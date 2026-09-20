@@ -77,3 +77,8 @@
 - Added the initial Supabase migration for the V1 privacy boundary: profiles, one trusted contact, idempotent events, location samples, delivery diagnostics, and hashed expiring viewer tokens.
 - Static schema security checks pass. The migration and real cross-user RLS tests have not run because the Supabase CLI is absent and the local Docker daemon is not running. Apply the migration to development/test and run those tests before treating the backend boundary as proven.
 - Frozen create-alert and public-viewer response fixtures and made them part of the local/CI verification gate. Contract changes now require an intentional fixture and documentation update.
+
+## 21 September 2026 — Day-3 reliability foundation
+
+- Added legal alert state transitions, server-time location freshness classification, retry classification, and a redacted pending-alert outbox contract. These are parser-validated only because the local Swift SDK is still unusable without full Xcode.
+- Attempted to install the Supabase CLI, but Homebrew rejected it because the installed Command Line Tools are outdated. Update Command Line Tools or install/select full Xcode before retrying. Docker’s daemon is also not running, so database-backed Day-3 integration tests remain blocked.

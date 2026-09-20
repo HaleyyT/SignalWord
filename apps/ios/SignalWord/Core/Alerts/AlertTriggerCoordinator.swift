@@ -6,17 +6,20 @@ import Foundation
 public actor AlertTriggerCoordinator {
     private let alertAPI: any AlertCreating
     private let persistence: any ActiveAlertPersisting
+    private let outbox: (any AlertOutboxPersisting)?
     private let cooldown: TimeInterval
     private let now: @Sendable () -> Date
 
     public init(
         alertAPI: any AlertCreating,
         persistence: any ActiveAlertPersisting,
+        outbox: (any AlertOutboxPersisting)? = nil,
         cooldown: TimeInterval = 60,
         now: @escaping @Sendable () -> Date = Date.init
     ) {
         self.alertAPI = alertAPI
         self.persistence = persistence
+        self.outbox = outbox
         self.cooldown = cooldown
         self.now = now
     }
@@ -50,8 +53,12 @@ public actor AlertTriggerCoordinator {
             )
             return .created(eventID: created.eventID)
         } catch {
-            // Day 3 adds a redacted outbox. Until then the caller receives no
-            // misleading delivery confirmation from this narrow spike.
+            if let retryableError = error as? any RetryClassifiableError,
+               retryableError.isRetryable,
+               let outbox {
+                await outbox.enqueue(PendingAlert(request: request, queuedAt: triggeredAt))
+                return .queuedOffline
+            }
             return .failed
         }
     }
