@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 test('repository documents the supported environments', () => {
   const readme = readFileSync('README.md', 'utf8');
@@ -27,4 +28,11 @@ test('locked intent is deliberately narrow and silent', () => {
   assert.match(intent, /openAppWhenRun = false/);
   assert.doesNotMatch(intent, /IntentDialog/);
   assert.match(credentials, /kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly/);
+});
+
+test('day-one preflight reports the Xcode gate without masking blockers', () => {
+  const output = execFileSync('node', ['scripts/day1-preflight.mjs'], { encoding: 'utf8' });
+  assert.match(output, /SignalWord Day-1 preflight/);
+  assert.match(output, /iOS source spike/);
+  assert.match(output, /Full Xcode/);
 });

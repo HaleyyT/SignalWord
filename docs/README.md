@@ -12,5 +12,6 @@ Read in this order:
 8. [Release checklist](RELEASE_CHECKLIST.md) — Xcode/accounts, App Review, Shipaton assets and no-ship conditions.
 9. [Eight-day execution plan](8_DAY_EXECUTION_PLAN.md) — dated dependency-aware tasks with acceptance, verification and pivots.
 10. [Build notes](build-notes.md) — durable decisions and open empirical questions.
+11. [Day-1 runbook](DAY_1_RUNBOOK.md) — the exact Xcode, device, backend, and evidence path for the first vertical slice.
 
 The master brief remains the product background. Where it conflicts with these reviewed documents, the reviewed documents take precedence.
