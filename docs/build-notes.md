@@ -71,3 +71,8 @@
 - Added the platform-independent alert trigger core with deterministic cooldown reuse and an honest failure outcome. Full execution of its verification harness is deferred until Xcode is installed and selected.
 - Added the narrow iOS 18 App Intent/App Shortcut source, a bearer-token Keychain store using the after-first-unlock device-only accessibility class, and the idempotent alert API client. These sources are parser-validated only until the Xcode toolchain is available.
 - No locked-device, Vocal Shortcut, credential, network, contact-delivery, or viewer claim has been marked proven.
+
+## 21 September 2026 — Day-2 backend foundation
+
+- Added the initial Supabase migration for the V1 privacy boundary: profiles, one trusted contact, idempotent events, location samples, delivery diagnostics, and hashed expiring viewer tokens.
+- Static schema security checks pass. The migration and real cross-user RLS tests have not run because the Supabase CLI is absent and the local Docker daemon is not running. Apply the migration to development/test and run those tests before treating the backend boundary as proven.
