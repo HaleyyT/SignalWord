@@ -69,4 +69,5 @@
 - Confirmed again that this Mac does not have full Xcode selected: `xcodebuild -version` resolves to Command Line Tools and fails.
 - The available Swift compiler and Command Line Tools SDK are mismatched, so neither package builds nor XCTest can run. This is an environment blocker, not a source-test pass.
 - Added the platform-independent alert trigger core with deterministic cooldown reuse and an honest failure outcome. Full execution of its verification harness is deferred until Xcode is installed and selected.
+- Added the narrow iOS 18 App Intent/App Shortcut source, a bearer-token Keychain store using the after-first-unlock device-only accessibility class, and the idempotent alert API client. These sources are parser-validated only until the Xcode toolchain is available.
 - No locked-device, Vocal Shortcut, credential, network, contact-delivery, or viewer claim has been marked proven.
