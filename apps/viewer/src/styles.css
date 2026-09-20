@@ -21,6 +21,7 @@ h2 { font-size: 1.25rem; margin-top: 0; }
 .freshness-recent { background: #fff0c9; color: #755706; }
 .freshness-stale, .freshness-unavailable { background: #ffe2dc; color: #912f1c; }
 .guidance { border-left: .4rem solid #075d46; }
+.refresh-warning { background: #fff0c9; border-radius: .5rem; color: #755706; font-weight: 700; padding: .65rem; }
 @media (prefers-color-scheme: dark) {
   :root { background: #111b13; color: #ecf1e9; }
   .card { background: #19251b; border-color: #344738; }
