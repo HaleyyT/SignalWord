@@ -1,8 +1,20 @@
 import Foundation
 
-enum AlertAPIError: Error {
+enum AlertAPIError: RetryClassifiableError {
+    case networkUnavailable
     case invalidResponse
     case rejected(statusCode: Int)
+
+    var isRetryable: Bool {
+        switch self {
+        case .networkUnavailable:
+            return true
+        case .rejected(let statusCode):
+            return statusCode == 429 || statusCode == 503
+        case .invalidResponse:
+            return false
+        }
+    }
 }
 
 struct RemoteAlertAPI: AlertCreating {
@@ -22,7 +34,13 @@ struct RemoteAlertAPI: AlertCreating {
         encoder.dateEncodingStrategy = .iso8601
         urlRequest.httpBody = try encoder.encode(request)
 
-        let (data, response) = try await session.data(for: urlRequest)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: urlRequest)
+        } catch is URLError {
+            throw AlertAPIError.networkUnavailable
+        }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AlertAPIError.invalidResponse
         }

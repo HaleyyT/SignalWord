@@ -58,7 +58,50 @@ public struct ActiveAlert: Equatable, Sendable {
 public enum TriggerOutcome: Equatable, Sendable {
     case created(eventID: UUID)
     case reused(eventID: UUID)
+    case queuedOffline
     case failed
+}
+
+public enum AlertLifecycleState: String, Codable, Sendable {
+    case ready
+    case triggering
+    case pendingDelivery
+    case active
+    case resolving
+    case resolved
+    case recoverableError
+
+    public func canTransition(to next: AlertLifecycleState) -> Bool {
+        switch (self, next) {
+        case (.ready, .triggering),
+             (.triggering, .pendingDelivery),
+             (.triggering, .recoverableError),
+             (.pendingDelivery, .active),
+             (.pendingDelivery, .recoverableError),
+             (.active, .resolving),
+             (.resolving, .resolved),
+             (.recoverableError, .triggering):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+public enum LocationFreshness: String, Codable, Sendable {
+    case live
+    case recent
+    case stale
+    case unavailable
+
+    /// The viewer must use the server receive time, never the device clock alone.
+    public static func classify(lastReceivedAt: Date?, serverNow: Date) -> LocationFreshness {
+        guard let lastReceivedAt else { return .unavailable }
+        let age = serverNow.timeIntervalSince(lastReceivedAt)
+        if age <= 30 { return .live }
+        if age <= 120 { return .recent }
+        return .stale
+    }
 }
 
 public protocol AlertCreating: Sendable {
@@ -68,4 +111,26 @@ public protocol AlertCreating: Sendable {
 public protocol ActiveAlertPersisting: Sendable {
     func loadActiveAlert() async -> ActiveAlert?
     func saveActiveAlert(_ alert: ActiveAlert) async
+}
+
+/// Errors conforming to this protocol may be queued for a later permitted retry.
+/// Authentication, validation, and configuration failures must not be retried.
+public protocol RetryClassifiableError: Error, Sendable {
+    var isRetryable: Bool { get }
+}
+
+/// A deliberately redacted local retry record: no phrase, contact, token,
+/// destination, or precise location enters the outbox.
+public struct PendingAlert: Codable, Equatable, Sendable {
+    public let request: AlertCreateRequest
+    public let queuedAt: Date
+
+    public init(request: AlertCreateRequest, queuedAt: Date) {
+        self.request = request
+        self.queuedAt = queuedAt
+    }
+}
+
+public protocol AlertOutboxPersisting: Sendable {
+    func enqueue(_ pendingAlert: PendingAlert) async
 }
