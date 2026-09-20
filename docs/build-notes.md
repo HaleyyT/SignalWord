@@ -76,3 +76,4 @@
 
 - Added the initial Supabase migration for the V1 privacy boundary: profiles, one trusted contact, idempotent events, location samples, delivery diagnostics, and hashed expiring viewer tokens.
 - Static schema security checks pass. The migration and real cross-user RLS tests have not run because the Supabase CLI is absent and the local Docker daemon is not running. Apply the migration to development/test and run those tests before treating the backend boundary as proven.
+- Frozen create-alert and public-viewer response fixtures and made them part of the local/CI verification gate. Contract changes now require an intentional fixture and documentation update.
