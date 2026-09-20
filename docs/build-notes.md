@@ -63,3 +63,10 @@
 - Clarified that an offline trigger may wait for an OS-permitted/next-launch retry and must never claim immediate delivery.
 - Made Day 4 the latest App Store target, with permission to submit a credible Day-3 candidate immediately.
 - Final engineering-plan assessment after these corrections: 93/100, with residual risk concentrated in physical-device/App Review/provider behavior.
+
+## 20 September 2026 — Day-1 implementation status
+
+- Confirmed again that this Mac does not have full Xcode selected: `xcodebuild -version` resolves to Command Line Tools and fails.
+- The available Swift compiler and Command Line Tools SDK are mismatched, so neither package builds nor XCTest can run. This is an environment blocker, not a source-test pass.
+- Added the platform-independent alert trigger core with deterministic cooldown reuse and an honest failure outcome. Full execution of its verification harness is deferred until Xcode is installed and selected.
+- No locked-device, Vocal Shortcut, credential, network, contact-delivery, or viewer claim has been marked proven.
