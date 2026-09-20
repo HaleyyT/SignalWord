@@ -82,3 +82,8 @@
 
 - Added legal alert state transitions, server-time location freshness classification, retry classification, and a redacted pending-alert outbox contract. These are parser-validated only because the local Swift SDK is still unusable without full Xcode.
 - Attempted to install the Supabase CLI, but Homebrew rejected it because the installed Command Line Tools are outdated. Update Command Line Tools or install/select full Xcode before retrying. Docker’s daemon is also not running, so database-backed Day-3 integration tests remain blocked.
+
+## 21 September 2026 — Day-4 public information foundation
+
+- Added dedicated privacy and support routes to the viewer with honest safety boundaries, retention language, private security-reporting guidance, and no invented emergency-service claim.
+- Hosted deployment, in-app delete data flow, purchase/restore, and physical-device accessibility checks remain pending their backend, RevenueCat, and Xcode prerequisites.

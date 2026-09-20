@@ -49,7 +49,7 @@ export function ViewerApp() {
     <main className="viewer-shell">
       <section className="card" aria-labelledby="alert-title">
         {state.status === 'error' && <p className="refresh-warning" role="status">The information shown may not be current. Retrying…</p>}
-        <p className="eyebrow">{event.kind === 'test' ? 'TEST — no emergency reported' : 'SIGNALWORD ALERT'}</p>
+        <p className="eyebrow">{event.kind === 'test' ? 'TEST - no emergency reported' : 'SIGNALWORD ALERT'}</p>
         <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? 'marked themselves safe' : 'sent an alert'}</h1>
         <p className="timestamp">Sent {formatTime(event.triggeredAt)}</p>
         <p className={`state state-${event.state}`}>{event.state === 'active' ? 'Alert active' : event.state}</p>
