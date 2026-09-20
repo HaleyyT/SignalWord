@@ -1,0 +1,16 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { ViewerApp } from './viewer/ViewerApp'
+import './styles.css'
+
+const root = document.getElementById('root')
+
+if (!root) {
+  throw new Error('Viewer root is missing.')
+}
+
+createRoot(root).render(
+  <StrictMode>
+    <ViewerApp />
+  </StrictMode>,
+)
