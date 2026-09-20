@@ -19,3 +19,12 @@ test('planned application boundaries exist', () => {
     assert.ok(existsSync(path), `${path} should exist`);
   }
 });
+
+test('locked intent is deliberately narrow and silent', () => {
+  const intent = readFileSync('apps/ios/SignalWord/Services/AppIntents/TriggerAlertIntent.swift', 'utf8');
+  const credentials = readFileSync('apps/ios/SignalWord/Core/Security/DeviceCredentialStore.swift', 'utf8');
+  assert.match(intent, /authenticationPolicy.*\.alwaysAllowed/);
+  assert.match(intent, /openAppWhenRun = false/);
+  assert.doesNotMatch(intent, /IntentDialog/);
+  assert.match(credentials, /kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly/);
+});
