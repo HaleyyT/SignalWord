@@ -87,3 +87,8 @@
 
 - Added dedicated privacy and support routes to the viewer with honest safety boundaries, retention language, private security-reporting guidance, and no invented emergency-service claim.
 - Hosted deployment, in-app delete data flow, purchase/restore, and physical-device accessibility checks remain pending their backend, RevenueCat, and Xcode prerequisites.
+
+## 21 September 2026 — Day-5 release discipline
+
+- Added a strict release preflight and a redacted evidence log for the ten-run reliability gate, physical-device failure matrix, and privacy/abuse review.
+- The preflight is expected to remain blocked until full Xcode and a healthy local Supabase stack are available. It must not be bypassed for a release candidate.

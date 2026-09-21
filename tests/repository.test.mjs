@@ -36,3 +36,10 @@ test('day-one preflight reports the Xcode gate without masking blockers', () => 
   assert.match(output, /iOS source spike/);
   assert.match(output, /Full Xcode/);
 });
+
+test('release evidence template preserves the required reliability and abuse checks', () => {
+  const evidence = readFileSync('docs/RELEASE_EVIDENCE.md', 'utf8');
+  assert.match(evidence, /Ten-run end-to-end log/);
+  assert.match(evidence, /User A cannot read User B data/);
+  assert.match(evidence, /Delete-data flow revokes prior token/);
+});
