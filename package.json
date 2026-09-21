@@ -14,6 +14,7 @@
     "check": "node scripts/verify-repository.mjs && node scripts/verify-contracts.mjs",
     "day1:preflight": "node scripts/day1-preflight.mjs",
     "day1:preflight:strict": "node scripts/day1-preflight.mjs --strict",
+    "release:preflight": "node scripts/release-preflight.mjs",
     "test": "node --test tests/*.test.mjs && npm run test --workspace=@signalword/viewer",
     "build": "npm run build --workspace=@signalword/viewer",
     "verify": "npm run check && npm run test && npm run build"
