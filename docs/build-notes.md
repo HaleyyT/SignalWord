@@ -92,3 +92,4 @@
 
 - Added a strict release preflight and a redacted evidence log for the ten-run reliability gate, physical-device failure matrix, and privacy/abuse review.
 - The preflight is expected to remain blocked until full Xcode and a healthy local Supabase stack are available. It must not be bypassed for a release candidate.
+- Added a moderator-ready external usability script and a privacy/abuse review runbook. Both require sandbox/test data and record redacted evidence only; neither represents completed device or backend validation.
