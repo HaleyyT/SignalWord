@@ -52,3 +52,11 @@ test('Day-7 materials prohibit staged safety claims and retain evidence gates', 
   assert.match(packet, /not a submitted Devpost form/i);
   assert.match(packet, /Evidence still required/i);
 });
+
+test('release preflight summarizes Supabase health without echoing status credentials', () => {
+  const preflight = readFileSync('scripts/release-preflight.mjs', 'utf8');
+  assert.match(preflight, /Local Supabase services are running/);
+  assert.match(preflight, /Supabase status failed; run npx supabase status locally for diagnostics/);
+  assert.doesNotMatch(preflight, /PUBLISHABLE_KEY/);
+  assert.doesNotMatch(preflight, /SERVICE_ROLE_KEY/);
+});
