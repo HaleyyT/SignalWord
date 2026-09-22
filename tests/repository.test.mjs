@@ -43,3 +43,12 @@ test('release evidence template preserves the required reliability and abuse che
   assert.match(evidence, /User A cannot read User B data/);
   assert.match(evidence, /Delete-data flow revokes prior token/);
 });
+
+test('Day-7 materials prohibit staged safety claims and retain evidence gates', () => {
+  const demoRunbook = readFileSync('docs/DEMO_PRODUCTION_RUNBOOK.md', 'utf8');
+  const packet = readFileSync('docs/SUBMISSION_PACKET_DRAFT.md', 'utf8');
+  assert.match(demoRunbook, /must never stage a delivery/i);
+  assert.match(demoRunbook, /release:preflight/);
+  assert.match(packet, /not a submitted Devpost form/i);
+  assert.match(packet, /Evidence still required/i);
+});
