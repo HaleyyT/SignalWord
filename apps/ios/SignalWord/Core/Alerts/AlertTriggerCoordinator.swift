@@ -15,7 +15,7 @@ public actor AlertTriggerCoordinator {
         persistence: any ActiveAlertPersisting,
         outbox: (any AlertOutboxPersisting)? = nil,
         cooldown: TimeInterval = 60,
-        now: @escaping @Sendable () -> Date = Date.init
+        now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.alertAPI = alertAPI
         self.persistence = persistence

@@ -112,7 +112,7 @@ private enum RetryableStubError: RetryClassifiableError {
 private enum VerificationError: Error { case assertion(String) }
 
 private func require(_ condition: Bool, _ message: String) throws {
-    guard condition() else { throw VerificationError.assertion(message) }
+    guard condition else { throw VerificationError.assertion(message) }
 }
 
 private actor RecordingAlertAPI: AlertCreating {
