@@ -11,13 +11,22 @@ export function ViewerApp() {
   const state = usePublicEvent(token)
 
   if (state.status === 'loading') {
-    return <main className="viewer-shell"><p aria-live="polite">Loading alert…</p></main>
+    return (
+      <main className="viewer-shell" aria-busy="true">
+        <section className="card loading-card" aria-live="polite">
+          <p className="eyebrow">SignalWord</p>
+          <div className="skeleton skeleton-heading" />
+          <div className="skeleton skeleton-copy" />
+          <span className="visually-hidden">Loading alert</span>
+        </section>
+      </main>
+    )
   }
 
   if (state.status === 'unavailable') {
     return (
       <main className="viewer-shell">
-        <section className="card">
+        <section className="card viewer-status-card">
           <p className="eyebrow">SignalWord</p>
           <h1>This alert link is unavailable</h1>
           <p>It may have expired, been resolved and removed, or no longer be valid.</p>
@@ -29,7 +38,7 @@ export function ViewerApp() {
   if (state.status === 'error' && !state.event) {
     return (
       <main className="viewer-shell">
-        <section className="card">
+        <section className="card viewer-status-card">
           <p className="eyebrow">SignalWord</p>
           <h1>Unable to refresh this alert</h1>
           <p>Check your connection and try again shortly.</p>

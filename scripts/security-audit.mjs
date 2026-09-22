@@ -27,14 +27,15 @@ for (const path of publicViewerFiles) {
 }
 
 const viewerDocument = readFileSync('apps/viewer/index.html', 'utf8')
+const viewerBuildConfiguration = readFileSync('apps/viewer/vite.config.ts', 'utf8')
 if (!/name="referrer" content="no-referrer"/.test(viewerDocument)) {
   violations.push('missing no-referrer policy in apps/viewer/index.html')
 }
-if (!/http-equiv="Content-Security-Policy"/.test(viewerDocument) ||
-  !/default-src 'self'/.test(viewerDocument) ||
-  !/connect-src 'self'/.test(viewerDocument) ||
-  !/object-src 'none'/.test(viewerDocument)) {
-  violations.push('missing restrictive content security policy in apps/viewer/index.html')
+if (!/productionSecurityHeaders/.test(viewerBuildConfiguration) ||
+  !/default-src 'self'/.test(viewerBuildConfiguration) ||
+  !/connect-src 'self'/.test(viewerBuildConfiguration) ||
+  !/object-src 'none'/.test(viewerBuildConfiguration)) {
+  violations.push('missing restrictive production content security policy')
 }
 
 if (violations.length) {
