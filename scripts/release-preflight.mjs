@@ -30,6 +30,11 @@ command('Local Supabase stack', 'npx', ['supabase', 'status'], {
     ? 'Local Supabase services are running.'
     : 'Supabase status failed; run npx supabase status locally for diagnostics.',
 })
+command('Database migration and RLS integration', 'npm', ['run', 'test:db'], {
+  summarize: (passed) => passed
+    ? 'Database integration and RLS policy tests passed.'
+    : 'Database integration tests failed; run npm run test:db locally for diagnostics.',
+})
 
 const publicViewerFiles = walk('apps/viewer/src').filter((file) => /\.(ts|tsx)$/.test(file))
 const prohibitedDashes = publicViewerFiles.filter((file) => /[—–]/.test(readFileSync(file, 'utf8')))

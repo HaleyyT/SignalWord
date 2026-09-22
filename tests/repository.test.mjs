@@ -56,7 +56,17 @@ test('Day-7 materials prohibit staged safety claims and retain evidence gates', 
 test('release preflight summarizes Supabase health without echoing status credentials', () => {
   const preflight = readFileSync('scripts/release-preflight.mjs', 'utf8');
   assert.match(preflight, /Local Supabase services are running/);
+  assert.match(preflight, /Database migration and RLS integration/);
+  assert.match(preflight, /npm run test:db/);
   assert.match(preflight, /Supabase status failed; run npx supabase status locally for diagnostics/);
   assert.doesNotMatch(preflight, /PUBLISHABLE_KEY/);
   assert.doesNotMatch(preflight, /SERVICE_ROLE_KEY/);
+});
+
+test('database policy integration tests are committed and exercised in CI', () => {
+  const policyTest = readFileSync('supabase/tests/rls_policies.test.sql', 'utf8');
+  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+  assert.match(policyTest, /select plan\(17\)/);
+  assert.match(policyTest, /anonymous users have no direct viewer-token privileges/);
+  assert.match(ci, /npm run test:db/);
 });
