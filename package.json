@@ -11,7 +11,7 @@
     "node": ">=22.0.0 <23"
   },
   "scripts": {
-    "check": "node scripts/verify-repository.mjs && node scripts/verify-contracts.mjs",
+    "check": "node scripts/verify-repository.mjs && node scripts/verify-contracts.mjs && node scripts/security-audit.mjs",
     "day1:preflight": "node scripts/day1-preflight.mjs",
     "day1:preflight:strict": "node scripts/day1-preflight.mjs --strict",
     "release:preflight": "node scripts/release-preflight.mjs",

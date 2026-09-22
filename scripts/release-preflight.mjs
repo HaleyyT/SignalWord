@@ -4,10 +4,11 @@ import { spawnSync } from 'node:child_process';
 const projectRoot = new URL('..', import.meta.url).pathname
 const findings = []
 
-function command(label, executable, args, { required = true } = {}) {
+function command(label, executable, args, { required = true, summarize } = {}) {
   const result = spawnSync(executable, args, { cwd: projectRoot, encoding: 'utf8' })
   const passed = result.status === 0
-  findings.push({ label, passed, required, detail: `${result.stdout}${result.stderr}`.trim().split('\n')[0] })
+  const rawDetail = `${result.stdout}${result.stderr}`.trim().split('\n')[0]
+  findings.push({ label, passed, required, detail: summarize ? summarize(passed) : rawDetail })
 }
 
 function walk(directory) {
@@ -24,7 +25,11 @@ function check(label, passed, detail) {
 command('Repository verification', 'npm', ['run', 'verify'])
 command('iOS source syntax', 'bash', ['-lc', "find apps/ios/SignalWord -name '*.swift' -print0 | xargs -0 swiftc -parse && swiftc -parse apps/ios/Verification/main.swift"])
 command('Full Xcode toolchain', 'xcodebuild', ['-version'])
-command('Local Supabase stack', 'npx', ['supabase', 'status'])
+command('Local Supabase stack', 'npx', ['supabase', 'status'], {
+  summarize: (passed) => passed
+    ? 'Local Supabase services are running.'
+    : 'Supabase status failed; run npx supabase status locally for diagnostics.',
+})
 
 const publicViewerFiles = walk('apps/viewer/src').filter((file) => /\.(ts|tsx)$/.test(file))
 const prohibitedDashes = publicViewerFiles.filter((file) => /[—–]/.test(readFileSync(file, 'utf8')))

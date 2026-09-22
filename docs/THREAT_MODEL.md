@@ -37,7 +37,7 @@ The trained phrase is protected by iOS Vocal Shortcuts and is intentionally outs
 
 | Threat | Control | Verification |
 |---|---|---|
-| Viewer link leaks | 256-bit opaque token, hash at rest, TLS, short expiry, revoke, one-event projection, no-store/no-referrer headers | Attempt reuse after expiry/revocation; inspect headers and logs |
+| Viewer link leaks | 256-bit opaque token, hash at rest, TLS, short expiry, revoke, one-event projection, strict client token-route validation, no-store/no-referrer policy | Attempt reuse after expiry/revocation; inspect headers and logs |
 | Cross-user database access | RLS deny by default, owner policies, privileged work only in Edge Functions | Automated user A/user B policy tests |
 | Alert storm | Client cooldown, server rate limit, unique idempotency constraint, provider deduplication | 20 concurrent identical requests yield one event/delivery |
 | Attacker says known phrase | Phrase is user-selected and OS-trained; alert action exposes no secrets; event is a notification, not a destructive action | Document limitation; test household speech false activations |
@@ -52,7 +52,7 @@ The trained phrase is protected by iOS Vocal Shortcuts and is intentionally outs
 | Provider callback spoof | Verify provider signature; allowlist event transitions | Invalid signature tests |
 | Contact destination leaks in logs | Structured allowlist logging and redaction | Automated log snapshot test/manual grep |
 | Precise coordinates leak in analytics | No precise-location events; aggregate latency only | Analytics payload inspection |
-| Token leaks through browser | No third-party analytics on viewer, restrictive referrer policy, no URL token in client logs, token not copied into query strings | Browser network/storage inspection |
+| Token leaks through browser | No third-party analytics on viewer, restrictive referrer policy, content security policy, no URL token in client logs, token not copied into query strings | Browser network/storage inspection and hosted-header check |
 | Service key ships in app | Only public client key in app; service role in server secret store | Secret scan and binary/config review |
 | Contact spam/harassment | Confirmation flow, previewed content, per-user/destination/IP rate limits, abuse contact | Abuse-case integration tests |
 | Data persists forever | DB expiry columns, scheduled deletion, deletion endpoint | Time-shifted retention tests |
@@ -110,8 +110,13 @@ Until all are true, only confirmed trusted contacts receive automated alerts.
 - RLS tests pass for every table.
 - No service role/provider secret is present in app/web bundles or Git history.
 - Public viewer returns only the allowlisted projection.
+- Public viewer security audit passes: no browser storage/logging/server-credential references, a no-referrer policy, and restrictive CSP metadata.
 - Concurrent idempotency test proves one event and one delivery.
 - Expired/revoked token tests pass.
 - Logs contain no phrase, transcript, destination, viewer token, JWT, or precise coordinate.
 - Delete-data flow is verified end to end.
 - Reviewer notes accurately state who is—and is not—contacted.
+
+## Current verified baseline and release caveat
+
+The local database has all six private tables with RLS enabled, and the public viewer rebuilds only its allowlisted event projection at runtime. These are valuable layers, not a guarantee that no one can attack the system. Before public hosting, the selected host must enforce HTTPS, `Cache-Control: no-store` for event routes, `Referrer-Policy: no-referrer`, and an equivalent response-header CSP; then the browser network/storage checks in the test plan must be recorded against that host.

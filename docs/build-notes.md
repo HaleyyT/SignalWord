@@ -105,3 +105,10 @@
 
 - Added an evidence-gated filming plan, independent judge-style preflight, and an honest local submission packet draft.
 - These materials deliberately preserve pending evidence rather than representing a Devpost draft, public video, store release, or completed submission.
+
+## 22 September 2026 — local backend and security hardening
+
+- Resolved the local Supabase startup blocker by disabling optional Studio, whose Docker Desktop bind mount was denied on this Mac. The database/API/Auth/Storage/Realtime/Mailpit development services now start and the initial migration applies.
+- Confirmed the six private tables exist locally with RLS enabled and the local schema lint passes.
+- Hardened the release preflight so it reports Supabase health without printing local credential-shaped values.
+- Added an enforced public-viewer security audit, stricter 256-bit token-route acceptance, runtime reconstruction of the allowlisted public event projection, and CSP/referrer browser policy metadata. Hosting response headers and production abuse tests remain required release evidence.
