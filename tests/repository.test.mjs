@@ -70,3 +70,10 @@ test('database policy integration tests are committed and exercised in CI', () =
   assert.match(policyTest, /anonymous users have no direct viewer-token privileges/);
   assert.match(ci, /npm run test:db/);
 });
+
+test('Day-8 audit fails closed when required production evidence is absent', () => {
+  const audit = readFileSync('docs/DAY_8_RELEASE_AUDIT.md', 'utf8');
+  assert.match(audit, /Not accepted for release or submission/);
+  assert.match(audit, /Current release readiness: 31\/100/);
+  assert.match(audit, /must not be described as end-to-end working/i);
+});
