@@ -100,3 +100,8 @@
 - Added small viewer accessibility improvements that can be statically and unit-test verified: complete state wording, polite status announcements, larger actionable-link targets, explicit new-tab labels, and a Reduce Motion fallback.
 - Added the controlled reliability-study protocol and redacted results template. The 50 physical phrase trials, delivery reconciliation, and tester-led usability findings remain pending observed evidence.
 - Docker Desktop is installed but its daemon socket was unavailable during the Day-6 check, so the local Supabase stack is not yet verified as healthy.
+
+## 22 September 2026 — Day-7 submission preparation
+
+- Added an evidence-gated filming plan, independent judge-style preflight, and an honest local submission packet draft.
+- These materials deliberately preserve pending evidence rather than representing a Devpost draft, public video, store release, or completed submission.
