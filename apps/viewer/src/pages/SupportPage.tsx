@@ -21,12 +21,12 @@ export function SupportPage() {
         <section>
           <h2>Report a product problem</h2>
           <p>For non-urgent product support, open a GitHub issue without including phrases, contact destinations, viewer links, tokens, precise coordinates, or account credentials.</p>
-          <a href="https://github.com/HaleyyT/SignalWord/issues/new" rel="noreferrer" target="_blank">Open the SignalWord issue tracker</a>
+          <a className="action-link" href="https://github.com/HaleyyT/SignalWord/issues/new" rel="noreferrer" target="_blank" aria-label="Open the SignalWord issue tracker in a new tab">Open the SignalWord issue tracker</a>
         </section>
         <section>
           <h2>Report a security concern</h2>
           <p>Do not publish suspected data exposure or credentials in an issue. Follow the private reporting guidance in the project security policy.</p>
-          <a href="https://github.com/HaleyyT/SignalWord/blob/main/SECURITY.md" rel="noreferrer" target="_blank">Read the security policy</a>
+          <a className="action-link" href="https://github.com/HaleyyT/SignalWord/blob/main/SECURITY.md" rel="noreferrer" target="_blank" aria-label="Read the security policy in a new tab">Read the security policy</a>
         </section>
       </article>
     </main>

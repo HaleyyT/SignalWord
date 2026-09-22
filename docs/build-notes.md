@@ -93,3 +93,10 @@
 - Added a strict release preflight and a redacted evidence log for the ten-run reliability gate, physical-device failure matrix, and privacy/abuse review.
 - The preflight is expected to remain blocked until full Xcode and a healthy local Supabase stack are available. It must not be bypassed for a release candidate.
 - Added a moderator-ready external usability script and a privacy/abuse review runbook. Both require sandbox/test data and record redacted evidence only; neither represents completed device or backend validation.
+
+## 22 September 2026 — Day-6 quality baseline
+
+- Full Xcode 27 is installed and selected. The Swift core verification executable now builds and passes on this machine after correcting its assertion helper and default clock closure.
+- Added small viewer accessibility improvements that can be statically and unit-test verified: complete state wording, polite status announcements, larger actionable-link targets, explicit new-tab labels, and a Reduce Motion fallback.
+- Added the controlled reliability-study protocol and redacted results template. The 50 physical phrase trials, delivery reconciliation, and tester-led usability findings remain pending observed evidence.
+- Docker Desktop is installed but its daemon socket was unavailable during the Day-6 check, so the local Supabase stack is not yet verified as healthy.

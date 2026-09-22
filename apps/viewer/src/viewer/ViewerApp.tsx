@@ -1,5 +1,5 @@
 import { viewerTokenFromPath } from './api'
-import { freshnessCopy, locationMapURL, type PublicEvent } from './model'
+import { eventStateCopy, freshnessCopy, locationMapURL, type PublicEvent } from './model'
 import { usePublicEvent } from './usePublicEvent'
 
 function formatTime(timestamp: string): string {
@@ -52,7 +52,9 @@ export function ViewerApp() {
         <p className="eyebrow">{event.kind === 'test' ? 'TEST - no emergency reported' : 'SIGNALWORD ALERT'}</p>
         <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? 'marked themselves safe' : 'sent an alert'}</h1>
         <p className="timestamp">Sent {formatTime(event.triggeredAt)}</p>
-        <p className={`state state-${event.state}`}>{event.state === 'active' ? 'Alert active' : event.state}</p>
+        <p className={`state state-${event.state}`} role="status" aria-live="polite" aria-atomic="true">
+          {eventStateCopy[event.state]}
+        </p>
       </section>
 
       <section className="card" aria-labelledby="location-title">
@@ -60,9 +62,9 @@ export function ViewerApp() {
         {location ? (
           <>
             <p className={`freshness freshness-${location.freshness}`}>{freshnessCopy[location.freshness]}</p>
-            <p>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)} · accuracy within {Math.round(location.horizontalAccuracyM)} m</p>
+            <p>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}. Accuracy within {Math.round(location.horizontalAccuracyM)} m.</p>
             <p className="timestamp">Captured {formatTime(location.capturedAt)}</p>
-            <a href={locationMapURL(location)} rel="noreferrer" target="_blank">Open in a map</a>
+            <a className="action-link" href={locationMapURL(location)} rel="noreferrer" target="_blank" aria-label="Open the latest available location in a map, in a new tab">Open in a map</a>
           </>
         ) : (
           <p>Location is unavailable. The alert was still sent.</p>
