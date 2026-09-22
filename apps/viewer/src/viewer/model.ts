@@ -27,6 +27,12 @@ export const freshnessCopy: Record<Freshness, string> = {
   unavailable: 'Location is unavailable',
 }
 
+export const eventStateCopy: Record<EventState, string> = {
+  active: 'Alert active',
+  resolved: 'Alert resolved',
+  expired: 'Alert expired',
+}
+
 export function locationMapURL(location: PublicLocation): string {
   const latitude = location.latitude.toFixed(6)
   const longitude = location.longitude.toFixed(6)
