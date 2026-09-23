@@ -4,14 +4,32 @@
 -- encrypted copy is held only in the crash-recoverable delivery outbox.
 
 alter table public.alert_deliveries
-  add column payload_ciphertext text not null,
-  add column payload_key_version smallint not null check (payload_key_version > 0),
+  add column payload_ciphertext text,
+  add column payload_key_version smallint,
   add column lease_owner uuid,
   add column lease_expires_at timestamptz,
   add constraint alert_delivery_lease_is_complete check (
     (lease_owner is null and lease_expires_at is null) or
     (lease_owner is not null and lease_expires_at is not null)
   );
+
+-- Pre-outbox queued rows cannot be recovered because their raw capability was
+-- never persisted. Fail them explicitly instead of pretending they can send or
+-- letting a NOT NULL migration fail on an existing environment.
+update public.alert_deliveries
+set status = 'failed',
+  completed_at = now(),
+  last_error_code = 'LEGACY_OUTBOX_UNRECOVERABLE',
+  payload_ciphertext = 'legacy-unrecoverable',
+  payload_key_version = 1,
+  updated_at = now()
+where payload_ciphertext is null;
+
+alter table public.alert_deliveries
+  alter column payload_ciphertext set not null,
+  alter column payload_key_version set not null,
+  add constraint alert_delivery_payload_key_version_positive
+    check (payload_key_version > 0);
 
 create index alert_deliveries_dispatch_idx
   on public.alert_deliveries (next_attempt_at, created_at)
@@ -25,7 +43,7 @@ create or replace function public.create_or_reuse_alert(
   p_viewer_token text,
   p_delivery_provider text,
   p_delivery_payload_ciphertext text,
-  p_delivery_payload_key_version smallint,
+  p_delivery_payload_key_version integer,
   p_location jsonb default null
 )
 returns table (
@@ -79,7 +97,7 @@ begin
 
   if p_delivery_provider not in ('fake', 'resend') or
     pg_catalog.char_length(p_delivery_payload_ciphertext) < 24 or
-    p_delivery_payload_key_version < 1 then
+    p_delivery_payload_key_version < 1 or p_delivery_payload_key_version > 32767 then
     raise exception using errcode = '22023', message = 'INVALID_DELIVERY_CONFIGURATION';
   end if;
 
@@ -132,7 +150,7 @@ begin
     status, payload_ciphertext, payload_key_version
   ) values (
     v_event.id, p_delivery_provider, 'alert/' || v_event.id::text || '/initial', 'initial', 'queued',
-    p_delivery_payload_ciphertext, p_delivery_payload_key_version
+    p_delivery_payload_ciphertext, p_delivery_payload_key_version::smallint
   )
   returning status into v_delivery_status;
 
@@ -155,8 +173,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_or_reuse_alert(uuid, uuid, text, text, text, text, text, smallint, jsonb) from public;
-grant execute on function public.create_or_reuse_alert(uuid, uuid, text, text, text, text, text, smallint, jsonb) to authenticated;
+revoke all on function public.create_or_reuse_alert(uuid, uuid, text, text, text, text, text, integer, jsonb) from public;
+grant execute on function public.create_or_reuse_alert(uuid, uuid, text, text, text, text, text, integer, jsonb) to authenticated;
 
 create or replace function public.get_public_event(p_token_hash bytea)
 returns table (projection jsonb)

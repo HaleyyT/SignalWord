@@ -66,10 +66,13 @@ insert into public.viewer_tokens (alert_event_id, token_hash, expires_at) values
   ('20000000-0000-0000-0000-000000000001', digest('viewer-a', 'sha256'), now() + interval '24 hours'),
   ('20000000-0000-0000-0000-000000000003', digest('viewer-c', 'sha256'), now() + interval '24 hours');
 
-insert into public.alert_deliveries (alert_event_id, provider, provider_idempotency_key, status) values
-  ('20000000-0000-0000-0000-000000000001', 'resend', 'alert/a/initial', 'queued'),
-  ('20000000-0000-0000-0000-000000000002', 'resend', 'alert/b/initial', 'queued'),
-  ('20000000-0000-0000-0000-000000000003', 'resend', 'alert/c/initial', 'queued');
+insert into public.alert_deliveries (
+  alert_event_id, provider, provider_idempotency_key, status,
+  payload_ciphertext, payload_key_version
+) values
+  ('20000000-0000-0000-0000-000000000001', 'resend', 'alert/a/initial', 'queued', 'cipher-a', 1),
+  ('20000000-0000-0000-0000-000000000002', 'resend', 'alert/b/initial', 'queued', 'cipher-b', 1),
+  ('20000000-0000-0000-0000-000000000003', 'resend', 'alert/c/initial', 'queued', 'cipher-c', 1);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
@@ -103,9 +106,11 @@ select throws_ok(
 );
 
 select lives_ok(
-  $$insert into public.alert_deliveries (alert_event_id, provider, provider_idempotency_key) values
-      ('20000000-0000-0000-0000-000000000004', 'resend', 'alert/a4/initial'),
-      ('20000000-0000-0000-0000-000000000005', 'resend', 'alert/a5/initial')$$,
+  $$insert into public.alert_deliveries (
+      alert_event_id, provider, provider_idempotency_key, payload_ciphertext, payload_key_version
+    ) values
+      ('20000000-0000-0000-0000-000000000004', 'resend', 'alert/a4/initial', 'cipher-a4', 1),
+      ('20000000-0000-0000-0000-000000000005', 'resend', 'alert/a5/initial', 'cipher-a5', 1)$$,
   'multiple queued deliveries may have null provider message IDs'
 );
 select is((select count(*) from public.alert_deliveries where provider_message_id is null), 5::bigint, 'queued deliveries with null provider message IDs are preserved');
