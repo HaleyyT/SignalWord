@@ -39,7 +39,7 @@ export function parseIdempotencyKey(value: string | null): string {
   return value;
 }
 
-export function parseCreateAlert(value: unknown): CreateAlertInput {
+export function parseCreateAlert(value: unknown, nowMilliseconds = Date.now()): CreateAlertInput {
   if (!isRecord(value)) invalid("Request body must be an object.");
   if ("idempotencyKey" in value) invalid("Idempotency-Key must be sent only as a header.");
   if (value.kind !== "test" && value.kind !== "real") invalid("kind must be test or real.");
@@ -69,12 +69,18 @@ export function parseCreateAlert(value: unknown): CreateAlertInput {
       value.location.horizontalAccuracyM > 100_000 || !isTimestamp(value.location.capturedAt)) {
       invalid("location is invalid.");
     }
-    location = {
-      latitude: value.location.latitude,
-      longitude: value.location.longitude,
-      horizontalAccuracyM: value.location.horizontalAccuracyM,
-      capturedAt: value.location.capturedAt,
-    };
+    const capturedAtMilliseconds = Date.parse(value.location.capturedAt);
+    // Device clocks are not trusted. An implausibly future or old sample is
+    // omitted so location can never block the alert itself.
+    if (capturedAtMilliseconds >= nowMilliseconds - 86_400_000 &&
+      capturedAtMilliseconds <= nowMilliseconds + 300_000) {
+      location = {
+        latitude: value.location.latitude,
+        longitude: value.location.longitude,
+        horizontalAccuracyM: value.location.horizontalAccuracyM,
+        capturedAt: value.location.capturedAt,
+      };
+    }
   }
 
   return {

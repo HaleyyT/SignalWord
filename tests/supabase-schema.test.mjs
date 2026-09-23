@@ -62,9 +62,20 @@ test('schema has bounded retention for locations, tokens, and delivery diagnosti
 
 test('alert creation is transactionally serialized and stores only a viewer-token hash', () => {
   assert.match(alertApiMigration, /pg_advisory_xact_lock/i);
-  assert.match(alertApiMigration, /digest\(convert_to\(p_viewer_token, 'UTF8'\), 'sha256'\)/i);
-  assert.match(alertApiMigration, /insert into public\.alert_deliveries[\s\S]*'fake', 'queued'/i);
+  assert.match(alertApiMigration, /extensions\.digest\(pg_catalog\.convert_to\(p_viewer_token, 'UTF8'\), 'sha256'\)/i);
+  assert.match(alertApiMigration, /insert into public\.alert_deliveries[\s\S]*payload_ciphertext[\s\S]*payload_key_version/i);
   assert.doesNotMatch(alertApiMigration, /return query[\s\S]{0,200}p_viewer_token/i);
+});
+
+test('cooldown is kind-scoped so a rehearsal cannot suppress a real alert', () => {
+  assert.match(alertApiMigration, /where user_id = p_user_id\s+and kind = p_kind\s+and state in/mi);
+});
+
+test('delivery uses a leased retryable transactional outbox', () => {
+  assert.match(alertApiMigration, /create or replace function public\.claim_alert_deliveries/i);
+  assert.match(alertApiMigration, /for update skip locked/i);
+  assert.match(alertApiMigration, /create or replace function public\.finish_alert_delivery/i);
+  assert.match(alertApiMigration, /when 1 then now\(\) \+ interval '1 minute'/i);
 });
 
 test('public projection is token-scoped, expiry-aware, and explicitly allowlisted', () => {
@@ -73,4 +84,5 @@ test('public projection is token-scoped, expiry-aware, and explicitly allowliste
   assert.match(alertApiMigration, /token\.expires_at > now\(\)/i);
   assert.match(alertApiMigration, /jsonb_strip_nulls\(jsonb_build_object/i);
   assert.doesNotMatch(alertApiMigration, /destination_ciphertext/);
+  assert.match(alertApiMigration, /location\.captured_at between now\(\) - interval '30 seconds'/i);
 });
