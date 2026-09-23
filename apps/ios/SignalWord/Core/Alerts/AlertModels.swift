@@ -12,24 +12,41 @@ public enum TriggerMethod: String, Codable, Sendable {
     case manual
 }
 
-/// The minimum safe payload for the first alert request. Location is deliberately
-/// omitted here: alert creation must never wait for a location sample.
+/// The JSON body sent to the alert API. Idempotency is intentionally not part
+/// of this type: it is transported exclusively in the `Idempotency-Key` header.
 public struct AlertCreateRequest: Codable, Equatable, Sendable {
     public let kind: AlertKind
     public let triggerMethod: TriggerMethod
     public let clientTriggeredAt: Date
-    public let idempotencyKey: UUID
 
-    public init(
-        kind: AlertKind,
-        triggerMethod: TriggerMethod,
-        clientTriggeredAt: Date,
-        idempotencyKey: UUID
-    ) {
+    public init(kind: AlertKind, triggerMethod: TriggerMethod, clientTriggeredAt: Date) {
         self.kind = kind
         self.triggerMethod = triggerMethod
         self.clientTriggeredAt = clientTriggeredAt
+    }
+}
+
+/// The durable, redacted command created before network work starts.
+public struct AlertCommand: Codable, Equatable, Sendable {
+    public let idempotencyKey: UUID
+    public let kind: AlertKind
+    public let triggerMethod: TriggerMethod
+    public let clientTriggeredAt: Date
+
+    public init(
+        idempotencyKey: UUID,
+        kind: AlertKind,
+        triggerMethod: TriggerMethod,
+        clientTriggeredAt: Date
+    ) {
         self.idempotencyKey = idempotencyKey
+        self.kind = kind
+        self.triggerMethod = triggerMethod
+        self.clientTriggeredAt = clientTriggeredAt
+    }
+
+    public var request: AlertCreateRequest {
+        AlertCreateRequest(kind: kind, triggerMethod: triggerMethod, clientTriggeredAt: clientTriggeredAt)
     }
 }
 
@@ -43,44 +60,87 @@ public struct CreatedAlert: Equatable, Sendable {
     }
 }
 
-public struct ActiveAlert: Equatable, Sendable {
-    public let eventID: UUID
-    public let idempotencyKey: UUID
-    public let triggeredAt: Date
-
-    public init(eventID: UUID, idempotencyKey: UUID, triggeredAt: Date) {
-        self.eventID = eventID
-        self.idempotencyKey = idempotencyKey
-        self.triggeredAt = triggeredAt
-    }
-}
-
 public enum TriggerOutcome: Equatable, Sendable {
     case created(eventID: UUID)
     case reused(eventID: UUID)
     case queuedOffline
-    case failed
+    case rejected
+    case failedRetryable
+}
+
+public enum PersistedTriggerPhase: String, Codable, Sendable {
+    case attempting
+    case queuedOffline
+    case created
+    case rejected
+}
+
+/// Inspectable local truth for the app UI. This record contains no recipient,
+/// phrase, public token, location, or other sensitive alert content.
+public struct PersistedTriggerRecord: Codable, Equatable, Sendable {
+    public let command: AlertCommand
+    public let phase: PersistedTriggerPhase
+    public let updatedAt: Date
+    public let retryCount: Int
+    public let nextAttemptAt: Date?
+    public let canonicalEventID: UUID?
+
+    public init(
+        command: AlertCommand,
+        phase: PersistedTriggerPhase,
+        updatedAt: Date,
+        retryCount: Int = 0,
+        nextAttemptAt: Date? = nil,
+        canonicalEventID: UUID? = nil
+    ) {
+        self.command = command
+        self.phase = phase
+        self.updatedAt = updatedAt
+        self.retryCount = retryCount
+        self.nextAttemptAt = nextAttemptAt
+        self.canonicalEventID = canonicalEventID
+    }
+}
+
+public enum CanonicalCommandAcquisition: Equatable, Sendable {
+    case attempt(AlertCommand)
+    case pending(AlertCommand)
+    case created(AlertCommand, eventID: UUID)
+    case rejected(AlertCommand)
+}
+
+public protocol AlertCommandPersisting: Sendable {
+    func acquireCanonicalCommand(
+        kind: AlertKind,
+        method: TriggerMethod,
+        triggeredAt: Date,
+        cooldown: TimeInterval,
+        attemptLease: TimeInterval
+    ) async throws -> CanonicalCommandAcquisition
+
+    func markCreated(_ command: AlertCommand, alert: CreatedAlert, at: Date) async throws
+    func markQueued(_ command: AlertCommand, at: Date) async throws
+    func markRejected(_ command: AlertCommand, at: Date) async throws
+    func latestTriggerRecord() async -> PersistedTriggerRecord?
+}
+
+public protocol AlertCreating: Sendable {
+    func createAlert(_ command: AlertCommand) async throws -> CreatedAlert
+}
+
+public protocol RetryClassifiableError: Error, Sendable {
+    var isRetryable: Bool { get }
 }
 
 public enum AlertLifecycleState: String, Codable, Sendable {
-    case ready
-    case triggering
-    case pendingDelivery
-    case active
-    case resolving
-    case resolved
-    case recoverableError
+    case ready, triggering, pendingDelivery, active, resolving, resolved, recoverableError
 
     public func canTransition(to next: AlertLifecycleState) -> Bool {
         switch (self, next) {
-        case (.ready, .triggering),
-             (.triggering, .pendingDelivery),
-             (.triggering, .recoverableError),
-             (.pendingDelivery, .active),
-             (.pendingDelivery, .recoverableError),
-             (.active, .resolving),
-             (.resolving, .resolved),
-             (.recoverableError, .triggering):
+        case (.ready, .triggering), (.triggering, .pendingDelivery),
+             (.triggering, .recoverableError), (.pendingDelivery, .active),
+             (.pendingDelivery, .recoverableError), (.active, .resolving),
+             (.resolving, .resolved), (.recoverableError, .triggering):
             return true
         default:
             return false
@@ -89,12 +149,8 @@ public enum AlertLifecycleState: String, Codable, Sendable {
 }
 
 public enum LocationFreshness: String, Codable, Sendable {
-    case live
-    case recent
-    case stale
-    case unavailable
+    case live, recent, stale, unavailable
 
-    /// The viewer must use the server receive time, never the device clock alone.
     public static func classify(lastReceivedAt: Date?, serverNow: Date) -> LocationFreshness {
         guard let lastReceivedAt else { return .unavailable }
         let age = serverNow.timeIntervalSince(lastReceivedAt)
@@ -102,35 +158,4 @@ public enum LocationFreshness: String, Codable, Sendable {
         if age <= 120 { return .recent }
         return .stale
     }
-}
-
-public protocol AlertCreating: Sendable {
-    func createAlert(_ request: AlertCreateRequest) async throws -> CreatedAlert
-}
-
-public protocol ActiveAlertPersisting: Sendable {
-    func loadActiveAlert() async -> ActiveAlert?
-    func saveActiveAlert(_ alert: ActiveAlert) async
-}
-
-/// Errors conforming to this protocol may be queued for a later permitted retry.
-/// Authentication, validation, and configuration failures must not be retried.
-public protocol RetryClassifiableError: Error, Sendable {
-    var isRetryable: Bool { get }
-}
-
-/// A deliberately redacted local retry record: no phrase, contact, token,
-/// destination, or precise location enters the outbox.
-public struct PendingAlert: Codable, Equatable, Sendable {
-    public let request: AlertCreateRequest
-    public let queuedAt: Date
-
-    public init(request: AlertCreateRequest, queuedAt: Date) {
-        self.request = request
-        self.queuedAt = queuedAt
-    }
-}
-
-public protocol AlertOutboxPersisting: Sendable {
-    func enqueue(_ pendingAlert: PendingAlert) async
 }

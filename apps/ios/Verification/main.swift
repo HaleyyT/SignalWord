@@ -5,10 +5,13 @@ import SignalWordCore
 struct SignalWordCoreVerification {
     static func main() async {
         do {
-            try await verifiesFirstTriggerCreatesOneAlert()
-            try await verifiesTriggerInsideCooldownReusesCanonicalEvent()
-            try await verifiesFailureDoesNotPersistOrClaimAnAlert()
-            try await verifiesRetryableFailureQueuesARedactedAlert()
+            try await verifiesFirstTriggerPersistsBeforeNetworkAndCreatesOneAlert()
+            try await verifiesConcurrentInvocationsUseOneCanonicalCommand()
+            try await verifiesOfflineRelaunchReusesTheSameIdempotencyKey()
+            try await verifiesTestCommandCannotSuppressARealTrigger()
+            try await verifiesClockRollbackCannotMintADuplicate()
+            try await verifiesNonRetryableFailureIsInspectableAndRejected()
+            try verifiesRequestBodyExcludesIdempotencyKey()
             try verifiesServerTimeLocationFreshness()
             try verifiesIllegalAlertTransitionsAreRejected()
             print("SignalWord core verification passed.")
@@ -18,75 +21,134 @@ struct SignalWordCoreVerification {
         }
     }
 
-    private static func verifiesFirstTriggerCreatesOneAlert() async throws {
-        let api = RecordingAlertAPI()
-        let persistence = MemoryActiveAlertStore()
+    private static func verifiesFirstTriggerPersistsBeforeNetworkAndCreatesOneAlert() async throws {
+        try await withTemporaryStore { store in
+            let eventID = UUID()
+            let api = RecordingAlertAPI(result: .success(createdAlert(eventID)))
+            let coordinator = coordinator(api: api, store: store, now: referenceDate)
+
+            let outcome = await coordinator.trigger(kind: .test, method: .vocalShortcut)
+
+            try require(outcome == .created(eventID: eventID), "first trigger should create its event")
+            try require(await api.requestCount() == 1, "first trigger should issue one request")
+            let record = await store.latestTriggerRecord()
+            try require(record?.phase == .created, "created outcome must be inspectable")
+            try require(record?.canonicalEventID == eventID, "canonical event must be persisted")
+        }
+    }
+
+    private static func verifiesConcurrentInvocationsUseOneCanonicalCommand() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let api = RecordingAlertAPI(
+            result: .success(createdAlert(UUID())),
+            delayNanoseconds: 100_000_000
+        )
+
+        let outcomes = await withTaskGroup(of: TriggerOutcome.self, returning: [TriggerOutcome].self) { group in
+            for _ in 0..<20 {
+                group.addTask {
+                    let store = try! FileLockedAlertCommandStore(directoryURL: directory)
+                    return await coordinator(api: api, store: store, now: referenceDate)
+                        .trigger(kind: .real, method: .vocalShortcut)
+                }
+            }
+            return await group.reduce(into: []) { $0.append($1) }
+        }
+
+        try require(await api.requestCount() == 1, "20 concurrent invocations must lease one request")
+        try require(Set(await api.idempotencyKeys()).count == 1, "concurrent invocations must share one key")
+        try require(outcomes.filter(isCreated).count == 1, "exactly one invocation should report creation")
+        try require(outcomes.filter { $0 == .queuedOffline }.count == 19, "other invocations should observe pending work")
+    }
+
+    private static func verifiesOfflineRelaunchReusesTheSameIdempotencyKey() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let offlineAPI = RecordingAlertAPI(result: .failure(RetryableStubError.offline))
+        let firstStore = try FileLockedAlertCommandStore(directoryURL: directory)
+
+        let firstOutcome = await coordinator(api: offlineAPI, store: firstStore, now: referenceDate)
+            .trigger(kind: .real, method: .vocalShortcut)
+        let queuedRecord = await firstStore.latestTriggerRecord()
+        try require(firstOutcome == .queuedOffline, "offline trigger must be durably queued")
+        try require(queuedRecord?.phase == .queuedOffline, "queued state must survive the caller")
+
         let eventID = UUID()
-        await api.setNextResult(.success(CreatedAlert(eventID: eventID, serverTriggeredAt: referenceDate)))
+        let recoveredAPI = RecordingAlertAPI(result: .success(createdAlert(eventID)))
+        let relaunchedStore = try FileLockedAlertCommandStore(directoryURL: directory)
+        let recoveredOutcome = await coordinator(
+            api: recoveredAPI,
+            store: relaunchedStore,
+            now: referenceDate.addingTimeInterval(61)
+        ).trigger(kind: .real, method: .vocalShortcut)
 
-        let coordinator = AlertTriggerCoordinator(
-            alertAPI: api,
-            persistence: persistence,
-            now: { referenceDate }
+        try require(recoveredOutcome == .created(eventID: eventID), "due command should recover after relaunch")
+        try require(
+            await offlineAPI.idempotencyKeys().first == recoveredAPI.idempotencyKeys().first,
+            "offline retry must reuse the original idempotency key"
         )
-        let outcome = await coordinator.trigger(kind: .test, method: .vocalShortcut)
-
-        try require(outcome == .created(eventID: eventID), "first trigger should create its event")
-        try require(await api.requestCount() == 1, "first trigger should issue one request")
-        try require(await persistence.loadActiveAlert()?.eventID == eventID, "event should be persisted")
     }
 
-    private static func verifiesTriggerInsideCooldownReusesCanonicalEvent() async throws {
-        let api = RecordingAlertAPI()
-        let persistence = MemoryActiveAlertStore()
-        let existingEventID = UUID()
-        await persistence.saveActiveAlert(
-            ActiveAlert(eventID: existingEventID, idempotencyKey: UUID(), triggeredAt: referenceDate)
-        )
+    private static func verifiesClockRollbackCannotMintADuplicate() async throws {
+        try await withTemporaryStore { store in
+            let eventID = UUID()
+            let api = RecordingAlertAPI(result: .success(createdAlert(eventID)))
+            let first = await coordinator(api: api, store: store, now: referenceDate)
+                .trigger(kind: .real, method: .manual)
+            let rolledBack = await coordinator(
+                api: api,
+                store: store,
+                now: referenceDate.addingTimeInterval(-86_400)
+            ).trigger(kind: .real, method: .manual)
 
-        let coordinator = AlertTriggerCoordinator(
-            alertAPI: api,
-            persistence: persistence,
-            now: { referenceDate.addingTimeInterval(59) }
-        )
-        let outcome = await coordinator.trigger(kind: .real, method: .vocalShortcut)
-
-        try require(outcome == .reused(eventID: existingEventID), "cooldown should reuse canonical event")
-        try require(await api.requestCount() == 0, "cooldown must avoid a second request")
+            try require(first == .created(eventID: eventID), "initial trigger should create")
+            try require(rolledBack == .reused(eventID: eventID), "clock rollback should reuse canonical event")
+            try require(await api.requestCount() == 1, "clock rollback must not issue another request")
+        }
     }
 
-    private static func verifiesFailureDoesNotPersistOrClaimAnAlert() async throws {
-        let api = RecordingAlertAPI()
-        let persistence = MemoryActiveAlertStore()
-        await api.setNextResult(.failure(StubError.unavailable))
+    private static func verifiesTestCommandCannotSuppressARealTrigger() async throws {
+        try await withTemporaryStore { store in
+            let api = RecordingAlertAPI(result: .failure(RetryableStubError.offline))
+            let coordinator = coordinator(api: api, store: store, now: referenceDate)
 
-        let coordinator = AlertTriggerCoordinator(
-            alertAPI: api,
-            persistence: persistence,
-            now: { referenceDate }
-        )
-        let outcome = await coordinator.trigger(kind: .real, method: .vocalShortcut)
+            let testOutcome = await coordinator.trigger(kind: .test, method: .manual)
+            let testKey = await api.idempotencyKeys().first
+            let realOutcome = await coordinator.trigger(kind: .real, method: .vocalShortcut)
+            let keys = await api.idempotencyKeys()
 
-        try require(outcome == .failed, "network failure must not claim an alert")
-        try require(await persistence.loadActiveAlert() == nil, "failed request must not be persisted as active")
+            try require(testOutcome == .queuedOffline, "offline TEST should be queued")
+            try require(realOutcome == .queuedOffline, "REAL must attempt even while TEST is queued")
+            try require(keys.count == 2, "REAL must not reuse a queued TEST request")
+            try require(keys.last != testKey, "REAL must receive a distinct idempotency key")
+            try require(
+                await store.latestTriggerRecord()?.command.kind == .real,
+                "durable outbox must retain the higher-priority REAL command"
+            )
+        }
     }
 
-    private static func verifiesRetryableFailureQueuesARedactedAlert() async throws {
-        let api = RecordingAlertAPI()
-        let persistence = MemoryActiveAlertStore()
-        let outbox = MemoryOutbox()
-        await api.setNextResult(.failure(RetryableStubError.offline))
+    private static func verifiesNonRetryableFailureIsInspectableAndRejected() async throws {
+        try await withTemporaryStore { store in
+            let api = RecordingAlertAPI(result: .failure(StubError.unauthorized))
+            let outcome = await coordinator(api: api, store: store, now: referenceDate)
+                .trigger(kind: .real, method: .vocalShortcut)
 
-        let coordinator = AlertTriggerCoordinator(
-            alertAPI: api,
-            persistence: persistence,
-            outbox: outbox,
-            now: { referenceDate }
+            try require(outcome == .rejected, "non-retryable failure must not enter the outbox")
+            try require(await store.latestTriggerRecord()?.phase == .rejected, "rejection must be inspectable")
+        }
+    }
+
+    private static func verifiesRequestBodyExcludesIdempotencyKey() throws {
+        let command = AlertCommand(
+            idempotencyKey: UUID(), kind: .test,
+            triggerMethod: .vocalShortcut, clientTriggeredAt: referenceDate
         )
-        let outcome = await coordinator.trigger(kind: .real, method: .vocalShortcut)
-
-        try require(outcome == .queuedOffline, "retryable failure should enter the outbox")
-        try require(await outbox.count() == 1, "one pending alert should be queued")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let object = try JSONSerialization.jsonObject(with: encoder.encode(command.request)) as? [String: Any]
+        try require(object?["idempotencyKey"] == nil, "idempotency key belongs only in the HTTP header")
     }
 
     private static func verifiesServerTimeLocationFreshness() throws {
@@ -104,7 +166,39 @@ struct SignalWordCoreVerification {
 
 private let referenceDate = Date(timeIntervalSince1970: 1_790_000_000)
 
-private enum StubError: Error { case unavailable }
+private func createdAlert(_ eventID: UUID) -> CreatedAlert {
+    CreatedAlert(eventID: eventID, serverTriggeredAt: referenceDate)
+}
+
+private func coordinator(
+    api: RecordingAlertAPI,
+    store: FileLockedAlertCommandStore,
+    now: Date
+) -> AlertTriggerCoordinator {
+    AlertTriggerCoordinator(alertAPI: api, commandStore: store, now: { now })
+}
+
+private func isCreated(_ outcome: TriggerOutcome) -> Bool {
+    if case .created = outcome { return true }
+    return false
+}
+
+private func temporaryDirectory() throws -> URL {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("signalword-verification-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    return directory
+}
+
+private func withTemporaryStore(
+    _ body: (FileLockedAlertCommandStore) async throws -> Void
+) async throws {
+    let directory = try temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try await body(FileLockedAlertCommandStore(directoryURL: directory))
+}
+
+private enum StubError: Error { case unauthorized }
 private enum RetryableStubError: RetryClassifiableError {
     case offline
     var isRetryable: Bool { true }
@@ -116,25 +210,21 @@ private func require(_ condition: Bool, _ message: String) throws {
 }
 
 private actor RecordingAlertAPI: AlertCreating {
-    private var result: Result<CreatedAlert, Error> = .failure(StubError.unavailable)
-    private var requests: [AlertCreateRequest] = []
+    private let result: Result<CreatedAlert, Error>
+    private let delayNanoseconds: UInt64
+    private var commands: [AlertCommand] = []
 
-    func setNextResult(_ result: Result<CreatedAlert, Error>) { self.result = result }
-    func createAlert(_ request: AlertCreateRequest) async throws -> CreatedAlert {
-        requests.append(request)
+    init(result: Result<CreatedAlert, Error>, delayNanoseconds: UInt64 = 0) {
+        self.result = result
+        self.delayNanoseconds = delayNanoseconds
+    }
+
+    func createAlert(_ command: AlertCommand) async throws -> CreatedAlert {
+        commands.append(command)
+        if delayNanoseconds > 0 { try await Task.sleep(nanoseconds: delayNanoseconds) }
         return try result.get()
     }
-    func requestCount() -> Int { requests.count }
-}
 
-private actor MemoryActiveAlertStore: ActiveAlertPersisting {
-    private var activeAlert: ActiveAlert?
-    func loadActiveAlert() async -> ActiveAlert? { activeAlert }
-    func saveActiveAlert(_ alert: ActiveAlert) async { activeAlert = alert }
-}
-
-private actor MemoryOutbox: AlertOutboxPersisting {
-    private var pending: [PendingAlert] = []
-    func enqueue(_ pendingAlert: PendingAlert) async { pending.append(pendingAlert) }
-    func count() -> Int { pending.count }
+    func requestCount() -> Int { commands.count }
+    func idempotencyKeys() -> [UUID] { commands.map(\.idempotencyKey) }
 }
