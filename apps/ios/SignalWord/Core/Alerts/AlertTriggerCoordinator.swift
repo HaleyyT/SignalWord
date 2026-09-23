@@ -1,65 +1,78 @@
 import Foundation
 
-/// Serializes trigger handling and protects the system from duplicate invocations.
-/// This is intentionally independent of App Intents and UI so it is testable on a
-/// developer machine before the physical-device integration is available.
+/// Coordinates one trigger attempt while delegating cross-process atomicity to
+/// the durable command store. Server-side idempotency remains the final guard.
 public actor AlertTriggerCoordinator {
     private let alertAPI: any AlertCreating
-    private let persistence: any ActiveAlertPersisting
-    private let outbox: (any AlertOutboxPersisting)?
+    private let commandStore: any AlertCommandPersisting
     private let cooldown: TimeInterval
+    private let attemptLease: TimeInterval
     private let now: @Sendable () -> Date
 
     public init(
         alertAPI: any AlertCreating,
-        persistence: any ActiveAlertPersisting,
-        outbox: (any AlertOutboxPersisting)? = nil,
+        commandStore: any AlertCommandPersisting,
         cooldown: TimeInterval = 60,
+        attemptLease: TimeInterval = 10,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.alertAPI = alertAPI
-        self.persistence = persistence
-        self.outbox = outbox
+        self.commandStore = commandStore
         self.cooldown = cooldown
+        self.attemptLease = attemptLease
         self.now = now
     }
 
-    public func trigger(
-        kind: AlertKind,
-        method: TriggerMethod
-    ) async -> TriggerOutcome {
+    public func trigger(kind: AlertKind, method: TriggerMethod) async -> TriggerOutcome {
         let triggeredAt = now()
-
-        if let active = await persistence.loadActiveAlert(),
-           triggeredAt.timeIntervalSince(active.triggeredAt) < cooldown {
-            return .reused(eventID: active.eventID)
+        let acquisition: CanonicalCommandAcquisition
+        do {
+            acquisition = try await commandStore.acquireCanonicalCommand(
+                kind: kind,
+                method: method,
+                triggeredAt: triggeredAt,
+                cooldown: cooldown,
+                attemptLease: attemptLease
+            )
+        } catch {
+            // Never start networking when the command could not be persisted.
+            return .failedRetryable
         }
 
-        let request = AlertCreateRequest(
-            kind: kind,
-            triggerMethod: method,
-            clientTriggeredAt: triggeredAt,
-            idempotencyKey: UUID()
-        )
+        switch acquisition {
+        case .created(_, let eventID):
+            return .reused(eventID: eventID)
+        case .pending:
+            return .queuedOffline
+        case .rejected:
+            return .rejected
+        case .attempt(let command):
+            return await attempt(command)
+        }
+    }
 
+    private func attempt(_ command: AlertCommand) async -> TriggerOutcome {
         do {
-            let created = try await alertAPI.createAlert(request)
-            await persistence.saveActiveAlert(
-                ActiveAlert(
-                    eventID: created.eventID,
-                    idempotencyKey: request.idempotencyKey,
-                    triggeredAt: triggeredAt
-                )
-            )
-            return .created(eventID: created.eventID)
-        } catch {
-            if let retryableError = error as? any RetryClassifiableError,
-               retryableError.isRetryable,
-               let outbox {
-                await outbox.enqueue(PendingAlert(request: request, queuedAt: triggeredAt))
-                return .queuedOffline
+            let created = try await alertAPI.createAlert(command)
+            do {
+                try await commandStore.markCreated(command, alert: created, at: now())
+                return .created(eventID: created.eventID)
+            } catch {
+                // The server may have committed. Retain the canonical key for reconciliation.
+                return .failedRetryable
             }
-            return .failed
+        } catch {
+            let retryable = (error as? any RetryClassifiableError)?.isRetryable == true
+            do {
+                if retryable {
+                    try await commandStore.markQueued(command, at: now())
+                    return .queuedOffline
+                }
+                try await commandStore.markRejected(command, at: now())
+                return .rejected
+            } catch {
+                return .failedRetryable
+            }
         }
     }
 }
