@@ -32,3 +32,6 @@ xcuserdata/
 supabase/.branches/
 supabase/.temp/
 supabase/.env
+
+# Local isolated feature worktrees
+.worktrees/
