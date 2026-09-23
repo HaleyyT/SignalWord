@@ -66,8 +66,11 @@ test('release preflight summarizes Supabase health without echoing status creden
 test('database policy integration tests are committed and exercised in CI', () => {
   const policyTest = readFileSync('supabase/tests/rls_policies.test.sql', 'utf8');
   const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
-  assert.match(policyTest, /select plan\(17\)/);
-  assert.match(policyTest, /anonymous users have no direct viewer-token privileges/);
+  assert.match(policyTest, /select plan\(56\)/);
+  assert.match(policyTest, /anonymous clients cannot query alert events/);
+  assert.match(policyTest, /user B cannot see user A events/);
+  assert.match(policyTest, /an event cannot reference another user contact/);
+  assert.match(policyTest, /profile deletion removes viewer tokens/);
   assert.match(ci, /npm run test:db/);
 });
 
