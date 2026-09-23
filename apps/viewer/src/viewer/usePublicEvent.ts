@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react'
 import { fetchPublicEvent } from './api'
-import type { PublicEvent } from './model'
-import { nextPollDelay } from './polling'
+import { PublicEventPoller, type PublicEventLoadState } from './polling'
 
-export type PublicEventLoadState =
-  | { status: 'loading' }
-  | { status: 'unavailable' }
-  | { status: 'error'; event?: PublicEvent }
-  | { status: 'loaded'; event: PublicEvent }
+export type { PublicEventLoadState } from './polling'
 
 export function usePublicEvent(token: string | null): PublicEventLoadState {
   const [state, setState] = useState<PublicEventLoadState>({ status: 'loading' })
@@ -18,49 +13,20 @@ export function usePublicEvent(token: string | null): PublicEventLoadState {
       return
     }
 
-    let cancelled = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    let failureCount = 0
-    let latestEvent: PublicEvent | undefined
-
-    const schedule = (delay: number) => {
-      if (!cancelled && document.visibilityState === 'visible') {
-        timer = setTimeout(load, delay)
-      }
-    }
-
-    const load = async () => {
-      const controller = new AbortController()
-      try {
-        const event = await fetchPublicEvent(token, controller.signal)
-        if (cancelled) return
-        latestEvent = event
-        failureCount = 0
-        setState({ status: 'loaded', event })
-        schedule(nextPollDelay(failureCount))
-      } catch (error) {
-        if (cancelled) return
-        if (error instanceof Error && error.message === 'EVENT_UNAVAILABLE') {
-          setState({ status: 'unavailable' })
-          return
-        }
-        failureCount += 1
-        setState({ status: 'error', event: latestEvent })
-        schedule(nextPollDelay(failureCount))
-      }
-    }
+    const poller = new PublicEventPoller(token, {
+      fetchEvent: fetchPublicEvent,
+      onState: setState,
+    })
 
     const onVisibilityChange = () => {
-      if (timer) clearTimeout(timer)
-      if (document.visibilityState === 'visible') void load()
+      poller.setVisible(document.visibilityState === 'visible')
     }
 
     document.addEventListener('visibilitychange', onVisibilityChange)
-    void load()
+    poller.start(document.visibilityState === 'visible')
 
     return () => {
-      cancelled = true
-      if (timer) clearTimeout(timer)
+      poller.stop()
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [token])
