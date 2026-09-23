@@ -1,6 +1,23 @@
 import type { PublicEvent } from './model'
 
 const tokenPattern = /^[A-Za-z0-9_-]{43,128}$/
+export const MAX_RETRY_AFTER_MS = 60_000
+
+export type ViewerRequestErrorKind = 'unavailable' | 'retryable'
+
+/**
+ * A deliberately small error surface for the public viewer. Callers can decide
+ * whether to retry without exposing why a token was rejected.
+ */
+export class ViewerRequestError extends Error {
+  constructor(
+    readonly kind: ViewerRequestErrorKind,
+    readonly retryAfterMs?: number,
+  ) {
+    super(kind === 'unavailable' ? 'EVENT_UNAVAILABLE' : 'EVENT_RETRYABLE')
+    this.name = 'ViewerRequestError'
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -73,17 +90,52 @@ export function viewerTokenFromPath(pathname: string): string | null {
   return token && tokenPattern.test(token) ? token : null
 }
 
-export async function fetchPublicEvent(token: string, signal?: AbortSignal): Promise<PublicEvent> {
-  const response = await fetch(`/v1/public/events/${encodeURIComponent(token)}`, {
-    cache: 'no-store',
-    signal,
-    headers: { Accept: 'application/json' },
-  })
+export function retryAfterMilliseconds(
+  value: string | null,
+  nowMilliseconds = Date.now(),
+): number | undefined {
+  if (!value) return undefined
 
-  if (!response.ok) {
-    // Invalid, expired, revoked, and unknown tokens all look identical.
-    throw new Error('EVENT_UNAVAILABLE')
+  const seconds = Number(value)
+  const unboundedMilliseconds = Number.isFinite(seconds)
+    ? seconds * 1_000
+    : Date.parse(value) - nowMilliseconds
+
+  if (!Number.isFinite(unboundedMilliseconds)) return undefined
+  return Math.min(Math.max(Math.ceil(unboundedMilliseconds), 0), MAX_RETRY_AFTER_MS)
+}
+
+export function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError'
+}
+
+export async function fetchPublicEvent(token: string, signal?: AbortSignal): Promise<PublicEvent> {
+  let response: Response
+  try {
+    response = await fetch(`/v1/public/events/${encodeURIComponent(token)}`, {
+      cache: 'no-store',
+      signal,
+      headers: { Accept: 'application/json' },
+    })
+  } catch (error) {
+    if (isAbortError(error)) throw error
+    throw new ViewerRequestError('retryable')
   }
 
-  return parsePublicEvent(await response.json())
+  if (!response.ok) {
+    if (response.status === 408 || response.status === 429 || response.status >= 500) {
+      throw new ViewerRequestError('retryable', retryAfterMilliseconds(response.headers.get('Retry-After')))
+    }
+
+    // Invalid, expired, revoked, unknown, and unauthorized tokens all look identical.
+    throw new ViewerRequestError('unavailable')
+  }
+
+  try {
+    return parsePublicEvent(await response.json())
+  } catch {
+    // A malformed successful response is a server fault, not proof that a
+    // previously displayed alert has become unavailable.
+    throw new ViewerRequestError('retryable')
+  }
 }
