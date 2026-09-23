@@ -383,6 +383,10 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# The public viewer uses its opaque 256-bit path token rather than a user JWT.
+[functions.public-event]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

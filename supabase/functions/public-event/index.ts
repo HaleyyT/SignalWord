@@ -41,12 +41,12 @@ export function createPublicEventHandler(dependencies: PublicEventDependencies) 
       if (projection === null) throw unavailable();
 
       status = 200;
-      return jsonResponse(parsePublicProjection(projection), status, SECURITY_HEADERS);
+      return jsonResponse(parsePublicProjection(projection), status, { ...SECURITY_HEADERS, "X-Request-ID": id });
     } catch (caught) {
       const error = asApiError(caught);
       status = error.status;
       code = error.code;
-      return errorResponse(error, id, SECURITY_HEADERS);
+      return errorResponse(error, id, { ...SECURITY_HEADERS, "X-Request-ID": id });
     } finally {
       dependencies.logger.write({
         requestId: id,
