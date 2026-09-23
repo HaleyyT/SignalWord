@@ -14,11 +14,29 @@ The Day-2 walking skeleton currently deploys two routed Edge Functions:
 `POST /v1/alerts` requires a user JWT and a UUID `Idempotency-Key` header. The
 database RPC holds a per-user transaction advisory lock, then atomically reuses
 or creates the event, hash-only viewer token, optional location, and one queued
-fake delivery. The raw viewer token exists only long enough to pass to a delivery
-adapter and is never returned to the iOS client or written to logs.
+delivery outbox row. The outbox stores the viewer capability only inside an
+AES-256-GCM envelope whose versioned key comes from Edge Function secrets. The
+raw viewer token is never returned to the iOS client or written to logs.
 
-The fake adapter intentionally sends no message. Real Resend dispatch, contact
-confirmation, and webhook handling belong to the next provider slice.
+The fake adapter is constructible only in `development` or `test`. Production
+starts with delivery unavailable and fails closed rather than accepting REAL
+alerts until the real provider slice is configured. Real Resend dispatch,
+contact confirmation, and webhook handling belong to that slice.
+
+The delivery worker claims outbox rows using `FOR UPDATE SKIP LOCKED`, receives a
+30-second lease, and records success or a bounded 1/5/15-minute retry schedule.
+Four failed attempts become terminal. A worker crash leaves the encrypted row
+recoverable after lease expiry.
+
+Public viewer traffic is intentionally same-origin through
+`apps/viewer/api/v1/public/events/[token].mjs`; no browser CORS permission is
+required. Configure `SIGNALWORD_PUBLIC_EVENT_ORIGIN` to the deployed
+`public-event` function. Apply IP-based throttling at the hosting firewall/API
+gateway (recommended starting ceiling: 60 requests/minute/IP); token-only
+application throttling is insufficient because attackers can rotate unknown
+tokens. The public function still returns `429` transparently for upstream
+limits. The user API reads request streams incrementally and rejects bodies over
+16 KiB even when `Content-Length` is absent.
 
 Migration ordering: `20260924010000_alert_api_walking_skeleton.sql` expects the
 base six tables. Before exercising more than one distinct alert, apply the

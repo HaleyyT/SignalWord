@@ -77,9 +77,31 @@ export async function readJson(request: Request, maximumBytes = 16_384): Promise
   if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
     throw new ApiError(400, "INVALID_REQUEST", "Request body is too large.");
   }
-  const text = await request.text();
-  if (new TextEncoder().encode(text).byteLength > maximumBytes) {
-    throw new ApiError(400, "INVALID_REQUEST", "Request body is too large.");
+  if (!request.body) throw new ApiError(400, "INVALID_REQUEST", "Request body must be valid JSON.");
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let byteLength = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    byteLength += value.byteLength;
+    if (byteLength > maximumBytes) {
+      await reader.cancel();
+      throw new ApiError(400, "INVALID_REQUEST", "Request body is too large.");
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(byteLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new ApiError(400, "INVALID_REQUEST", "Request body must be valid UTF-8 JSON.");
   }
   try {
     return JSON.parse(text);

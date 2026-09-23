@@ -1,4 +1,5 @@
 import { ApiError } from "./http.ts";
+import type { DeliveryProviderName } from "./delivery.ts";
 import type { CreateAlertInput } from "./validation.ts";
 
 export interface AuthenticatedUser { id: string }
@@ -13,7 +14,12 @@ export interface CreatedAlert {
 
 export interface BackendGateway {
   authenticate(jwt: string): Promise<AuthenticatedUser>;
-  createAlert(input: CreateAlertInput, userId: string, idempotencyKey: string, viewerToken: string, jwt: string): Promise<CreatedAlert>;
+  createAlert(input: CreateAlertInput, userId: string, idempotencyKey: string, delivery: {
+    viewerToken: string;
+    provider: DeliveryProviderName;
+    payloadCiphertext: string;
+    payloadKeyVersion: number;
+  }, jwt: string): Promise<CreatedAlert>;
   publicEvent(tokenHashHex: string): Promise<unknown | null>;
 }
 
@@ -41,7 +47,7 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
       return { id: user.id };
     },
 
-    async createAlert(input, userId, idempotencyKey, viewerToken, jwt) {
+    async createAlert(input, userId, idempotencyKey, delivery, jwt) {
       let response: Response;
       try {
         response = await fetch(`${baseUrl}/rest/v1/rpc/create_or_reuse_alert`, {
@@ -52,7 +58,10 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
             p_idempotency_key: idempotencyKey,
             p_kind: input.kind,
             p_trigger_method: input.triggerMethod,
-            p_viewer_token: viewerToken,
+            p_viewer_token: delivery.viewerToken,
+            p_delivery_provider: delivery.provider,
+            p_delivery_payload_ciphertext: delivery.payloadCiphertext,
+            p_delivery_payload_key_version: delivery.payloadKeyVersion,
             p_location: input.location ?? null,
           }),
         });

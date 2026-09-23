@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import { createPublicEventHandler } from '../supabase/functions/public-event/index.ts';
 import { createUserApiHandler } from '../supabase/functions/user-api/index.ts';
 import { createBackendGateway } from '../supabase/functions/_shared/supabase.ts';
+import { createDeliveryPolicy, FakeDeliveryAdapter, runDeliveryWorker } from '../supabase/functions/_shared/delivery.ts';
+import { createDeliveryPayloadCipher } from '../supabase/functions/_shared/encryption.ts';
 import { generateViewerToken, sha256Hex } from '../supabase/functions/_shared/tokens.ts';
+import { parseCreateAlert } from '../supabase/functions/_shared/validation.ts';
 
 const USER_ID = '00000000-0000-4000-8000-000000000010';
 const EVENT_ID = '00000000-0000-4000-8000-000000000020';
@@ -45,10 +48,11 @@ function baseBackend(overrides = {}) {
   };
 }
 
-function userHandler(backend, deliveries = [], logs = []) {
+function userHandler(backend, logs = []) {
   return createUserApiHandler({
     backend,
-    delivery: { enqueue: async (delivery) => deliveries.push(delivery) },
+    delivery: createDeliveryPolicy('test', 'fake'),
+    encryptPayload: async () => ({ ciphertext: 'encrypted-payload-for-outbox', keyVersion: 1 }),
     logger: { write: (event) => logs.push(event) },
     now: () => 1_000,
     generateToken: () => TOKEN,
@@ -86,10 +90,20 @@ test('user API validates payloads and forbids body idempotency keys', async () =
   assert.match(body.error.message, /header/);
 });
 
+test('user API enforces the body cap when Content-Length is absent', async () => {
+  const request = alertRequest({ body: { padding: 'x'.repeat(17_000) } });
+  request.headers.delete('Content-Length');
+  const response = await userHandler(baseBackend())(request);
+  const body = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(body.error.code, 'INVALID_REQUEST');
+  assert.match(body.error.message, /too large/i);
+});
+
 test('user API returns only the stable public create-alert projection', async () => {
-  const deliveries = [];
   const logs = [];
-  const handler = userHandler(baseBackend(), deliveries, logs);
+  const handler = userHandler(baseBackend(), logs);
   const response = await handler(alertRequest());
   const body = await response.json();
 
@@ -101,16 +115,16 @@ test('user API returns only the stable public create-alert projection', async ()
     serverTriggeredAt: '2026-09-24T00:00:01Z',
     reused: false,
   });
-  assert.equal(deliveries.length, 1);
   assert.equal(response.headers.get('X-Request-ID'), REQUEST_ID);
   assert.equal(JSON.stringify(body).includes(TOKEN), false);
   assert.equal(JSON.stringify(logs).includes(TOKEN), false);
   assert.deepEqual(Object.keys(logs[0]).sort(), ['durationMs', 'method', 'requestId', 'reused', 'route', 'status']);
 });
 
-test('twenty concurrent identical creates produce one canonical event and dispatch', async () => {
+test('twenty concurrent identical creates produce one canonical event and outbox row', async () => {
   let canonical = null;
   let createCount = 0;
+  let outboxCount = 0;
   let mutex = Promise.resolve();
   const backend = baseBackend({
     createAlert: async () => {
@@ -122,6 +136,7 @@ test('twenty concurrent identical creates produce one canonical event and dispat
         if (canonical) return { ...canonical, reused: true };
         await new Promise((resolve) => setTimeout(resolve, 2));
         createCount += 1;
+        outboxCount += 1;
         canonical = {
           eventId: EVENT_ID,
           state: 'active',
@@ -135,14 +150,13 @@ test('twenty concurrent identical creates produce one canonical event and dispat
       }
     },
   });
-  const deliveries = [];
-  const handler = userHandler(backend, deliveries);
+  const handler = userHandler(backend);
 
   const responses = await Promise.all(Array.from({ length: 20 }, () => handler(alertRequest())));
   const bodies = await Promise.all(responses.map((response) => response.json()));
 
   assert.equal(createCount, 1);
-  assert.equal(deliveries.length, 1);
+  assert.equal(outboxCount, 1);
   assert.deepEqual(new Set(bodies.map((body) => body.eventId)), new Set([EVENT_ID]));
   assert.equal(responses.filter((response) => response.status === 201).length, 1);
   assert.equal(responses.filter((response) => response.status === 200).length, 19);
@@ -229,7 +243,12 @@ test('backend gateway forwards caller auth and maps the internal RPC result', as
     const gateway = createBackendGateway({ url: 'https://project.supabase.co/', anonKey: 'publishable-key' });
     const result = await gateway.createAlert({
       kind: 'real', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',
-    }, USER_ID, IDEMPOTENCY_KEY, TOKEN, 'user-jwt');
+    }, USER_ID, IDEMPOTENCY_KEY, {
+      viewerToken: TOKEN,
+      provider: 'fake',
+      payloadCiphertext: 'encrypted-payload-for-outbox',
+      payloadKeyVersion: 1,
+    }, 'user-jwt');
 
     assert.equal(result.eventId, EVENT_ID);
     assert.equal(request.url, 'https://project.supabase.co/rest/v1/rpc/create_or_reuse_alert');
@@ -238,6 +257,8 @@ test('backend gateway forwards caller auth and maps the internal RPC result', as
     const rpcBody = JSON.parse(request.init.body);
     assert.equal(rpcBody.p_idempotency_key, IDEMPOTENCY_KEY);
     assert.equal(rpcBody.p_viewer_token, TOKEN);
+    assert.equal(rpcBody.p_delivery_provider, 'fake');
+    assert.equal(rpcBody.p_delivery_payload_ciphertext, 'encrypted-payload-for-outbox');
     assert.equal('idempotencyKey' in rpcBody, false);
   } finally {
     globalThis.fetch = originalFetch;
@@ -255,10 +276,92 @@ test('malformed successful database results fail closed as retryable', async () 
     await assert.rejects(
       gateway.createAlert({
         kind: 'real', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',
-      }, USER_ID, IDEMPOTENCY_KEY, TOKEN, 'user-jwt'),
+      }, USER_ID, IDEMPOTENCY_KEY, {
+        viewerToken: TOKEN,
+        provider: 'fake',
+        payloadCiphertext: 'encrypted-payload-for-outbox',
+        payloadKeyVersion: 1,
+      }, 'user-jwt'),
       (error) => error.code === 'SERVICE_UNAVAILABLE' && error.retryable === true,
     );
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test('delivery payload is AES-GCM encrypted and versioned at rest', async () => {
+  const key = generateViewerToken();
+  const cipher = createDeliveryPayloadCipher(key, 3);
+  const ciphertext = await cipher.encrypt(TOKEN);
+
+  assert.equal(ciphertext.includes(TOKEN), false);
+  assert.deepEqual(await cipher.decrypt(ciphertext, 3), { viewerToken: TOKEN });
+  await assert.rejects(cipher.decrypt(ciphertext, 2), /key version/);
+});
+
+test('transactional outbox survives request completion and retries with the same viewer capability', async () => {
+  const delivery = {
+    deliveryId: '00000000-0000-4000-8000-000000000050',
+    eventId: EVENT_ID,
+    kind: 'real',
+    provider: 'fake',
+    providerIdempotencyKey: `alert/${EVENT_ID}/initial`,
+    payloadCiphertext: 'opaque-ciphertext',
+    payloadKeyVersion: 1,
+    attemptCount: 1,
+  };
+  let available = true;
+  const finishes = [];
+  const outbox = {
+    claim: async () => available ? [delivery] : [],
+    finish: async (_deliveryId, _workerId, result) => {
+      finishes.push(result);
+      available = result.succeeded === false;
+      return true;
+    },
+  };
+  let attempts = 0;
+  const sentTokens = [];
+  const adapter = {
+    send: async ({ viewerToken, idempotencyKey }) => {
+      attempts += 1;
+      sentTokens.push(viewerToken);
+      assert.equal(idempotencyKey, `alert/${EVENT_ID}/initial`);
+      if (attempts === 1) throw new Error('simulated provider outage');
+      return { providerMessageId: 'fake/message-1' };
+    },
+  };
+  const cipher = { decrypt: async () => ({ viewerToken: TOKEN }) };
+
+  const first = await runDeliveryWorker({ workerId: REQUEST_ID, outbox, cipher, adapter });
+  const second = await runDeliveryWorker({ workerId: REQUEST_ID, outbox, cipher, adapter });
+
+  assert.deepEqual(first, { claimed: 1, sent: 0, failed: 1 });
+  assert.deepEqual(second, { claimed: 1, sent: 1, failed: 0 });
+  assert.deepEqual(sentTokens, [TOKEN, TOKEN]);
+  assert.deepEqual(finishes.map((result) => result.succeeded), [false, true]);
+});
+
+test('fake delivery is impossible in production and missing production delivery fails closed', () => {
+  assert.throws(() => createDeliveryPolicy('production', 'fake'), /cannot be enabled/);
+  assert.throws(() => createDeliveryPolicy('prod', 'fake'), /APP_ENV/);
+  assert.throws(() => new FakeDeliveryAdapter('production'), /cannot run/);
+  assert.throws(
+    () => createDeliveryPolicy('production', 'none').assertAvailable('real'),
+    (error) => error.code === 'SERVICE_UNAVAILABLE' && error.retryable === true,
+  );
+});
+
+test('implausibly old or future location is omitted without blocking the alert', () => {
+  const now = Date.parse('2026-09-24T12:00:00Z');
+  const input = (capturedAt) => ({
+    kind: 'real',
+    triggerMethod: 'manual',
+    clientTriggeredAt: '2026-09-24T12:00:00Z',
+    location: { latitude: -33.8, longitude: 151.2, horizontalAccuracyM: 10, capturedAt },
+  });
+
+  assert.ok(parseCreateAlert(input('2026-09-24T11:59:50Z'), now).location);
+  assert.equal(parseCreateAlert(input('2026-09-23T11:59:59Z'), now).location, undefined);
+  assert.equal(parseCreateAlert(input('2026-09-24T12:05:01Z'), now).location, undefined);
 });
