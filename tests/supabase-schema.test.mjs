@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const migration = readFileSync('supabase/migrations/20260921000000_initial_alerts.sql', 'utf8');
+const alertApiMigration = readFileSync('supabase/migrations/20260924010000_alert_api_walking_skeleton.sql', 'utf8');
 
 test('schema protects each private table with row-level security', () => {
   for (const table of [
@@ -57,4 +58,19 @@ test('schema has bounded retention for locations, tokens, and delivery diagnosti
   assert.match(migration, /delete from public\.contact_confirmation_tokens/i);
   assert.match(migration, /delete from public\.rate_limit_buckets where expires_at <= now\(\)/i);
   assert.match(migration, /cron\.schedule\([\s\S]*signalword-hourly-retention/i);
+});
+
+test('alert creation is transactionally serialized and stores only a viewer-token hash', () => {
+  assert.match(alertApiMigration, /pg_advisory_xact_lock/i);
+  assert.match(alertApiMigration, /digest\(convert_to\(p_viewer_token, 'UTF8'\), 'sha256'\)/i);
+  assert.match(alertApiMigration, /insert into public\.alert_deliveries[\s\S]*'fake', 'queued'/i);
+  assert.doesNotMatch(alertApiMigration, /return query[\s\S]{0,200}p_viewer_token/i);
+});
+
+test('public projection is token-scoped, expiry-aware, and explicitly allowlisted', () => {
+  assert.match(alertApiMigration, /create or replace function public\.get_public_event/i);
+  assert.match(alertApiMigration, /token\.revoked_at is null/i);
+  assert.match(alertApiMigration, /token\.expires_at > now\(\)/i);
+  assert.match(alertApiMigration, /jsonb_strip_nulls\(jsonb_build_object/i);
+  assert.doesNotMatch(alertApiMigration, /destination_ciphertext/);
 });

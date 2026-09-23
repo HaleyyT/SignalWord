@@ -2,6 +2,7 @@
   "name": "signalword",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "A privacy-first personal safety alert system.",
   "workspaces": [
     "apps/viewer"
@@ -17,6 +18,7 @@
     "release:preflight": "node scripts/release-preflight.mjs",
     "test:db": "npx supabase test db",
     "test": "node --test tests/*.test.mjs && npm run test --workspace=@signalword/viewer",
+    "test:functions": "node --test tests/functions.test.mjs",
     "build": "npm run build --workspace=@signalword/viewer",
     "verify": "npm run check && npm run test && npm run build"
   },

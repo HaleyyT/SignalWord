@@ -32,9 +32,9 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       }
 
       const jwt = bearerToken(request);
+      const user = await dependencies.backend.authenticate(jwt);
       const idempotencyKey = parseIdempotencyKey(request.headers.get("Idempotency-Key"));
       const input = parseCreateAlert(await readJson(request));
-      const user = await dependencies.backend.authenticate(jwt);
       const viewerToken = dependencies.generateToken();
       const result = await dependencies.backend.createAlert(input, user.id, idempotencyKey, viewerToken, jwt);
 
@@ -44,12 +44,12 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
 
       reused = result.reused;
       status = result.reused ? 200 : 201;
-      return jsonResponse(result, status, RESPONSE_HEADERS);
+      return jsonResponse(result, status, { ...RESPONSE_HEADERS, "X-Request-ID": id });
     } catch (caught) {
       const error = asApiError(caught);
       status = error.status;
       code = error.code;
-      return errorResponse(error, id, RESPONSE_HEADERS);
+      return errorResponse(error, id, { ...RESPONSE_HEADERS, "X-Request-ID": id });
     } finally {
       dependencies.logger.write({
         requestId: id,
