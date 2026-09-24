@@ -391,6 +391,14 @@ verify_jwt = false
 [functions.contact-confirm]
 verify_jwt = false
 
+# Both endpoints authenticate at the application layer: a high-entropy dispatch
+# secret for the worker and a signed raw-body webhook for Resend.
+[functions.dispatch-deliveries]
+verify_jwt = false
+
+[functions.resend-webhook]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
