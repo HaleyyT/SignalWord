@@ -398,10 +398,13 @@ test('transactional outbox survives request completion and retries with the same
     deliveryId: '00000000-0000-4000-8000-000000000050',
     eventId: EVENT_ID,
     kind: 'real',
+    messageType: 'initial',
     provider: 'fake',
     providerIdempotencyKey: `alert/${EVENT_ID}/initial`,
     payloadCiphertext: 'opaque-ciphertext',
     payloadKeyVersion: 1,
+    destinationCiphertext: 'encrypted-destination',
+    destinationKeyVersion: 1,
     attemptCount: 1,
   };
   let available = true;
@@ -426,12 +429,13 @@ test('transactional outbox survives request completion and retries with the same
     },
   };
   const cipher = { decrypt: async () => ({ viewerToken: TOKEN }) };
+  const destinationCipher = { decryptEmail: async () => 'trusted@example.com' };
 
-  const first = await runDeliveryWorker({ workerId: REQUEST_ID, outbox, cipher, adapter });
-  const second = await runDeliveryWorker({ workerId: REQUEST_ID, outbox, cipher, adapter });
+  const first = await runDeliveryWorker({ workerId: REQUEST_ID, outbox, cipher, destinationCipher, adapter });
+  const second = await runDeliveryWorker({ workerId: REQUEST_ID, outbox, cipher, destinationCipher, adapter });
 
-  assert.deepEqual(first, { claimed: 1, sent: 0, failed: 1 });
-  assert.deepEqual(second, { claimed: 1, sent: 1, failed: 0 });
+  assert.deepEqual(first, { claimed: 1, sent: 0, failed: 1, leaseLost: 0 });
+  assert.deepEqual(second, { claimed: 1, sent: 1, failed: 0, leaseLost: 0 });
   assert.deepEqual(sentTokens, [TOKEN, TOKEN]);
   assert.deepEqual(finishes.map((result) => result.succeeded), [false, true]);
 });

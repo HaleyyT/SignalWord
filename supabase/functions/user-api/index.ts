@@ -144,7 +144,8 @@ if (import.meta.main) {
   const url = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const environment = (Deno.env.get("APP_ENV") ?? "production") as RuntimeEnvironment;
-  const provider = Deno.env.get("DELIVERY_PROVIDER") === "fake" ? "fake" : "none";
+  const configuredProvider = Deno.env.get("DELIVERY_PROVIDER");
+  const provider = configuredProvider === "fake" || configuredProvider === "resend" ? configuredProvider : "none";
   const encodedKey = Deno.env.get("DELIVERY_PAYLOAD_KEY");
   const contactEncryptionKey = Deno.env.get("DESTINATION_ENCRYPTION_KEY");
   const contactFingerprintKey = Deno.env.get("DESTINATION_FINGERPRINT_KEY");
