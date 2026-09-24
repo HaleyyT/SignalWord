@@ -18,6 +18,47 @@ async function importKey(encodedKey: string): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
+async function hmacSha256Hex(encodedKey: string, value: string): Promise<string> {
+  const bytes = decodeBase64Url(encodedKey);
+  if (bytes.byteLength !== 32) throw new Error("Fingerprint key must contain 32 bytes");
+  const key = await crypto.subtle.importKey("raw", bytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const digest = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value)));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function encryptText(encodedKey: string, value: string): Promise<string> {
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = new Uint8Array(await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: nonce },
+    await importKey(encodedKey),
+    new TextEncoder().encode(value),
+  ));
+  const combined = new Uint8Array(nonce.byteLength + encrypted.byteLength);
+  combined.set(nonce);
+  combined.set(encrypted, nonce.byteLength);
+  return encodeBase64Url(combined);
+}
+
+export function createContactDataProtection(
+  encodedEncryptionKey: string,
+  encodedFingerprintKey: string,
+  keyVersion: number,
+) {
+  if (!Number.isInteger(keyVersion) || keyVersion < 1) throw new Error("Invalid contact data key version");
+  return {
+    keyVersion,
+    encryptDestination(destination: string): Promise<string> {
+      return encryptText(encodedEncryptionKey, destination);
+    },
+    encryptConfirmationToken(token: string): Promise<string> {
+      return encryptText(encodedEncryptionKey, JSON.stringify({ confirmationToken: token }));
+    },
+    fingerprintDestination(destination: string): Promise<string> {
+      return hmacSha256Hex(encodedFingerprintKey, destination);
+    },
+  };
+}
+
 export function createDeliveryPayloadCipher(encodedKey: string, keyVersion: number) {
   if (!Number.isInteger(keyVersion) || keyVersion < 1) throw new Error("Invalid delivery payload key version");
   return {
