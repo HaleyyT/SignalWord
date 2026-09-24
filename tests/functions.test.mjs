@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createPublicEventHandler } from '../supabase/functions/public-event/index.ts';
+import { createContactConfirmHandler } from '../supabase/functions/contact-confirm/index.ts';
 import { createUserApiHandler } from '../supabase/functions/user-api/index.ts';
 import { createBackendGateway } from '../supabase/functions/_shared/supabase.ts';
 import { createDeliveryPolicy, FakeDeliveryAdapter, runDeliveryWorker } from '../supabase/functions/_shared/delivery.ts';
@@ -48,14 +49,39 @@ function baseBackend(overrides = {}) {
   };
 }
 
-function userHandler(backend, logs = []) {
+function baseLifecycle(overrides = {}) {
+  return {
+    saveContact: async ({ name }) => ({
+      contactId: '00000000-0000-4000-8000-000000000060', name,
+      channel: 'email', status: 'pending', confirmationExpiresAt: '2026-09-24T00:30:00Z',
+    }),
+    getContact: async () => null,
+    disableContact: async () => true,
+    appendLocation: async () => ({ accepted: true, receivedAt: '2026-09-24T00:00:02Z' }),
+    getAlertStatus: async () => null,
+    resolveAlert: async (_userId, eventId) => ({ eventId, state: 'resolved', resolvedAt: '2026-09-24T00:05:00Z' }),
+    deleteData: async () => ({ deletionId: '00000000-0000-4000-8000-000000000070' }),
+    confirmContact: async () => false,
+    ...overrides,
+  };
+}
+
+function userHandler(backend, logs = [], lifecycle = baseLifecycle()) {
   return createUserApiHandler({
     backend,
+    lifecycle,
     delivery: createDeliveryPolicy('test', 'fake'),
     encryptPayload: async () => ({ ciphertext: 'encrypted-payload-for-outbox', keyVersion: 1 }),
     logger: { write: (event) => logs.push(event) },
     now: () => 1_000,
     generateToken: () => TOKEN,
+    protectContact: async () => ({
+      destinationCiphertext: 'encrypted-destination',
+      destinationFingerprint: 'f'.repeat(64),
+      destinationKeyVersion: 1,
+      confirmationPayloadCiphertext: 'encrypted-confirmation-token',
+      payloadKeyVersion: 1,
+    }),
   });
 }
 
@@ -160,6 +186,74 @@ test('twenty concurrent identical creates produce one canonical event and outbox
   assert.deepEqual(new Set(bodies.map((body) => body.eventId)), new Set([EVENT_ID]));
   assert.equal(responses.filter((response) => response.status === 201).length, 1);
   assert.equal(responses.filter((response) => response.status === 200).length, 19);
+});
+
+test('contact setup encrypts server inputs and never returns destination or confirmation token', async () => {
+  let received;
+  const lifecycle = baseLifecycle({
+    saveContact: async (input) => {
+      received = input;
+      return { contactId: '00000000-0000-4000-8000-000000000060', name: input.name,
+        channel: 'email', status: 'pending', confirmationExpiresAt: '2026-09-24T00:30:00Z' };
+    },
+  });
+  const handler = userHandler(baseBackend(), [], lifecycle);
+  const response = await handler(new Request('https://api.example.test/user-api/v1/contacts', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer user-jwt', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Trusted person', email: 'Trusted@Example.com' }),
+  }));
+  const body = await response.json();
+
+  assert.equal(response.status, 202);
+  assert.equal(received.destinationCiphertext, 'encrypted-destination');
+  assert.equal(received.destinationFingerprint, 'f'.repeat(64));
+  assert.equal(JSON.stringify(body).includes('trusted@example.com'), false);
+  assert.equal(JSON.stringify(body).includes(TOKEN), false);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+});
+
+test('authenticated lifecycle routes preserve ownership-scoped identifiers', async () => {
+  const calls = [];
+  const lifecycle = baseLifecycle({
+    getAlertStatus: async (userId, eventId) => {
+      calls.push(['status', userId, eventId]);
+      return { eventId, kind: 'real', state: 'active', triggeredAt: '2026-09-24T00:00:00Z', delivery: 'sent' };
+    },
+    resolveAlert: async (userId, eventId) => {
+      calls.push(['resolve', userId, eventId]);
+      return { eventId, state: 'resolved', resolvedAt: '2026-09-24T00:05:00Z' };
+    },
+    deleteData: async (userId) => {
+      calls.push(['delete', userId]);
+      return { deletionId: '00000000-0000-4000-8000-000000000070' };
+    },
+  });
+  const handler = userHandler(baseBackend(), [], lifecycle);
+  const auth = { Authorization: 'Bearer user-jwt' };
+  const status = await handler(new Request(`https://api.example.test/user-api/v1/alerts/${EVENT_ID}`, { headers: auth }));
+  const resolve = await handler(new Request(`https://api.example.test/user-api/v1/alerts/${EVENT_ID}/resolve`, { method: 'POST', headers: auth }));
+  const deletion = await handler(new Request('https://api.example.test/user-api/v1/data', { method: 'DELETE', headers: auth }));
+
+  assert.equal(status.status, 200);
+  assert.equal(resolve.status, 200);
+  assert.equal(deletion.status, 200);
+  assert.deepEqual(calls, [
+    ['status', USER_ID, EVENT_ID], ['resolve', USER_ID, EVENT_ID], ['delete', USER_ID],
+  ]);
+});
+
+test('contact confirmation consumes only a valid one-time token and hides token validity', async () => {
+  let hash;
+  const lifecycle = baseLifecycle({ confirmContact: async (value) => { hash = value; return true; } });
+  const handler = createContactConfirmHandler({ lifecycle, logger: { write() {} }, now: () => 1_000 });
+  const confirmed = await handler(new Request(`https://api.example.test/contact-confirm/v1/contacts/confirm/${TOKEN}`, { method: 'POST' }));
+  const invalid = await handler(new Request('https://api.example.test/contact-confirm/v1/contacts/confirm/short', { method: 'POST' }));
+
+  assert.equal(confirmed.status, 200);
+  assert.equal(hash, await sha256Hex(TOKEN));
+  assert.equal(invalid.status, 410);
+  assert.equal((await invalid.json()).error.message, 'This confirmation link is unavailable.');
 });
 
 test('public API hashes the token and returns only the viewer projection', async () => {
