@@ -387,6 +387,10 @@ deno_version = 2
 [functions.public-event]
 verify_jwt = false
 
+# Contact confirmation uses a one-time 256-bit capability, not a user JWT.
+[functions.contact-confirm]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

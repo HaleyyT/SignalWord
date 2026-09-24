@@ -1,0 +1,155 @@
+import { ApiError } from "./http.ts";
+
+export interface ContactProjection {
+  contactId: string;
+  name: string;
+  channel: "email";
+  status: "pending" | "confirmed" | "disabled";
+  confirmationExpiresAt?: string;
+}
+
+export interface AlertStatusProjection {
+  eventId: string;
+  kind: "test" | "real";
+  state: "pending" | "active" | "resolved" | "expired";
+  triggeredAt: string;
+  resolvedAt?: string;
+  delivery: "queued" | "sent" | "delivered" | "failed";
+  latestLocationAt?: string;
+}
+
+export interface LifecycleGateway {
+  saveContact(input: {
+    userId: string;
+    name: string;
+    destinationCiphertext: string;
+    destinationFingerprint: string;
+    destinationKeyVersion: number;
+    confirmationTokenHashHex: string;
+    confirmationPayloadCiphertext: string;
+    payloadKeyVersion: number;
+    provider: "fake" | "resend";
+  }, jwt: string): Promise<ContactProjection>;
+  getContact(userId: string, jwt: string): Promise<ContactProjection | null>;
+  disableContact(userId: string, contactId: string, jwt: string): Promise<boolean>;
+  appendLocation(userId: string, eventId: string, location: unknown, jwt: string): Promise<{ accepted: boolean; receivedAt: string }>;
+  getAlertStatus(userId: string, eventId: string, jwt: string): Promise<AlertStatusProjection | null>;
+  resolveAlert(userId: string, eventId: string, jwt: string): Promise<{ eventId: string; state: "resolved"; resolvedAt: string }>;
+  deleteData(userId: string, jwt: string): Promise<{ deletionId: string }>;
+  confirmContact(tokenHashHex: string): Promise<boolean>;
+}
+
+type Row = Record<string, unknown>;
+
+function contactProjection(row: Row): ContactProjection {
+  if (typeof row.contact_id !== "string" || typeof row.contact_name !== "string" ||
+    row.contact_channel !== "email" || !["pending", "confirmed", "disabled"].includes(String(row.contact_status))) {
+    throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact service returned an invalid result.", true);
+  }
+  return {
+    contactId: row.contact_id,
+    name: row.contact_name,
+    channel: "email",
+    status: row.contact_status as ContactProjection["status"],
+    ...(typeof row.confirmation_expires_at === "string" ? { confirmationExpiresAt: row.confirmation_expires_at } : {}),
+  };
+}
+
+export function createLifecycleGateway(configuration: { url: string; anonKey: string }): LifecycleGateway {
+  const baseUrl = configuration.url.replace(/\/$/, "");
+  const headers = (authorization: string) => ({
+    apikey: configuration.anonKey,
+    Authorization: authorization,
+    "Content-Type": "application/json",
+  });
+  const rpc = async (name: string, body: unknown, authorization: string, message: string): Promise<unknown> => {
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}/rest/v1/rpc/${name}`, {
+        method: "POST", headers: headers(authorization), body: JSON.stringify(body),
+      });
+    } catch {
+      throw new ApiError(503, "SERVICE_UNAVAILABLE", `${message} is temporarily unavailable.`, true);
+    }
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({})) as { message?: unknown };
+      if (response.status === 401 || response.status === 403 || payload.message === "NOT_AUTHORIZED") {
+        throw new ApiError(401, "AUTH_REQUIRED", "Authentication is required.");
+      }
+      if (payload.message === "EVENT_NOT_FOUND") throw new ApiError(404, "NOT_FOUND", "Alert not found.");
+      if (payload.message === "EVENT_NOT_ACTIVE") throw new ApiError(409, "EVENT_NOT_ACTIVE", "This alert is no longer active.");
+      throw new ApiError(503, "SERVICE_UNAVAILABLE", `${message} is temporarily unavailable.`, true);
+    }
+    return await response.json();
+  };
+
+  return {
+    async saveContact(input, jwt) {
+      const rows = await rpc("create_or_replace_contact", {
+        p_user_id: input.userId,
+        p_name: input.name,
+        p_channel: "email",
+        p_destination_ciphertext: input.destinationCiphertext,
+        p_destination_fingerprint: input.destinationFingerprint,
+        p_destination_key_version: input.destinationKeyVersion,
+        p_confirmation_token_hash: `\\x${input.confirmationTokenHashHex}`,
+        p_confirmation_payload_ciphertext: input.confirmationPayloadCiphertext,
+        p_payload_key_version: input.payloadKeyVersion,
+        p_delivery_provider: input.provider,
+      }, `Bearer ${jwt}`, "Contact setup") as Row[];
+      return contactProjection(rows[0] ?? {});
+    },
+    async getContact(userId, jwt) {
+      const rows = await rpc("get_my_contact", { p_user_id: userId }, `Bearer ${jwt}`, "Contact status") as Row[];
+      return rows[0] ? contactProjection(rows[0]) : null;
+    },
+    async disableContact(userId, contactId, jwt) {
+      return await rpc("disable_contact", { p_user_id: userId, p_contact_id: contactId }, `Bearer ${jwt}`, "Contact update") === true;
+    },
+    async appendLocation(userId, eventId, location, jwt) {
+      const rows = await rpc("append_alert_location", {
+        p_user_id: userId, p_event_id: eventId, p_location: location,
+      }, `Bearer ${jwt}`, "Location update") as Row[];
+      const row = rows[0];
+      if (!row || typeof row.accepted !== "boolean" || typeof row.received_at !== "string") {
+        throw new ApiError(503, "SERVICE_UNAVAILABLE", "Location update returned an invalid result.", true);
+      }
+      return { accepted: row.accepted, receivedAt: row.received_at };
+    },
+    async getAlertStatus(userId, eventId, jwt) {
+      const rows = await rpc("get_alert_status", { p_user_id: userId, p_event_id: eventId }, `Bearer ${jwt}`, "Alert status") as Row[];
+      const row = rows[0];
+      if (!row) return null;
+      if (typeof row.event_id !== "string" || !["test", "real"].includes(String(row.event_kind)) ||
+        !["pending", "active", "resolved", "expired"].includes(String(row.event_state)) ||
+        typeof row.triggered_at !== "string" || !["queued", "sent", "delivered", "failed"].includes(String(row.delivery_status))) {
+        throw new ApiError(503, "SERVICE_UNAVAILABLE", "Alert status returned an invalid result.", true);
+      }
+      return {
+        eventId: row.event_id,
+        kind: row.event_kind as AlertStatusProjection["kind"],
+        state: row.event_state as AlertStatusProjection["state"],
+        triggeredAt: row.triggered_at,
+        delivery: row.delivery_status as AlertStatusProjection["delivery"],
+        ...(typeof row.resolved_at === "string" ? { resolvedAt: row.resolved_at } : {}),
+        ...(typeof row.latest_location_at === "string" ? { latestLocationAt: row.latest_location_at } : {}),
+      };
+    },
+    async resolveAlert(userId, eventId, jwt) {
+      const rows = await rpc("resolve_alert", { p_user_id: userId, p_event_id: eventId }, `Bearer ${jwt}`, "Alert resolution") as Row[];
+      const row = rows[0];
+      if (!row || typeof row.event_id !== "string" || row.event_state !== "resolved" || typeof row.event_resolved_at !== "string") {
+        throw new ApiError(503, "SERVICE_UNAVAILABLE", "Alert resolution returned an invalid result.", true);
+      }
+      return { eventId: row.event_id, state: "resolved", resolvedAt: row.event_resolved_at };
+    },
+    async deleteData(userId, jwt) {
+      const deletionId = await rpc("delete_my_account", { p_user_id: userId }, `Bearer ${jwt}`, "Data deletion");
+      if (typeof deletionId !== "string") throw new ApiError(503, "SERVICE_UNAVAILABLE", "Data deletion returned an invalid result.", true);
+      return { deletionId };
+    },
+    async confirmContact(tokenHashHex) {
+      return await rpc("confirm_contact", { p_token_hash: `\\x${tokenHashHex}` }, `Bearer ${configuration.anonKey}`, "Contact confirmation") === true;
+    },
+  };
+}
