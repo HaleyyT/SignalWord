@@ -47,3 +47,21 @@ jobs:
       - run: npm ci
       - run: npx supabase start
       - run: npm run test:db
+
+  ios:
+    name: Build iOS app and verify trigger core
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift run --package-path apps/ios SignalWordCoreVerification
+      - name: Build SignalWord for iOS Simulator
+        run: >-
+          xcodebuild -quiet
+          -project apps/ios/SignalWord.xcodeproj
+          -scheme SignalWord
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build
