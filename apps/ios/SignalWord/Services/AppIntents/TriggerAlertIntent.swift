@@ -3,10 +3,10 @@ import AppIntents
 
 @available(iOS 18.0, *)
 struct TriggerAlertIntent: AppIntent {
-    static var title: LocalizedStringResource = "Trigger Alert"
-    static var description = IntentDescription("Send an alert to your confirmed trusted contact.")
-    static var openAppWhenRun = false
-    static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
+    static let title: LocalizedStringResource = "Trigger Alert"
+    static let description = IntentDescription("Send an alert to your confirmed trusted contact.")
+    static let openAppWhenRun = false
+    static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
     func perform() async throws -> some IntentResult {
         _ = await IntentAlertRunner.triggerAlert()
