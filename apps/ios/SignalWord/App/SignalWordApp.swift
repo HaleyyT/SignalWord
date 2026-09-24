@@ -1,16 +1,13 @@
-#if canImport(SwiftUI)
 import SwiftUI
 
 @main
 struct SignalWordApp: App {
+    @State private var model = AppShellModel.live()
+
     var body: some Scene {
         WindowGroup {
-            ContentUnavailableView(
-                "SignalWord setup required",
-                systemImage: "exclamationmark.shield",
-                description: Text("Complete trusted-contact setup before relying on this action.")
-            )
+            SignalWordRootView(model: model)
+                .tint(SignalWordColor.action)
         }
     }
 }
-#endif
