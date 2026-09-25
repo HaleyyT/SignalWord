@@ -78,6 +78,9 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
       }
       if (payload.message === "EVENT_NOT_FOUND") throw new ApiError(404, "NOT_FOUND", "Alert not found.");
       if (payload.message === "EVENT_NOT_ACTIVE") throw new ApiError(409, "EVENT_NOT_ACTIVE", "This alert is no longer active.");
+      if (payload.message === "RATE_LIMITED") {
+        throw new ApiError(429, "RATE_LIMITED", "Too many contact setup requests. Try again later.", true, 3600);
+      }
       throw new ApiError(503, "SERVICE_UNAVAILABLE", `${message} is temporarily unavailable.`, true);
     }
     return await response.json();
