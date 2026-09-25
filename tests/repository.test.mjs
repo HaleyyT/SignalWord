@@ -74,6 +74,16 @@ test('database policy integration tests are committed and exercised in CI', () =
   assert.match(ci, /npm run test:db/);
 });
 
+test('database runner keeps the standard path and narrowly handles the Docker Desktop mount failure', () => {
+  const runner = readFileSync('scripts/test-database.mjs', 'utf8');
+  assert.match(runner, /\['test', 'db'\]/);
+  assert.match(runner, /error while creating mount source path/);
+  assert.match(runner, /operation not permitted/);
+  assert.match(runner, /PGOPTIONS=-c search_path=public,extensions/);
+  assert.match(runner, /not ok/);
+  assert.doesNotMatch(runner, /SERVICE_ROLE_KEY|SECRET_KEY|ANON_KEY/);
+});
+
 test('CI type-checks every Edge Function and blocks high-severity runtime dependencies', () => {
   const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
   for (const entrypoint of [
