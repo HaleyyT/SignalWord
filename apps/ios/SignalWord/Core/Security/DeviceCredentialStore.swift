@@ -3,9 +3,19 @@ import Security
 
 enum DeviceCredentialStore {
     private static let service = "SignalWord.AlertAPI"
-    private static let account = "device-bearer-token"
+    private static let account = "device-session-v1"
+
+    struct Session: Codable, Equatable, Sendable {
+        let accessToken: String
+        let refreshToken: String
+        let expiresAt: Date
+    }
 
     static func loadBearerToken() -> String? {
+        loadSession()?.accessToken
+    }
+
+    static func loadSession() -> Session? {
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
@@ -19,11 +29,11 @@ enum DeviceCredentialStore {
               let data = result as? Data else {
             return nil
         }
-        return String(data: data, encoding: .utf8)
+        return try? JSONDecoder().decode(Session.self, from: data)
     }
 
-    static func saveBearerToken(_ token: String) throws {
-        let data = Data(token.utf8)
+    static func saveSession(_ session: Session) throws {
+        let data = try JSONEncoder().encode(session)
         let identity: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
@@ -44,6 +54,18 @@ enum DeviceCredentialStore {
             guard addStatus == errSecSuccess else { throw KeychainError.unexpectedStatus(addStatus) }
         } else if updateStatus != errSecSuccess {
             throw KeychainError.unexpectedStatus(updateStatus)
+        }
+    }
+
+    static func clear() throws {
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
+        ]
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unexpectedStatus(status)
         }
     }
 }

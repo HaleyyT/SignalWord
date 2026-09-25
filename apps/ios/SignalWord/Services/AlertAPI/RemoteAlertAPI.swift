@@ -19,11 +19,19 @@ enum AlertAPIError: RetryClassifiableError {
 
 struct RemoteAlertAPI: AlertCreating {
     let baseURL: URL
-    let bearerToken: String
+    let bearerToken: @Sendable (_ forceRefresh: Bool) async throws -> String
     let session: URLSession
     let maxAttempts: Int
 
     init(baseURL: URL, bearerToken: String, maxAttempts: Int = 2) {
+        self.init(baseURL: baseURL, maxAttempts: maxAttempts, bearerToken: { _ in bearerToken })
+    }
+
+    init(
+        baseURL: URL,
+        maxAttempts: Int = 2,
+        bearerToken: @escaping @Sendable (_ forceRefresh: Bool) async throws -> String
+    ) {
         self.baseURL = baseURL
         self.bearerToken = bearerToken
         self.maxAttempts = max(1, min(maxAttempts, 3))
@@ -40,7 +48,6 @@ struct RemoteAlertAPI: AlertCreating {
         var urlRequest = URLRequest(url: baseURL.appending(path: "/v1/alerts"))
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
         urlRequest.setValue(command.idempotencyKey.uuidString, forHTTPHeaderField: "Idempotency-Key")
         urlRequest.setValue(UUID().uuidString, forHTTPHeaderField: "X-Request-ID")
 
@@ -48,7 +55,12 @@ struct RemoteAlertAPI: AlertCreating {
         encoder.dateEncodingStrategy = .iso8601
         urlRequest.httpBody = try encoder.encode(command.request)
 
+        var forceRefresh = false
         for attempt in 1...maxAttempts {
+            urlRequest.setValue(
+                "Bearer \(try await bearerToken(forceRefresh))",
+                forHTTPHeaderField: "Authorization"
+            )
             let data: Data
             let response: URLResponse
             do {
@@ -61,6 +73,10 @@ struct RemoteAlertAPI: AlertCreating {
             }
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw AlertAPIError.invalidResponse
+            }
+            if httpResponse.statusCode == 401, attempt < maxAttempts {
+                forceRefresh = true
+                continue
             }
             guard [200, 201].contains(httpResponse.statusCode) else {
                 let error = AlertAPIError.rejected(statusCode: httpResponse.statusCode)
