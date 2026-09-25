@@ -124,6 +124,10 @@ public actor FileLockedAlertCommandStore: AlertCommandPersisting {
         try? withExclusiveLock { $0 }
     }
 
+    public func clearAll() async throws {
+        try withExclusiveLock { record in record = nil }
+    }
+
     private func isInsideCooldown(
         _ record: PersistedTriggerRecord,
         at date: Date,
@@ -162,7 +166,12 @@ public actor FileLockedAlertCommandStore: AlertCommandPersisting {
     }
 
     private func saveRecord(_ record: PersistedTriggerRecord?) throws {
-        guard let record else { return }
+        guard let record else {
+            if FileManager.default.fileExists(atPath: recordURL.path) {
+                try FileManager.default.removeItem(at: recordURL)
+            }
+            return
+        }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
