@@ -11,6 +11,7 @@ struct SignalWordCoreVerification {
             try await verifiesTestCommandCannotSuppressARealTrigger()
             try await verifiesClockRollbackCannotMintADuplicate()
             try await verifiesNonRetryableFailureIsInspectableAndRejected()
+            try await verifiesLocalDeletionClearsDurableAlertState()
             try verifiesRequestBodyExcludesIdempotencyKey()
             try verifiesServerTimeLocationFreshness()
             try verifiesIllegalAlertTransitionsAreRejected()
@@ -137,6 +138,17 @@ struct SignalWordCoreVerification {
 
             try require(outcome == .rejected, "non-retryable failure must not enter the outbox")
             try require(await store.latestTriggerRecord()?.phase == .rejected, "rejection must be inspectable")
+        }
+    }
+
+    private static func verifiesLocalDeletionClearsDurableAlertState() async throws {
+        try await withTemporaryStore { store in
+            let api = RecordingAlertAPI(result: .failure(RetryableStubError.offline))
+            _ = await coordinator(api: api, store: store, now: referenceDate)
+                .trigger(kind: .real, method: .manual)
+            try require(await store.latestTriggerRecord() != nil, "queued alert must exist before deletion")
+            try await store.clearAll()
+            try require(await store.latestTriggerRecord() == nil, "delete-data cleanup must remove durable alert state")
         }
     }
 
