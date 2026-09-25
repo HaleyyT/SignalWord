@@ -25,7 +25,9 @@ xcodebuild -project apps/ios/SignalWord.xcodeproj -scheme SignalWord \
   -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
 
-The package verifier covers durable command/idempotency behavior. The Xcode build covers the real SwiftUI app, Keychain session rotation, lifecycle API, device authentication, and locked App Intent integration.
+The package verifier covers durable command/idempotency behavior and location freshness boundaries. The Xcode build covers the real SwiftUI app, Keychain session rotation, lifecycle API, device authentication, locked App Intent integration, and Core Location integration.
+
+Location is optional and requested only with clear user action. A fresh cached sample may be included in the initial request; after server acceptance the app makes one time-bounded best-effort request and appends the result through `POST /v1/alerts/{eventId}/locations`. Denial, timeout, invalid coordinates, stale data, or GPS failure never blocks the alert.
 
 ## Environment configuration
 

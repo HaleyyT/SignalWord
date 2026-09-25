@@ -11,8 +11,10 @@ struct SignalWordCoreVerification {
             try await verifiesTestCommandCannotSuppressARealTrigger()
             try await verifiesClockRollbackCannotMintADuplicate()
             try await verifiesNonRetryableFailureIsInspectableAndRejected()
+            try await verifiesFreshCachedLocationEnrichesWithoutOwningAlertOutcome()
             try await verifiesLocalDeletionClearsDurableAlertState()
             try verifiesRequestBodyExcludesIdempotencyKey()
+            try verifiesOnlyFreshValidLocationIsAttached()
             try verifiesServerTimeLocationFreshness()
             try verifiesIllegalAlertTransitionsAreRejected()
             print("SignalWord core verification passed.")
@@ -141,6 +143,28 @@ struct SignalWordCoreVerification {
         }
     }
 
+    private static func verifiesFreshCachedLocationEnrichesWithoutOwningAlertOutcome() async throws {
+        try await withTemporaryStore { store in
+            let eventID = UUID()
+            let api = RecordingAlertAPI(result: .success(createdAlert(eventID)))
+            let sample = AlertLocationSnapshot(
+                latitude: -33.8688, longitude: 151.2093,
+                horizontalAccuracyM: 12, capturedAt: referenceDate.addingTimeInterval(-10)
+            )
+            let coordinator = AlertTriggerCoordinator(
+                alertAPI: api,
+                commandStore: store,
+                locationProvider: StubLocationProvider(snapshot: sample),
+                now: { referenceDate }
+            )
+
+            let outcome = await coordinator.trigger(kind: .real, method: .vocalShortcut)
+
+            try require(outcome == .created(eventID: eventID), "location enrichment must not change alert success")
+            try require(await api.locations() == [sample], "fresh cached location should reach the alert API")
+        }
+    }
+
     private static func verifiesLocalDeletionClearsDurableAlertState() async throws {
         try await withTemporaryStore { store in
             let api = RecordingAlertAPI(result: .failure(RetryableStubError.offline))
@@ -159,8 +183,26 @@ struct SignalWordCoreVerification {
         )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        let object = try JSONSerialization.jsonObject(with: encoder.encode(command.request)) as? [String: Any]
+        let object = try JSONSerialization.jsonObject(with: encoder.encode(command.request())) as? [String: Any]
         try require(object?["idempotencyKey"] == nil, "idempotency key belongs only in the HTTP header")
+    }
+
+    private static func verifiesOnlyFreshValidLocationIsAttached() throws {
+        let fresh = AlertLocationSnapshot(
+            latitude: -33.8688, longitude: 151.2093,
+            horizontalAccuracyM: 12, capturedAt: referenceDate.addingTimeInterval(-30)
+        )
+        let stale = AlertLocationSnapshot(
+            latitude: -33.8688, longitude: 151.2093,
+            horizontalAccuracyM: 12, capturedAt: referenceDate.addingTimeInterval(-121)
+        )
+        try require(fresh.isUsable(at: referenceDate), "fresh valid location should be usable")
+        try require(!stale.isUsable(at: referenceDate), "stale location must not be attached")
+        try require(
+            !AlertLocationSnapshot(latitude: 91, longitude: 0, horizontalAccuracyM: 1, capturedAt: referenceDate)
+                .isUsable(at: referenceDate),
+            "invalid coordinates must not be attached"
+        )
     }
 
     private static func verifiesServerTimeLocationFreshness() throws {
@@ -217,6 +259,14 @@ private enum RetryableStubError: RetryClassifiableError {
 }
 private enum VerificationError: Error { case assertion(String) }
 
+private struct StubLocationProvider: AlertLocationProviding {
+    let snapshot: AlertLocationSnapshot?
+    func cachedSnapshot(at now: Date) async -> AlertLocationSnapshot? {
+        guard let snapshot, snapshot.isUsable(at: now) else { return nil }
+        return snapshot
+    }
+}
+
 private func require(_ condition: Bool, _ message: String) throws {
     guard condition else { throw VerificationError.assertion(message) }
 }
@@ -225,18 +275,21 @@ private actor RecordingAlertAPI: AlertCreating {
     private let result: Result<CreatedAlert, Error>
     private let delayNanoseconds: UInt64
     private var commands: [AlertCommand] = []
+    private var capturedLocations: [AlertLocationSnapshot?] = []
 
     init(result: Result<CreatedAlert, Error>, delayNanoseconds: UInt64 = 0) {
         self.result = result
         self.delayNanoseconds = delayNanoseconds
     }
 
-    func createAlert(_ command: AlertCommand) async throws -> CreatedAlert {
+    func createAlert(_ command: AlertCommand, location: AlertLocationSnapshot?) async throws -> CreatedAlert {
         commands.append(command)
+        capturedLocations.append(location)
         if delayNanoseconds > 0 { try await Task.sleep(nanoseconds: delayNanoseconds) }
         return try result.get()
     }
 
     func requestCount() -> Int { commands.count }
     func idempotencyKeys() -> [UUID] { commands.map(\.idempotencyKey) }
+    func locations() -> [AlertLocationSnapshot?] { capturedLocations }
 }
