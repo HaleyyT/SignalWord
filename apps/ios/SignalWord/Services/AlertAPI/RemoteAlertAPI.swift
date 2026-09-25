@@ -44,7 +44,7 @@ struct RemoteAlertAPI: AlertCreating {
         self.session = URLSession(configuration: configuration)
     }
 
-    func createAlert(_ command: AlertCommand) async throws -> CreatedAlert {
+    func createAlert(_ command: AlertCommand, location: AlertLocationSnapshot?) async throws -> CreatedAlert {
         var urlRequest = URLRequest(url: baseURL.appending(path: "/v1/alerts"))
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -53,7 +53,7 @@ struct RemoteAlertAPI: AlertCreating {
 
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        urlRequest.httpBody = try encoder.encode(command.request)
+        urlRequest.httpBody = try encoder.encode(command.request(location: location))
 
         var forceRefresh = false
         for attempt in 1...maxAttempts {

@@ -100,6 +100,13 @@ struct RemoteUserLifecycleAPI: Sendable {
         )
     }
 
+    func appendLocation(eventID: UUID, location: AlertLocationSnapshot) async throws {
+        let _: LocationAcceptedProjection = try await send(
+            path: "/v1/alerts/\(eventID.uuidString.lowercased())/locations", method: "POST",
+            body: LocationInput(location: location), response: LocationAcceptedProjection.self
+        )
+    }
+
     func deleteAccount() async throws {
         let _: DeletionReceipt = try await send(
             path: "/v1/data", method: "DELETE", body: Optional<EmptyBody>.none,
@@ -148,6 +155,11 @@ struct RemoteUserLifecycleAPI: Sendable {
 
 private struct ContactInput: Encodable, Sendable { let name: String; let email: String }
 private struct EmptyBody: Encodable, Sendable {}
+private struct LocationInput: Encodable, Sendable { let location: AlertLocationSnapshot }
+private struct LocationAcceptedProjection: Decodable, Sendable {
+    let accepted: Bool
+    let receivedAt: Date
+}
 private struct DeletionReceipt: Decodable, Sendable { let deletionID: UUID
     enum CodingKeys: String, CodingKey { case deletionID = "deletionId" }
 }
