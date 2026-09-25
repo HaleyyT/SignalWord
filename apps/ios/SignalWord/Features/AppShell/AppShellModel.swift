@@ -15,7 +15,7 @@ enum OnboardingStage: Int, CaseIterable, Identifiable {
     }
 }
 
-enum LocationPermissionState: Equatable {
+enum LocationPermissionState: Equatable, Sendable {
     case notRequested, allowedApproximate, allowedPrecise, denied
 
     var summary: String {
@@ -73,6 +73,8 @@ final class AppShellModel {
         let getAlertStatus: @Sendable (UUID) async throws -> AlertStatusProjection
         let authenticateResolution: @Sendable () async -> Bool
         let resolve: @Sendable (UUID) async throws -> ResolvedAlertProjection
+        let locationAuthorization: @Sendable () async -> DeviceLocationAuthorization
+        let requestLocationAccess: @Sendable () async -> DeviceLocationAuthorization
         let deleteAccount: @Sendable () async throws -> Void
 
         static let unconfigured = LifecycleActions(
@@ -82,6 +84,8 @@ final class AppShellModel {
             getAlertStatus: { _ in throw SessionError.configuration },
             authenticateResolution: { false },
             resolve: { _ in throw SessionError.configuration },
+            locationAuthorization: { .notRequested },
+            requestLocationAccess: { .notRequested },
             deleteAccount: { throw SessionError.configuration }
         )
     }
@@ -164,6 +168,7 @@ final class AppShellModel {
     func advanceFromUnderstanding() { stage = .contact }
 
     func prepare() async {
+        apply(await lifecycle.locationAuthorization())
         guard backendConfigured, !identityReady else { return }
         do {
             try await lifecycle.prepare()
@@ -172,6 +177,10 @@ final class AppShellModel {
         } catch {
             accountMessage = "SignalWord could not create a protected device identity. Check the connection and try again."
         }
+    }
+
+    func requestLocationAccess() async {
+        apply(await lifecycle.requestLocationAccess())
     }
 
     func saveContact() async {
@@ -280,6 +289,15 @@ final class AppShellModel {
         contactEmail = ""
         hasContactDraft = true
         contactStatus = contact.status
+    }
+
+    private func apply(_ authorization: DeviceLocationAuthorization) {
+        switch authorization {
+        case .notRequested: locationState = .notRequested
+        case .approximate: locationState = .allowedApproximate
+        case .precise: locationState = .allowedPrecise
+        case .denied: locationState = .denied
+        }
     }
 
     private static func looksLikeEmail(_ value: String) -> Bool {

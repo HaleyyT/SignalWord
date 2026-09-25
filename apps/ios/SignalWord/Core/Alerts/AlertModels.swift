@@ -18,11 +18,40 @@ public struct AlertCreateRequest: Codable, Equatable, Sendable {
     public let kind: AlertKind
     public let triggerMethod: TriggerMethod
     public let clientTriggeredAt: Date
+    public let location: AlertLocationSnapshot?
 
-    public init(kind: AlertKind, triggerMethod: TriggerMethod, clientTriggeredAt: Date) {
+    public init(
+        kind: AlertKind,
+        triggerMethod: TriggerMethod,
+        clientTriggeredAt: Date,
+        location: AlertLocationSnapshot? = nil
+    ) {
         self.kind = kind
         self.triggerMethod = triggerMethod
         self.clientTriggeredAt = clientTriggeredAt
+        self.location = location
+    }
+}
+
+public struct AlertLocationSnapshot: Codable, Equatable, Sendable {
+    public let latitude: Double
+    public let longitude: Double
+    public let horizontalAccuracyM: Double
+    public let capturedAt: Date
+
+    public init(latitude: Double, longitude: Double, horizontalAccuracyM: Double, capturedAt: Date) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.horizontalAccuracyM = horizontalAccuracyM
+        self.capturedAt = capturedAt
+    }
+
+    public func isUsable(at now: Date, maximumAge: TimeInterval = 120) -> Bool {
+        (-90...90).contains(latitude)
+            && (-180...180).contains(longitude)
+            && (0...100_000).contains(horizontalAccuracyM)
+            && capturedAt <= now.addingTimeInterval(5)
+            && capturedAt >= now.addingTimeInterval(-maximumAge)
     }
 }
 
@@ -45,8 +74,13 @@ public struct AlertCommand: Codable, Equatable, Sendable {
         self.clientTriggeredAt = clientTriggeredAt
     }
 
-    public var request: AlertCreateRequest {
-        AlertCreateRequest(kind: kind, triggerMethod: triggerMethod, clientTriggeredAt: clientTriggeredAt)
+    public func request(location: AlertLocationSnapshot? = nil) -> AlertCreateRequest {
+        AlertCreateRequest(
+            kind: kind,
+            triggerMethod: triggerMethod,
+            clientTriggeredAt: clientTriggeredAt,
+            location: location
+        )
     }
 }
 
@@ -125,7 +159,18 @@ public protocol AlertCommandPersisting: Sendable {
 }
 
 public protocol AlertCreating: Sendable {
-    func createAlert(_ command: AlertCommand) async throws -> CreatedAlert
+    func createAlert(_ command: AlertCommand, location: AlertLocationSnapshot?) async throws -> CreatedAlert
+}
+
+public protocol AlertLocationProviding: Sendable {
+    /// Must return immediately from an already-available device sample. Alert
+    /// creation must never wait for a new GPS fix.
+    func cachedSnapshot(at now: Date) async -> AlertLocationSnapshot?
+}
+
+public struct NoAlertLocationProvider: AlertLocationProviding {
+    public init() {}
+    public func cachedSnapshot(at now: Date) async -> AlertLocationSnapshot? { nil }
 }
 
 public protocol RetryClassifiableError: Error, Sendable {

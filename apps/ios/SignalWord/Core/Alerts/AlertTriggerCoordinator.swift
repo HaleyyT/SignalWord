@@ -5,6 +5,7 @@ import Foundation
 public actor AlertTriggerCoordinator {
     private let alertAPI: any AlertCreating
     private let commandStore: any AlertCommandPersisting
+    private let locationProvider: any AlertLocationProviding
     private let cooldown: TimeInterval
     private let attemptLease: TimeInterval
     private let now: @Sendable () -> Date
@@ -12,12 +13,14 @@ public actor AlertTriggerCoordinator {
     public init(
         alertAPI: any AlertCreating,
         commandStore: any AlertCommandPersisting,
+        locationProvider: any AlertLocationProviding = NoAlertLocationProvider(),
         cooldown: TimeInterval = 60,
         attemptLease: TimeInterval = 10,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.alertAPI = alertAPI
         self.commandStore = commandStore
+        self.locationProvider = locationProvider
         self.cooldown = cooldown
         self.attemptLease = attemptLease
         self.now = now
@@ -53,7 +56,12 @@ public actor AlertTriggerCoordinator {
 
     private func attempt(_ command: AlertCommand) async -> TriggerOutcome {
         do {
-            let created = try await alertAPI.createAlert(command)
+            // Read only an already-cached sample. A missing or stale location is
+            // represented by nil and can never delay or reject alert creation.
+            let snapshotTime = now()
+            let candidate = await locationProvider.cachedSnapshot(at: snapshotTime)
+            let location = candidate?.isUsable(at: snapshotTime) == true ? candidate : nil
+            let created = try await alertAPI.createAlert(command, location: location)
             do {
                 try await commandStore.markCreated(command, alert: created, at: now())
                 return .created(eventID: created.eventID)

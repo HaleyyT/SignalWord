@@ -91,7 +91,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         status = 200;
       } else {
         const contactMatch = /\/v1\/contacts\/([0-9a-f-]+)$/i.exec(path);
-        const locationMatch = /\/v1\/alerts\/([0-9a-f-]+)\/location$/i.exec(path);
+        const locationMatch = /\/v1\/alerts\/([0-9a-f-]+)\/locations$/i.exec(path);
         const resolveMatch = /\/v1\/alerts\/([0-9a-f-]+)\/resolve$/i.exec(path);
         const statusMatch = /\/v1\/alerts\/([0-9a-f-]+)$/i.exec(path);
         if (request.method === "DELETE" && contactMatch && UUID_PATTERN.test(contactMatch[1])) {

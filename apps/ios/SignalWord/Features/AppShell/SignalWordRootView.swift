@@ -132,6 +132,19 @@ struct SignalWordRootView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 8)
             }
+            SignalWordCard {
+                Label("Optional location", systemImage: "location")
+                    .font(.headline)
+                Text(model.locationState.summary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+                if model.locationState == .notRequested {
+                    Button("Allow location while using SignalWord") {
+                        Task { await model.requestLocationAccess() }
+                    }
+                }
+            }
             Button("Send manual TEST alert") { Task { await model.runRehearsal() } }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
