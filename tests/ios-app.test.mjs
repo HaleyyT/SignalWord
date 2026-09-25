@@ -9,6 +9,8 @@ const model = readFileSync('apps/ios/SignalWord/Features/AppShell/AppShellModel.
 const session = readFileSync('apps/ios/SignalWord/Services/Auth/SupabaseSessionManager.swift', 'utf8');
 const lifecycle = readFileSync('apps/ios/SignalWord/Services/UserAPI/RemoteUserLifecycleAPI.swift', 'utf8');
 const credentials = readFileSync('apps/ios/SignalWord/Core/Security/DeviceCredentialStore.swift', 'utf8');
+const locationService = readFileSync('apps/ios/SignalWord/Services/Location/LiveLocationService.swift', 'utf8');
+const composition = readFileSync('apps/ios/SignalWord/App/AppCompositionRoot.swift', 'utf8');
 
 test('iOS project contains a real application target and App Group entitlement', () => {
   assert.match(project, /productType = "com\.apple\.product-type\.application"/);
@@ -17,6 +19,15 @@ test('iOS project contains a real application target and App Group entitlement',
   assert.match(project, /INFOPLIST_KEY_SignalWordSupabaseURL/);
   assert.match(project, /INFOPLIST_KEY_SignalWordUserAPIURL/);
   assert.match(project, /INFOPLIST_KEY_NSFaceIDUsageDescription/);
+});
+
+test('iOS location is optional, freshness-bounded, and appended after alert acceptance', () => {
+  assert.match(project, /INFOPLIST_KEY_NSLocationWhenInUseUsageDescription/);
+  assert.match(locationService, /snapshot\.isUsable\(at: now\)/);
+  assert.match(locationService, /requestFreshSnapshot\(timeout:/);
+  assert.match(composition, /let outcome = await alertRunner\.trigger/);
+  assert.match(composition, /api\.appendLocation/);
+  assert.match(composition, /guard let snapshot = await locationService\.requestFreshSnapshot/);
 });
 
 test('iOS lifecycle uses refreshable device identity and real authenticated APIs', () => {

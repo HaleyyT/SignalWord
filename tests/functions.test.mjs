@@ -243,6 +243,32 @@ test('authenticated lifecycle routes preserve ownership-scoped identifiers', asy
   ]);
 });
 
+test('location enrichment uses the canonical plural route and preserves ownership', async () => {
+  let received;
+  const lifecycle = baseLifecycle({
+    appendLocation: async (userId, eventId, location) => {
+      received = { userId, eventId, location };
+      return { accepted: true, receivedAt: '2026-09-24T00:00:02Z' };
+    },
+  });
+  const response = await userHandler(baseBackend(), [], lifecycle)(new Request(
+    `https://api.example.test/user-api/v1/alerts/${EVENT_ID}/locations`,
+    {
+      method: 'POST',
+      headers: { Authorization: 'Bearer user-jwt', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location: {
+        latitude: -33.8688, longitude: 151.2093,
+        horizontalAccuracyM: 12, capturedAt: new Date(1_000).toISOString(),
+      } }),
+    },
+  ));
+
+  assert.equal(response.status, 202);
+  assert.equal(received.userId, USER_ID);
+  assert.equal(received.eventId, EVENT_ID);
+  assert.equal(received.location.latitude, -33.8688);
+});
+
 test('contact confirmation consumes only a valid one-time token and hides token validity', async () => {
   let hash;
   const lifecycle = baseLifecycle({ confirmContact: async (value) => { hash = value; return true; } });
