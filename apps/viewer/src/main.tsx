@@ -4,6 +4,7 @@ import { ViewerApp } from './viewer/ViewerApp'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { SupportPage } from './pages/SupportPage'
 import { UnavailablePage } from './pages/UnavailablePage'
+import { ContactConfirmationPage } from './pages/ContactConfirmationPage'
 import { pageForPath } from './pages/route'
 import './styles.css'
 
@@ -16,6 +17,8 @@ if (!root) {
 const page = pageForPath(window.location.pathname)
 const content = page === 'event'
   ? <ViewerApp />
+  : page === 'confirm'
+    ? <ContactConfirmationPage />
   : page === 'privacy'
     ? <PrivacyPage />
     : page === 'support'

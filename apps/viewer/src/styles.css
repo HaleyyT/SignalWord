@@ -50,6 +50,10 @@ p { font-size: 1rem; line-height: 1.65; }
 .guidance h2 { color: var(--accent-deep); }
 .refresh-warning { background: var(--warning-pale); border-radius: .8rem; color: var(--warning); font-weight: 750; margin: 0 0 1rem; padding: .7rem .8rem; }
 .action-link { align-items: center; display: inline-flex; min-height: 2.75rem; padding: .35rem 0; }
+.primary-button { background: var(--accent-deep); border: 0; border-radius: .9rem; color: var(--surface); cursor: pointer; font: inherit; font-weight: 800; min-height: 3rem; padding: .7rem 1rem; }
+.primary-button:hover { background: var(--accent); }
+.primary-button:focus-visible { outline: 3px solid #73b690; outline-offset: 4px; }
+.primary-button:disabled { cursor: wait; opacity: .62; }
 .skeleton { background: linear-gradient(100deg, #e4ebe4 20%, #f4f7f3 42%, #e4ebe4 64%); border-radius: .7rem; }
 .skeleton-heading { height: 2.65rem; margin: 1rem 0 .8rem; max-width: 19rem; }
 .skeleton-copy { height: 1rem; max-width: 27rem; }
