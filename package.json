@@ -16,7 +16,7 @@
     "day1:preflight": "node scripts/day1-preflight.mjs",
     "day1:preflight:strict": "node scripts/day1-preflight.mjs --strict",
     "release:preflight": "node scripts/release-preflight.mjs",
-    "test:db": "npx supabase test db",
+    "test:db": "node scripts/test-database.mjs",
     "test": "node --test tests/*.test.mjs && npm run test --workspace=@signalword/viewer",
     "test:functions": "node --test tests/functions.test.mjs",
     "build": "npm run build --workspace=@signalword/viewer",
