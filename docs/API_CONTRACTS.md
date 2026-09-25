@@ -34,7 +34,7 @@ Response `201`:
 }
 ```
 
-Rules: destination is encrypted server-side; user can only access their own contact; rate-limit replacements.
+Rules: destination is encrypted server-side; user can only access their own contact. Confirmation delivery is limited to five accepted setup requests per user and three per destination fingerprint per rolling clock hour. A blocked request returns `429 RATE_LIMITED` with `Retry-After: 3600`; it does not replace the contact or queue provider work.
 
 ## `POST /v1/contacts/{contactId}/verification`
 

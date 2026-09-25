@@ -5,6 +5,7 @@ import { createPublicEventHandler } from '../supabase/functions/public-event/ind
 import { createContactConfirmHandler } from '../supabase/functions/contact-confirm/index.ts';
 import { createUserApiHandler } from '../supabase/functions/user-api/index.ts';
 import { createBackendGateway } from '../supabase/functions/_shared/supabase.ts';
+import { createLifecycleGateway } from '../supabase/functions/_shared/lifecycle.ts';
 import { createDeliveryPolicy, FakeDeliveryAdapter, runDeliveryWorker } from '../supabase/functions/_shared/delivery.ts';
 import { createDeliveryPayloadCipher } from '../supabase/functions/_shared/encryption.ts';
 import { generateViewerToken, sha256Hex } from '../supabase/functions/_shared/tokens.ts';
@@ -267,6 +268,30 @@ test('location enrichment uses the canonical plural route and preserves ownershi
   assert.equal(received.userId, USER_ID);
   assert.equal(received.eventId, EVENT_ID);
   assert.equal(received.location.latitude, -33.8688);
+});
+
+test('lifecycle gateway exposes contact rate limits as bounded retry guidance', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ message: 'RATE_LIMITED' }), {
+    status: 400,
+    headers: { 'Content-Type': 'application/json' },
+  });
+  try {
+    const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key' });
+    await assert.rejects(
+      gateway.saveContact({
+        userId: USER_ID, name: 'Trusted', destinationCiphertext: 'encrypted-destination',
+        destinationFingerprint: 'f'.repeat(64), destinationKeyVersion: 1,
+        confirmationTokenHashHex: 'a'.repeat(64),
+        confirmationPayloadCiphertext: 'encrypted-confirmation', payloadKeyVersion: 1,
+        provider: 'fake',
+      }, 'user-jwt'),
+      (error) => error.code === 'RATE_LIMITED' && error.status === 429
+        && error.retryable === true && error.retryAfterSeconds === 3600,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('contact confirmation consumes only a valid one-time token and hides token validity', async () => {

@@ -15,7 +15,7 @@ physical-device capability.
 | Check | Result | What it proves | What it does not prove |
 |---|---|---|---|
 | `npm run verify` | Pass | Repository/security checks, 61 Node tests, 39 viewer tests, and production viewer build | Hosted availability or physical-device behavior |
-| `npm run test:db` | Pass | 114 pgTAP assertions across five suites after a clean migration reset; RLS, ownership, idempotency, retention, provider reconciliation, lifecycle, and deletion boundaries | Production database configuration or load behavior |
+| `npm run test:db` | Pass | 126 pgTAP assertions across six suites after a clean migration reset; RLS, ownership, idempotency, retention, provider reconciliation, contact abuse limits, lifecycle, and deletion boundaries | Production database configuration or load behavior |
 | `swift run --disable-sandbox --package-path apps/ios SignalWordCoreVerification` | Pass | Durable command, concurrency, retry, cooldown, state, deletion, and location-freshness behavior | Signed App Intent or locked-device execution |
 | `xcodebuild ... CODE_SIGNING_ALLOWED=NO ... build` | Pass | The real Swift 6 iOS app compiles for the simulator, including App Intents, Keychain, lifecycle APIs, Core Location, and SwiftUI | Signing, archive, TestFlight, device permissions, or App Review |
 | Deno check of all five Edge Function entry points | Pass | Function entry points and shared TypeScript boundaries type-check | Deployed secrets, routing, schedules, or provider credentials |
@@ -32,7 +32,7 @@ physical-device capability.
 | Provider delivery | Resend adapter, idempotency, retry taxonomy, leases, raw-body webhook verification, immutable receipts | Verified Resend domain, production webhook, live TEST/REAL/resolved email evidence | Blocked for release |
 | Public viewer | Token-only allowlisted projection, same-origin proxy, security headers, location freshness, resolution state | Public HTTPS deployment and revoked/expired/live token smoke tests from a second device | Blocked for release |
 | Location | Optional Core Location permission UI, fresh cached snapshot, non-blocking post-acceptance refresh, server validation | Physical-device permission-denied/approximate/precise/timeout tests and map/viewer observation | Blocked for release |
-| Security and privacy | RLS, encrypted contact data, hashed capabilities, bounded retention, redacted structured logs, refreshable device identity, deletion | External security review; production log inspection; per-IP/token/destination abuse limits and kill-switch exercise | Partially accepted |
+| Security and privacy | RLS, encrypted contact data, hashed capabilities, bounded retention, redacted structured logs, refreshable device identity, deletion, per-user/destination contact setup limits | External security review; production log inspection; remaining IP/token abuse limits and kill-switch exercise | Partially accepted |
 | Monetization | Safety path is independent of entitlement state | RevenueCat `plus` entitlement, non-safety paywall, purchase/cancel/restore, outage test, project ID | Not implemented |
 | Store and submission | Draft runbooks, evidence templates, and honest claims ledger exist | Owned identifiers, signed archive, TestFlight/App Store URL, final icon/screenshots/video, Devpost page and receipt | Not implemented |
 

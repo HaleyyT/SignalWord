@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const migration = readFileSync('supabase/migrations/20260921000000_initial_alerts.sql', 'utf8');
 const alertApiMigration = readFileSync('supabase/migrations/20260924010000_alert_api_walking_skeleton.sql', 'utf8');
+const contactRateLimitMigration = readFileSync('supabase/migrations/20260924060000_contact_setup_rate_limits.sql', 'utf8');
 
 test('schema protects each private table with row-level security', () => {
   for (const table of [
@@ -42,6 +43,16 @@ test('schema persists only hashed expiring confirmation and rate-limit subjects'
   assert.match(migration, /consumed_at timestamptz/i);
   assert.match(migration, /create table public\.rate_limit_buckets/i);
   assert.match(migration, /subject_hash bytea not null check \(octet_length\(subject_hash\) = 32\)/i);
+});
+
+test('contact verification traffic is limited by hashed user and destination subjects', () => {
+  assert.match(contactRateLimitMigration, /before insert on public\.contact_verification_deliveries/i);
+  assert.match(contactRateLimitMigration, /scope = 'user'/i);
+  assert.match(contactRateLimitMigration, /scope = 'destination'/i);
+  assert.match(contactRateLimitMigration, />= 5/);
+  assert.match(contactRateLimitMigration, />= 3/);
+  assert.match(contactRateLimitMigration, /message = 'RATE_LIMITED'/);
+  assert.doesNotMatch(contactRateLimitMigration, /destination_ciphertext/);
 });
 
 test('schema blocks anonymous direct access to sensitive data', () => {
