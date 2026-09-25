@@ -98,7 +98,11 @@ test('CI type-checks every Edge Function and blocks high-severity runtime depend
 
 test('Day-8 audit fails closed when required production evidence is absent', () => {
   const audit = readFileSync('docs/DAY_8_RELEASE_AUDIT.md', 'utf8');
-  assert.match(audit, /Not accepted for release or submission/);
-  assert.match(audit, /Current release readiness: 31\/100/);
+  assert.match(audit, /not accepted for production release or Shipaton submission yet/i);
+  assert.match(audit, /Current repository implementation quality: 88\/100/);
+  assert.match(audit, /Current production\/Shipaton release readiness: 64\/100/);
+  assert.match(audit, /95\/100 acceptance: not yet earned/i);
+  assert.match(audit, /RevenueCat `plus` entitlement/);
+  assert.match(audit, /50 phrase trials/);
   assert.match(audit, /must not be described as end-to-end working/i);
 });
