@@ -74,6 +74,18 @@ test('database policy integration tests are committed and exercised in CI', () =
   assert.match(ci, /npm run test:db/);
 });
 
+test('CI type-checks every Edge Function and blocks high-severity runtime dependencies', () => {
+  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+  for (const entrypoint of [
+    'user-api/index.ts', 'public-event/index.ts', 'contact-confirm/index.ts',
+    'dispatch-deliveries/index.ts', 'resend-webhook/index.ts',
+  ]) {
+    assert.match(ci, new RegExp(entrypoint.replace('.', '\\.')));
+  }
+  assert.match(ci, /deno check/);
+  assert.match(ci, /npm audit --omit=dev --audit-level=high/);
+});
+
 test('Day-8 audit fails closed when required production evidence is absent', () => {
   const audit = readFileSync('docs/DAY_8_RELEASE_AUDIT.md', 'utf8');
   assert.match(audit, /Not accepted for release or submission/);

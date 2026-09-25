@@ -20,7 +20,26 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run verify
+
+  functions:
+    name: Type-check Edge Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check every deployable function
+        run: >-
+          deno check
+          supabase/functions/user-api/index.ts
+          supabase/functions/public-event/index.ts
+          supabase/functions/contact-confirm/index.ts
+          supabase/functions/dispatch-deliveries/index.ts
+          supabase/functions/resend-webhook/index.ts
 
   secrets:
     name: Scan committed history for secrets
