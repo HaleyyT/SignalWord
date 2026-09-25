@@ -6,6 +6,7 @@ describe('public information routes', () => {
     expect(pageForPath('/privacy')).toBe('privacy')
     expect(pageForPath('/support')).toBe('support')
     expect(pageForPath('/events/abcdefghijklmnopqrstuvwxyzABCDEF12')).toBe('event')
+    expect(pageForPath('/confirm/abcdefghijklmnopqrstuvwxyzABCDEF12')).toBe('confirm')
     expect(pageForPath('/unknown')).toBe('unavailable')
   })
 })

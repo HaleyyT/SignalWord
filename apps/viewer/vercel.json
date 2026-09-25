@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/events/:token", "destination": "/index.html" },
+    { "source": "/confirm/:token", "destination": "/index.html" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/support", "destination": "/index.html" }
   ],
