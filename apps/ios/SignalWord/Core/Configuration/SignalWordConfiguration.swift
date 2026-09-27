@@ -15,6 +15,17 @@ enum SignalWordConfiguration {
 
     static var supabaseURL: URL? { configuredURL(for: supabaseURLInfoKey) }
 
+    static var verificationURL: URL? {
+        guard let url = configuredURL(for: "SignalWordVerificationURL"),
+              url.scheme == "https", url.path == "/onboarding/verify.html",
+              url.query == nil, url.fragment == nil,
+              let key = Bundle.main.object(forInfoDictionaryKey: "SignalWordTurnstileSiteKey") as? String,
+              key.range(of: "^[A-Za-z0-9_-]{10,100}$", options: .regularExpression) != nil,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        components.queryItems = [URLQueryItem(name: "sitekey", value: key)]
+        return components.url
+    }
+
     static var supabasePublishableKey: String? {
         guard let value = Bundle.main.object(forInfoDictionaryKey: publishableKeyInfoKey) as? String,
               !value.isEmpty, !value.contains("$(") else { return nil }

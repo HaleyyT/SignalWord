@@ -3,6 +3,7 @@ import Observation
 
 struct SignalWordSetupFlow: View {
     @Bindable var model: AppShellModel
+    @State private var showVerification = false
 
     var body: some View {
         NavigationStack {
@@ -10,6 +11,16 @@ struct SignalWordSetupFlow: View {
                 VStack(alignment: .leading, spacing: 24) {
                     progress
                     if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
+                    if model.needsIdentityVerification {
+                        if SignalWordConfiguration.verificationURL != nil {
+                            Button("Verify new account") { showVerification = true }
+                                .buttonStyle(.borderedProminent)
+                                .accessibilityIdentifier("onboarding.verifyIdentity")
+                        } else {
+                            Text("Account verification is not configured in this build. Contact support before continuing.")
+                                .font(.footnote)
+                        }
+                    }
                     switch model.stage {
                     case .understand: introduction
                     case .contact: contactSetup
@@ -25,6 +36,18 @@ struct SignalWordSetupFlow: View {
             .background(SignalWordColor.canvas.ignoresSafeArea())
             .navigationTitle(model.stage.title)
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .sheet(isPresented: $showVerification) {
+            NavigationStack {
+                if let url = SignalWordConfiguration.verificationURL {
+                    SignupVerificationView(url: url) { token in
+                        showVerification = false
+                        Task { await model.prepare(captchaToken: token) }
+                    }
+                    .navigationTitle("Verify new account")
+                    .toolbar { Button("Cancel") { showVerification = false } }
+                }
+            }
         }
     }
 

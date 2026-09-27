@@ -33,8 +33,8 @@ struct RemoteUserLifecycleAPI: Sendable {
             response: [AlertStatusProjection].self, query: key.map { [URLQueryItem(name: "key", value: $0.uuidString)] } ?? [])
     }
 
-    func prepareIdentity() async throws {
-        _ = try await sessionManager.accessToken(createIfMissing: true)
+    func prepareIdentity(captchaToken: String? = nil) async throws {
+        _ = try await sessionManager.accessToken(createIfMissing: true, captchaToken: captchaToken)
     }
 
     func saveContact(name: String, email: String) async throws -> TrustedContactProjection {

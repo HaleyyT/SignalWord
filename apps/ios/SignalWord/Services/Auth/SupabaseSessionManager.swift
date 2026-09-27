@@ -1,7 +1,8 @@
 import Foundation
 
 enum SessionError: RetryClassifiableError {
-    var isRetryable: Bool { self != .configuration }
+    var isRetryable: Bool { self != .configuration && self != .verificationRequired }
+    case verificationRequired
     case configuration
     case unavailable
     case invalidResponse
@@ -26,9 +27,9 @@ actor SupabaseSessionManager {
         self.now = now
     }
 
-    func accessToken(createIfMissing: Bool, forceRefresh: Bool = false) async throws -> String {
+    func accessToken(createIfMissing: Bool, forceRefresh: Bool = false, captchaToken: String? = nil) async throws -> String {
         if let tokenTask { return try await tokenTask.value.accessToken }
-        if let stored = DeviceCredentialStore.loadSession() {
+        if let stored = try DeviceCredentialStore.loadSession() {
             if !forceRefresh && stored.expiresAt.timeIntervalSince(now()) > 120 {
                 return stored.accessToken
             }
@@ -38,7 +39,8 @@ actor SupabaseSessionManager {
             return try await task.value.accessToken
         }
         guard createIfMissing else { throw SessionError.unavailable }
-        let task = Task { try await self.signInAnonymously() }
+        guard let captchaToken, SignupVerification.validToken(captchaToken) else { throw SessionError.verificationRequired }
+        let task = Task { try await self.signInAnonymously(captchaToken: captchaToken) }
         tokenTask = task
         defer { tokenTask = nil }
         return try await task.value.accessToken
@@ -46,12 +48,10 @@ actor SupabaseSessionManager {
 
     func deleteLocalSession() throws { try DeviceCredentialStore.clear() }
 
-    private func signInAnonymously() async throws -> DeviceCredentialStore.Session {
+    private func signInAnonymously(captchaToken: String) async throws -> DeviceCredentialStore.Session {
         var request = request(path: "/auth/v1/signup")
         request.httpMethod = "POST"
-        request.httpBody = try JSONSerialization.data(withJSONObject: [
-            "data": ["signalword_client": true],
-        ])
+        request.httpBody = try SignupVerification.requestBody(token: captchaToken)
         return try await perform(request, fallbackRefreshToken: nil)
     }
 
