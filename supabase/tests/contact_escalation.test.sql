@@ -17,6 +17,8 @@ select is((select count(*) from public.alert_events),1::bigint,'duplicate reques
 select is((select count(*) from public.alert_deliveries),3::bigint,'one initial delivery per recipient');
 select is((select count(distinct token_hash) from public.viewer_tokens),3::bigint,'independent capability for each recipient');
 select is((select count(*) from public.alert_deliveries where next_attempt_at>now()),2::bigint,'remaining recipients scheduled later');
+update public.alert_deliveries set created_at=now()-interval '5 minutes';
+select is((public.signalword_delivery_health()->>'oldestQueuedSeconds')::numeric,0::numeric,'intentional escalation delay is not an overdue queue');
 select is((select count(*) from public.claim_alert_deliveries('84000000-0000-4000-8000-000000000001',3)),1::bigint,'only primary due now');
 select is((select count(*) from public.claim_alert_deliveries('84000000-0000-4000-8000-000000000002',3)),0::bigint,'duplicate worker cannot claim leased primary');
 set local role anon;
