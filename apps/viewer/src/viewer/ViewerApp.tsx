@@ -1,5 +1,6 @@
-import { viewerTokenFromPath } from './api'
-import { eventStateCopy, freshnessCopy, locationMapURL, type PublicEvent } from './model'
+import { useEffect, useState } from 'react'
+import { acknowledgeEvent, viewerTokenFromPath } from './api'
+import { agedFreshness, eventStateCopy, freshnessCopy, locationMapURL, type PublicEvent } from './model'
 import { usePublicEvent } from './usePublicEvent'
 
 function formatTime(timestamp: string): string {
@@ -9,6 +10,20 @@ function formatTime(timestamp: string): string {
 export function ViewerApp() {
   const token = viewerTokenFromPath(window.location.pathname)
   const state = usePublicEvent(token)
+  const [ack, setAck] = useState<'idle' | 'sending' | 'done' | 'failed'>('idle')
+  const [elapsed, setElapsed] = useState(0)
+  const receivedEvent = 'event' in state ? state.event : undefined
+  useEffect(() => {
+    const start = performance.now()
+    setElapsed(0)
+    const timer = setInterval(() => setElapsed((performance.now() - start) / 1000), 1000)
+    return () => clearInterval(timer)
+  }, [receivedEvent])
+  async function acknowledge() {
+    if (!token || ack === 'sending') return
+    setAck('sending')
+    try { await acknowledgeEvent(token); setAck('done') } catch { setAck('failed') }
+  }
 
   if (state.status === 'loading') {
     return (
@@ -53,13 +68,14 @@ export function ViewerApp() {
 
   const event: PublicEvent = state.event
   const location = event.location
+  const freshness = location ? agedFreshness(location, elapsed + (event.serverNow ? Math.max(0, (Date.parse(event.serverNow) - Date.parse(location.capturedAt)) / 1000) : 0)) : 'unavailable'
 
   return (
     <main className="viewer-shell">
       <section className="card" aria-labelledby="alert-title">
         {state.status === 'error' && <p className="refresh-warning" role="status">The information shown may not be current. Retrying…</p>}
-        <p className="eyebrow">{event.kind === 'test' ? 'TEST - no emergency reported' : 'SIGNALWORD ALERT'}</p>
-        <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? 'marked themselves safe' : 'sent an alert'}</h1>
+        <p className="eyebrow">{event.kind === 'test' ? 'TEST · NO EMERGENCY' : 'REAL ALERT'}</p>
+        <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? 'resolved the alert' : 'sent an alert'}</h1>
         <p className="timestamp">Sent {formatTime(event.triggeredAt)}</p>
         <p className={`state state-${event.state}`} role="status" aria-live="polite" aria-atomic="true">
           {eventStateCopy[event.state]}
@@ -70,19 +86,29 @@ export function ViewerApp() {
         <h2 id="location-title">Latest available location</h2>
         {location ? (
           <>
-            <p className={`freshness freshness-${location.freshness}`}>{freshnessCopy[location.freshness]}</p>
+            <p className={`freshness freshness-${freshness}`}>{freshnessCopy[freshness]}</p>
             <p>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}. Accuracy within {Math.round(location.horizontalAccuracyM)} m.</p>
             <p className="timestamp">Captured {formatTime(location.capturedAt)}</p>
             <a className="action-link" href={locationMapURL(location)} rel="noreferrer" target="_blank" aria-label="Open the latest available location in a map, in a new tab">Open in a map</a>
           </>
         ) : (
-          <p>Location is unavailable. The alert was still sent.</p>
+          <p>Location is unavailable. The alert was accepted by SignalWord.</p>
         )}
       </section>
 
       <section className="card guidance" aria-labelledby="guidance-title">
         <h2 id="guidance-title">What to do</h2>
         <p>{event.guidance.summary}</p>
+        {event.acknowledgedAt || ack === 'done'
+          ? <p role="status">Acknowledged through this recipient link. This does not confirm help is coming.</p>
+          : event.state !== 'expired' && <>
+            <button className="primary-button" disabled={ack === 'sending'} onClick={() => void acknowledge()}>
+              {ack === 'sending' ? 'Acknowledging…' : 'Acknowledge this alert'}
+            </button>
+            <p>Let the sender know this link has been acknowledged. Contact them directly to arrange help.</p>
+            {ack === 'failed' && <p role="alert">Acknowledgement was not confirmed. Check your connection and try again.</p>}
+          </>}
+        <p className="timestamp">Last server update {formatTime(event.lastUpdatedAt)}</p>
       </section>
     </main>
   )

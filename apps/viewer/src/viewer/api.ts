@@ -79,6 +79,9 @@ export function parsePublicEvent(value: unknown): PublicEvent {
     state,
     triggeredAt,
     lastUpdatedAt,
+    ...(isTimestamp(value.acknowledgedAt) ? { acknowledgedAt: value.acknowledgedAt } : {}),
+    ...(isTimestamp(value.serverNow) ? { serverNow: value.serverNow } : {}),
+    ...(isTimestamp(value.clientTriggeredAt) ? { clientTriggeredAt: value.clientTriggeredAt } : {}),
     ...(safeLocation ? { location: safeLocation } : {}),
     guidance: { summary: guidance.summary },
   }
@@ -138,4 +141,12 @@ export async function fetchPublicEvent(token: string, signal?: AbortSignal): Pro
     // previously displayed alert has become unavailable.
     throw new ViewerRequestError('retryable')
   }
+}
+
+export async function acknowledgeEvent(token: string): Promise<void> {
+  const response = await fetch(`/v1/public/events/${encodeURIComponent(token)}`, {
+    method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(8000),
+    headers: { 'X-SignalWord-Action': 'acknowledge', Accept: 'application/json' },
+  })
+  if (!response.ok || (await response.json()).acknowledged !== true) throw new Error('ACKNOWLEDGEMENT_FAILED')
 }

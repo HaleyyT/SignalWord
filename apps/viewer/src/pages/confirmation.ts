@@ -27,3 +27,19 @@ export async function confirmTrustedContact(token: string, signal?: AbortSignal)
     return 'temporary'
   }
 }
+
+export async function withdrawTrustedContact(token: string): Promise<'withdrawn' | 'unavailable' | 'temporary'> {
+  if (!TOKEN_PATTERN.test(token)) return 'unavailable'
+  try {
+    const response = await fetch(`/api/v1/contacts/confirm/${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'X-SignalWord-Action': 'withdraw' },
+      cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
+    })
+    if (response.status === 404 || response.status === 410) return 'unavailable'
+    if (!response.ok) return 'temporary'
+    const value: unknown = await response.json()
+    return value !== null && typeof value === 'object' && (value as { withdrawn?: unknown }).withdrawn === true
+      ? 'withdrawn' : 'temporary'
+  } catch { return 'temporary' }
+}
