@@ -1,0 +1,56 @@
+/* Reuse the product palette. These rules are scoped to the public homepage so
+   marketing layout changes cannot alter consent or emergency-recipient views. */
+.home-page { background: var(--canvas); color: var(--ink); }
+.home-wrap { width: min(100% - 3rem, 72rem); margin-inline: auto; }
+.home-header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.home-page nav { display: flex; gap: 1.5rem; }
+.home-page nav a { font-size: .9rem; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+.home-skip { position: absolute; top: -80px; left: 1rem; background: var(--surface); padding: 1rem; }
+.home-skip:focus { top: 1rem; z-index: 1; }
+.home-hero { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 3rem; padding-block: 2.5rem 4rem; }
+.home-hero h1 { font-size: clamp(2.6rem, 4.9vw, 4.4rem); line-height: 1.06; max-width: none; margin-block: 1.25rem; }
+.home-lede { color: var(--muted); max-width: 36ch; font-size: 1.13rem; }
+.home-button { display: inline-flex; align-items: center; gap: 2rem; margin-top: 1rem; padding: .9rem 1.2rem; background: var(--accent-deep); color: var(--canvas); border-radius: .9rem; text-decoration: none; min-height: 48px; }
+.home-button:hover { color: var(--canvas); filter: brightness(1.08); }
+.home-button:active { transform: translateY(1px); }
+.home-photo { margin: 0; }
+.home-photo img { display: block; width: 100%; height: clamp(340px, 38vw, 490px); object-fit: cover; border-radius: 1.35rem; }
+.home-status { border-block: 1px solid var(--border); display: grid; grid-template-columns: 1fr 2fr; gap: 3rem; padding-block: 1.5rem; align-items: baseline; }
+.home-status strong { color: var(--accent-deep); }
+.home-status p { margin: 0; font-size: .95rem; color: var(--muted); }
+.home-section { padding-block: 5rem; }
+.home-page h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); max-width: 25ch; }
+.home-steps { counter-reset: journey; list-style: none; padding: 0; margin: 2.5rem 0 0; }
+.home-steps li { counter-increment: journey; position: relative; display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; padding: 1.5rem 0 1.5rem 3.25rem; border-bottom: 1px solid var(--border); }
+.home-steps li::before { content: counter(journey, decimal-leading-zero); position: absolute; top: 1.6rem; left: 0; font-variant-numeric: tabular-nums; color: var(--accent-deep); }
+.home-steps h3 { font-size: 1.15rem; margin: .15rem 0; }
+.home-steps p { margin: 0; color: var(--muted); max-width: 51ch; }
+.home-recipient { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; background: var(--surface); padding: 2.5rem; border-radius: 1.35rem; }
+.home-recipient h2 { margin-top: 1rem; }
+.home-recipient p:not(.eyebrow) { color: var(--muted); margin-top: 0; }
+.home-faq { max-width: 52rem; }
+.home-faq h2 { margin-bottom: 2rem; }
+.home-faq details { border-bottom: 1px solid var(--border); padding-block: .3rem; }
+.home-faq summary { cursor: pointer; padding-block: 1rem; font-weight: 650; line-height: 1.5; }
+.home-faq summary:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 3px; }
+.home-faq details p { margin-top: 0; padding-bottom: .75rem; color: var(--muted); }
+.home-footer { border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding-block: 2rem; }
+.home-footer p { color: var(--muted); font-size: .85rem; }
+@media (prefers-color-scheme: light) {
+  .home-page { color-scheme: light; --canvas: #f6f7fa; --surface: #e9ecf2; --ink: #191b24; --muted: #4f5665; --border: #ccd0dc; --accent-deep: #5143b0; }
+}
+@media (max-width: 767px) {
+  .home-wrap { width: min(100% - 2rem, 36rem); }
+  .home-header { min-height: 68px; }
+  .home-page nav { gap: .8rem; }
+  .home-page nav a { font-size: .82rem; }
+  .home-hero { grid-template-columns: 1fr; padding-block: 2rem 2.5rem; gap: 2rem; }
+  .home-hero h1 { font-size: clamp(2.35rem, 8vw, 3.5rem); }
+  .home-photo img { height: 310px; object-position: center 60%; }
+  .home-status, .home-recipient { grid-template-columns: 1fr; gap: 1rem; }
+  .home-section { padding-block: 3rem; }
+  .home-steps li { grid-template-columns: 1fr; gap: .5rem; padding-left: 2.5rem; }
+  .home-recipient { padding: 1.5rem; }
+  .home-footer { flex-wrap: wrap; gap: .5rem 1rem; }
+  .home-footer p { flex-basis: 100%; order: 3; }
+}

@@ -24,6 +24,8 @@ jobs:
       - run: npm run verify
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser --workspace=@signalword/viewer
+      - run: npm run test:signup:browser
+      - run: npm run test:home:browser
 
   functions:
     name: Type-check Edge Functions
