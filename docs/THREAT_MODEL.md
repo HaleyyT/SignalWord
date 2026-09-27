@@ -1,4 +1,4 @@
-# SafeWord V1 Threat Model
+# SignalWord V1 Threat Model
 
 ## Security goals
 
@@ -55,6 +55,9 @@ The trained phrase is protected by iOS Vocal Shortcuts and is intentionally outs
 | Token leaks through browser | No third-party analytics on viewer, restrictive referrer policy, content security policy, no URL token in client logs, token not copied into query strings | Browser network/storage inspection and hosted-header check |
 | Service key ships in app | Only public client key in app; service role in server secret store | Secret scan and binary/config review |
 | Contact spam/harassment | Confirmation flow, previewed content, per-user/destination/IP rate limits, abuse contact | Abuse-case integration tests |
+| Sender mints their own consent | Backend-only contact creation; API generates tokens and binds the verified caller identity; recipient capability required | Direct authenticated RPC denied; backend creation and actual recipient confirmation tested |
+| Oversized webhook upload | Bound raw bytes while streaming before signature verification and parsing | Oversized chunked upload is cancelled with 413; altered/stale signatures rejected |
+| Automated anonymous signup | CAPTCHA-compatible onboarding, hosted signup limits and quota monitoring required before public enrollment | Not yet complete; see public-launch security gates |
 | Data persists forever | DB expiry columns, scheduled deletion, deletion endpoint | Time-shifted retention tests |
 
 ## Locked App Intent security decision
@@ -91,7 +94,7 @@ Until all are true, only confirmed trusted contacts receive automated alerts.
 
 - Location samples: expire 24 hours after resolution or event expiry.
 - Viewer token: expire no later than 24 hours after resolution; user may revoke immediately.
-- Contact confirmation tokens: 30 minutes and single use.
+- Contact confirmation tokens: 30-minute acceptance window and single-use confirmation; consumed capabilities remain available for withdrawal until replacement or account deletion.
 - Redacted delivery diagnostics: at most seven days.
 - Aggregate reliability metrics: no precise coordinates, phrases, contacts, or tokens.
 - Account deletion: revoke immediately and delete user-controlled data as soon as operationally possible.
@@ -119,4 +122,4 @@ Until all are true, only confirmed trusted contacts receive automated alerts.
 
 ## Current verified baseline and release caveat
 
-The local database has all six private tables with RLS enabled, and the public viewer rebuilds only its allowlisted event projection at runtime. These are valuable layers, not a guarantee that no one can attack the system. Before public hosting, the selected host must enforce HTTPS, `Cache-Control: no-store` for event routes, `Referrer-Policy: no-referrer`, and an equivalent response-header CSP; then the browser network/storage checks in the test plan must be recorded against that host.
+The development database has 12 application tables with RLS enabled. Live profile isolation, tampered-token rejection, webhook rejection and an authorized email TEST lifecycle have been verified. The public viewer rebuilds only its allowlisted event projection; hosted routing/privacy-header checks pass. These are specific checks, not a guarantee against all attacks. See [deployment evidence](implementation/DEVELOPMENT_DEPLOYMENT_STATUS.md) and [remaining public-launch security gates](implementation/PUBLIC_LAUNCH_SECURITY.md). The threat/control table contains intended controls as well as implemented ones; unverified IP limits, CAPTCHA, device recovery, restore protection and monitoring must not be treated as complete.
