@@ -101,9 +101,12 @@ final class SignalWordJourneyTests: XCTestCase {
         completeContactSetup()
         let trigger = app.buttons["alert.trigger"]
         XCTAssertTrue(trigger.waitForExistence(timeout: 5))
-        trigger.tap()
+        app.buttons["alert.trigger.review"].tap()
         XCTAssertTrue(app.buttons["Send REAL alert"].waitForExistence(timeout: 5))
         app.buttons["Cancel"].tap()
         XCTAssertTrue(trigger.exists)
+        app.buttons["alert.trigger.review"].tap()
+        app.buttons["Send REAL alert"].tap()
+        XCTAssertTrue(app.buttons["alert.resolve"].waitForExistence(timeout: 5))
     }
 }

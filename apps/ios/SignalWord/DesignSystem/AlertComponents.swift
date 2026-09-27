@@ -35,8 +35,8 @@ enum HoldConfirmAction {
 
     var accessibilityHint: String {
         switch self {
-        case .sendRealAlert: "Notifies your confirmed trusted person and does not contact emergency services. Tap to review and confirm, or hold for one and a half seconds."
-        case .resolveAlert: "Marks this alert resolved after device owner authentication. Tap to review and confirm, or hold for one and a half seconds."
+        case .sendRealAlert: "Notifies your confirmed trusted person and does not contact emergency services. Use Review and confirm, or hold for one and a half seconds."
+        case .resolveAlert: "Marks this alert resolved after device owner authentication. Use Review and confirm, or hold for one and a half seconds."
         }
     }
 
@@ -50,83 +50,26 @@ enum HoldConfirmAction {
 
 struct HoldConfirmControl: View {
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let action: HoldConfirmAction
     let isEnabled: Bool
     var identifier: String? = nil
     let perform: @Sendable () async -> Void
 
-    @State private var isHolding = false
+    @GestureState private var isHolding = false
     @State private var holdStartedAt: Date?
     @State private var showConfirmation = false
     @State private var isRunning = false
-    @State private var suppressTap = false
     private let holdDuration: TimeInterval = 1.5
 
     var body: some View {
-        Button {
-            // SwiftUI can finish a press before delivering the button action.
-            // Defer until the gesture has classified this release.
-            Task { @MainActor in
-                await Task.yield()
-                guard !suppressTap else { suppressTap = false; return }
-                reviewAction()
-            }
-        } label: {
-            VStack(spacing: 9) {
-                HStack(spacing: 10) {
-                    if isRunning {
-                        ProgressView().tint(.white)
-                    } else {
-                        Image(systemName: action == .sendRealAlert ? "waveform.path" : "checkmark.circle")
-                            .font(.body.weight(.semibold))
-                    }
-                    Text(isRunning ? "Please wait…" : isHolding ? "Keep holding to confirm…" : action.buttonTitle)
-                        .font(.subheadline.weight(.semibold))
-                        .multilineTextAlignment(.center)
-                }
-                TimelineView(.animation(minimumInterval: 0.04, paused: !isHolding)) { timeline in
-                    let elapsed = timeline.date.timeIntervalSince(holdStartedAt ?? timeline.date)
-                    let progress = isHolding ? min(1, max(0, elapsed / holdDuration)) : 0
-                    GeometryReader { geometry in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.20))
-                            Capsule().fill(.white).frame(width: geometry.size.width * progress)
-                        }
-                    }
-                    .frame(height: 3)
-                    .accessibilityHidden(true)
-                }
-                .frame(maxWidth: 220)
-            }
-            .foregroundStyle(SignalWordColor.primaryText)
-            .frame(maxWidth: .infinity, minHeight: 58)
-            .padding(.horizontal, 14)
-            .background(SignalWordColor.action, in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
+        VStack(spacing: 8) {
+            holdSurface
+            Button("Review and confirm", action: reviewAction)
+                .font(.subheadline.weight(.semibold))
+                .frame(minHeight: 44)
+                .disabled(!isEnabled || isRunning)
+                .accessibilityIdentifier((identifier ?? "alert.hold-confirm") + ".review")
         }
-        .buttonStyle(PressScaleButtonStyle())
-        .disabled(!isEnabled || isRunning)
-        .opacity(isEnabled ? 1 : 0.55)
-        .onLongPressGesture(minimumDuration: holdDuration, maximumDistance: 18, pressing: { pressing in
-            if pressing {
-                guard isEnabled, !isRunning, !showConfirmation else { return }
-                suppressTap = false
-                holdStartedAt = .now
-                isHolding = true
-            } else {
-                if let started = holdStartedAt, Date.now.timeIntervalSince(started) > 0.25 {
-                    suppressTap = true
-                }
-                cancelHold()
-            }
-        }, perform: {
-            // The pressing(false) callback can precede perform. Completion must
-            // not depend on the visual isHolding state, which may already reset.
-            suppressTap = true
-            cancelHold()
-            runAction()
-        })
         .alert(action.confirmationTitle, isPresented: $showConfirmation) {
             Button(action.confirmationButton, role: action == .sendRealAlert ? .destructive : nil) {
                 runAction()
@@ -135,28 +78,64 @@ struct HoldConfirmControl: View {
         } message: {
             Text(action.confirmationDetail)
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { showConfirmation = false }
+        }
+    }
+
+    private var holdSurface: some View {
+        VStack(spacing: 9) {
+            HStack(spacing: 10) {
+                if isRunning {
+                    ProgressView().tint(.white)
+                } else {
+                    Image(systemName: action == .sendRealAlert ? "waveform.path" : "checkmark.circle")
+                        .font(.body.weight(.semibold))
+                }
+                Text(isRunning ? "Please wait…" : isHolding ? "Keep holding to confirm…" : action.buttonTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .multilineTextAlignment(.center)
+            }
+            TimelineView(.animation(minimumInterval: 0.04, paused: !isHolding)) { timeline in
+                let elapsed = timeline.date.timeIntervalSince(holdStartedAt ?? timeline.date)
+                let progress = isHolding ? min(1, max(0, elapsed / holdDuration)) : 0
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.20))
+                        Capsule().fill(.white).frame(width: geometry.size.width * progress)
+                    }
+                }
+                .frame(height: 3)
+                .accessibilityHidden(true)
+            }
+            .frame(maxWidth: 220)
+        }
+        .foregroundStyle(SignalWordColor.primaryText)
+        .frame(maxWidth: .infinity, minHeight: 58)
+        .padding(.horizontal, 14)
+        .background(SignalWordColor.action, in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
+        .opacity(isEnabled ? 1 : 0.55)
+        // Keep the hold recognizer separate from the ordinary confirmation button.
+        // Competing tap/long-press recognizers can consume or reinterpret release.
+        .gesture(
+            LongPressGesture(minimumDuration: holdDuration, maximumDistance: 18)
+                .updating($isHolding) { pressing, state, _ in state = pressing }
+                .onEnded { completed in
+                    if completed { runAction() }
+                }
+        )
+        .onChange(of: isHolding) { _, holding in
+            holdStartedAt = holding ? .now : nil
+        }
+        // Expose the whole hold surface as one actionable accessibility element.
+        .accessibilityElement(children: .ignore)
         .accessibilityIdentifier(identifier ?? "alert.hold-confirm")
         .accessibilityLabel(action.buttonTitle)
-        .accessibilityValue(isHolding ? "Holding, \(Int(holdProgress * 100)) percent" : isRunning ? "In progress" : "Ready")
-        .accessibilityHint(action.accessibilityHint + " Releasing before the hold completes cancels it.")
+        .accessibilityValue(isRunning ? "In progress" : "Ready")
+        .accessibilityHint(action.accessibilityHint + " Releasing early cancels the hold.")
+        .accessibilityAddTraits(.isButton)
         .accessibilityAction { reviewAction() }
-        .accessibilityAction(named: Text("Review and confirm")) { reviewAction() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase != .active { suppressTap = true; cancelHold(); showConfirmation = false }
-        }
-        .onChange(of: reduceMotion) { _, reduced in
-            if reduced { cancelHold() }
-        }
-    }
-
-    private var holdProgress: Double {
-        guard let holdStartedAt else { return 0 }
-        return min(1, max(0, Date.now.timeIntervalSince(holdStartedAt) / holdDuration))
-    }
-
-    private func cancelHold() {
-        isHolding = false
-        holdStartedAt = nil
     }
 
     private func reviewAction() {

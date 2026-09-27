@@ -90,7 +90,7 @@ struct HomeScreen: View {
         }
 
         if model.canTriggerManually && !isActiveAlert {
-            Text("Hold for 1.5 seconds to send. Tap to review first. This alerts your confirmed person only.")
+            Text("Hold for 1.5 seconds to send. Use Review and confirm for a tap alternative. This alerts your confirmed person only.")
                 .font(.caption)
                 .foregroundStyle(SignalWordColor.secondaryText)
                 .frame(maxWidth: .infinity, alignment: .center)
