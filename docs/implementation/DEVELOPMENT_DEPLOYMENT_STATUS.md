@@ -63,7 +63,7 @@ The aggregate health RPC confirms Vault configuration, but that is not proof of 
 4. Completed: scheduled HTTP 200, recipient confirmation, TEST delivery, idempotent retry, API recovery, recipient acknowledgement, resolution delivery, deletion, and receipt recovery. Repeat these checks with the signed iPhone app.
 5. Repeat the flow through the signed iPhone app; HTTP probes do not establish device or locked-intent behavior.
 6. Back up the generated keys from the private, Git-ignored `.env.signalword-dev.backend` file into your password manager. The file has owner-only permissions. Do not regenerate keys once encrypted records exist.
-7. Complete the signed-device TEST journey with an explicitly consenting recipient. The current app requires iOS 18; the reported iPhone 13 Pro on iOS 17.6.1 cannot install this build. Apple signing/membership activation also remains to be confirmed. The recipient can initially use the Mac browser.
+7. Complete the signed-device TEST journey with an explicitly consenting recipient. The current app requires iOS 18; the user now reports iOS 26.7 on the iPhone 13 Pro. Apple Developer membership is still processing, so signed-device evidence remains open. The recipient can initially use the Mac browser.
 
 ## Security evidence and limits
 
@@ -74,3 +74,9 @@ Anonymous sign-in does not verify a person's identity. The `authenticated` role 
 Before public enrollment, implement CAPTCHA/Turnstile-compatible onboarding and verify signup, email, and per-user abuse limits with operational alerts. Do not merely enable CAPTCHA in the dashboard: the current iOS signup request does not supply a CAPTCHA token and would fail. Recipient consent and email confirmation do not establish the sender's real-world identity. See [Supabase anonymous sign-in guidance](https://supabase.com/docs/guides/auth/auth-anonymous).
 
 Hosted routing checks use unissued links. The additional authorized TEST establishes one actual email/recipient/API lifecycle, including acknowledgement and deletion. It does not establish device recovery, locked execution, or population-wide reliability. Independent restore protection, production monitoring/crash reporting, and physical-device evidence remain release gates. This deployment does not complete Step 2 or establish a 97/100 score.
+
+## Protected signup and monitoring follow-up
+
+The reviewed migration `20260928020000_dispatch_monitoring.sql` was dry-run and applied to development on 28 September 2026. It records worker request IDs and correlates actual HTTP outcomes, with service-only aggregate signup/invitation counts. No production resource was changed.
+
+The new iOS onboarding and isolated viewer challenge page supply a Turnstile token to Supabase Auth; Keychain read errors no longer look like a new installation. Cloudflare site-key configuration, Auth enforcement, real challenge/device verification and operator notification setup remain gates. Follow [RELEASE_GATE_SETUP.md](RELEASE_GATE_SETUP.md).

@@ -18,6 +18,10 @@ Database regressions exercise the forbidden client call and normal backend-to-re
 
 Checking size after `arrayBuffer()` allows an untrusted upload to consume memory before rejection. The shared body reader now bounds accumulated bytes and cancels an oversized stream. The webhook retains the exact bytes needed for signature verification. Tests cover chunked oversized bodies, modified signed bodies, and signatures outside the timestamp window.
 
+## Current implementation and setup
+
+Protected signup, Keychain error separation, dispatch HTTP monitoring and an independent-heartbeat integration now exist. They do not close the gates without live configuration and evidence. Follow [RELEASE_GATE_SETUP.md](RELEASE_GATE_SETUP.md) for exact setup, remaining restore work and the provisional scorecard.
+
 ## Required before public enrollment
 
 | Order | Work | Acceptance evidence |
