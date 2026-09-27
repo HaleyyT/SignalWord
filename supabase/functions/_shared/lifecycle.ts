@@ -61,18 +61,18 @@ function contactProjection(row: Row): ContactProjection {
   };
 }
 
-export function createLifecycleGateway(configuration: { url: string; anonKey: string }): LifecycleGateway {
+export function createLifecycleGateway(configuration: { url: string; anonKey: string; serviceRoleKey?: string }): LifecycleGateway {
   const baseUrl = configuration.url.replace(/\/$/, "");
-  const headers = (authorization: string) => ({
-    apikey: configuration.anonKey,
+  const headers = (authorization: string, apiKey = configuration.anonKey) => ({
+    apikey: apiKey,
     Authorization: authorization,
     "Content-Type": "application/json",
   });
-  const rpc = async (name: string, body: unknown, authorization: string, message: string): Promise<unknown> => {
+  const rpc = async (name: string, body: unknown, authorization: string, message: string, apiKey = configuration.anonKey): Promise<unknown> => {
     let response: Response;
     try {
       response = await fetch(`${baseUrl}/rest/v1/rpc/${name}`, {
-        method: "POST", signal: AbortSignal.timeout(5000), headers: headers(authorization), body: JSON.stringify(body),
+        method: "POST", signal: AbortSignal.timeout(5000), headers: headers(authorization, apiKey), body: JSON.stringify(body),
       });
     } catch {
       throw new ApiError(503, "SERVICE_UNAVAILABLE", `${message} is temporarily unavailable.`, true);
@@ -102,7 +102,11 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
     async details(userId, eventId, jwt) {
       return await rpc("alert_details", {p_user_id: userId, p_event_id: eventId}, `Bearer ${jwt}`, "Alert status");
     },
-    async saveContact(input, jwt) {
+    async saveContact(input, _jwt) {
+      // The HTTP handler authenticates first and supplies the verified user ID.
+      // Only this write uses service credentials: clients cannot mint consent tokens.
+      const serviceKey = configuration.serviceRoleKey;
+      if (!serviceKey) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact setup is unavailable.", true);
       const rows = await rpc("create_or_replace_contact", {
         p_user_id: input.userId,
         p_name: input.name,
@@ -114,7 +118,7 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
         p_confirmation_payload_ciphertext: input.confirmationPayloadCiphertext,
         p_payload_key_version: input.payloadKeyVersion,
         p_delivery_provider: input.provider,
-      }, `Bearer ${jwt}`, "Contact setup") as Row[];
+      }, `Bearer ${serviceKey}`, "Contact setup", serviceKey) as Row[];
       return contactProjection(rows[0] ?? {});
     },
     async getContact(userId, jwt) {

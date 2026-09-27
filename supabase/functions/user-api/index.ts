@@ -178,6 +178,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
 if (import.meta.main) {
   const url = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const environment = (Deno.env.get("APP_ENV") ?? "production") as RuntimeEnvironment;
   const configuredProvider = Deno.env.get("DELIVERY_PROVIDER");
   const provider = configuredProvider === "fake" || configuredProvider === "resend" ? configuredProvider : "none";
@@ -186,7 +187,7 @@ if (import.meta.main) {
   const contactFingerprintKey = Deno.env.get("DESTINATION_FINGERPRINT_KEY");
   const keyVersion = Number(Deno.env.get("DELIVERY_PAYLOAD_KEY_VERSION") ?? "1");
   const destinationKeyVersion = Number(Deno.env.get("DESTINATION_KEY_VERSION") ?? "1");
-  if (!url || !anonKey || !encodedKey || !contactEncryptionKey || !contactFingerprintKey) {
+  if (!url || !anonKey || !serviceRoleKey || !encodedKey || !contactEncryptionKey || !contactFingerprintKey) {
     throw new Error("Backend URL, anonymous key, delivery key, and contact protection keys are required");
   }
   const cipher = createDeliveryPayloadCipher(encodedKey, keyVersion);
@@ -200,7 +201,7 @@ if (import.meta.main) {
       runtime?.waitUntil(task);
     },
     backend: createBackendGateway({ url, anonKey }),
-    lifecycle: createLifecycleGateway({ url, anonKey }),
+    lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey }),
     delivery: createDeliveryPolicy(environment, provider),
     encryptPayload: async (viewerToken) => ({
       ciphertext: await cipher.encrypt(viewerToken),
