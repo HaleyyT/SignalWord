@@ -1,0 +1,15 @@
+begin;
+select no_plan();
+select is(has_table_privilege('anon','public.dispatch_requests','SELECT'), false, 'request diagnostics are not public');
+select is(has_table_privilege('authenticated','public.dispatch_requests','SELECT'), false, 'clients cannot read request diagnostics');
+select is(has_function_privilege('authenticated','public.signalword_operational_health()','EXECUTE'), false, 'client cannot query operational aggregates');
+insert into public.dispatch_requests(request_id,requested_at) values (910000001,now());
+insert into net._http_response(id,status_code,timed_out,created) values (910000001,500,false,now());
+select is((public.signalword_operational_health()->'dispatchHTTP'->>'lastStatus')::int,500,'HTTP failure remains visible even when dispatch SQL succeeded');
+update net._http_response set status_code=200 where id=910000001;
+select is((public.signalword_operational_health()->'dispatchHTTP'->>'lastStatus')::int,200,'HTTP recovery is visible');
+insert into public.dispatch_requests(request_id,requested_at) values (910000002,now()-interval '2 minutes');
+select ok((public.signalword_operational_health()->'dispatchHTTP'->>'overdue')::int >= 1,'missing HTTP response becomes overdue');
+select ok(public.signalword_operational_health()->'abuse' ? 'signupsLastHour','signup abuse metric is available without identities');
+select * from finish();
+rollback;
