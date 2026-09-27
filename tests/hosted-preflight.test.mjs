@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { checkHostedViewer } from '../scripts/hosted-preflight.mjs';
+import { proxyContactConfirmation } from '../apps/viewer/api/v1/contacts/confirm/[token].mjs';
 
 const security = { 'referrer-policy': 'no-referrer', 'x-content-type-options': 'nosniff',
   'strict-transport-security': 'max-age=31536000', 'cache-control': 'no-store',
@@ -13,6 +14,16 @@ test('hosted preflight checks both methods and never needs a real capability', a
     if (url.pathname.startsWith('/events/') || url.pathname.startsWith('/confirm/')) {
       return new Response('<html></html>', { headers: { ...security, 'content-type': 'text/html' } });
     }
+    if (url.pathname.startsWith('/api/v1/contacts/confirm/')) {
+      const result = await proxyContactConfirmation({
+        token: url.pathname.split('/').at(-1), upstreamOrigin: 'https://backend.example',
+        action: init.headers['X-SignalWord-Action'] ?? 'confirm',
+        fetchImpl: async () => Response.json({}, { status: 404 }),
+      });
+      const headers = new Headers(security);
+      for (const [name, value] of Object.entries(result.headers)) headers.set(name, value);
+      return Response.json(result.body, { status: result.status, headers });
+    }
     return Response.json({ error: { code: 'NOT_FOUND' } }, { status: 404, headers: security });
   });
   assert.equal(results.length, 6);
@@ -22,6 +33,14 @@ test('hosted preflight checks both methods and never needs a real capability', a
   assert.equal(calls[5].init.headers['X-SignalWord-Action'], 'withdraw');
   assert.equal(calls[0].init.redirect, 'error');
   assert.match(calls[0].url.pathname, /^\/events\/[A-Za-z0-9_-]{43}$/);
+});
+
+test('unavailable status alone does not satisfy the contact response contract', async () => {
+  for (const body of [{}, { confirmed: true, unavailable: true }, { error: { code: 'NOT_FOUND' } }]) {
+    const results = await checkHostedViewer('https://viewer.example', async () =>
+      Response.json(body, { status: 410, headers: security }));
+    assert.ok(results.slice(4).every(result => !result.passed));
+  }
 });
 
 test('SPA fallthrough and missing privacy headers cannot pass hosted preflight', async () => {
