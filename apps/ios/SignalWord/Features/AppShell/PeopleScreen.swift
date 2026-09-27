@@ -12,7 +12,7 @@ struct PeopleScreen: View {
                 PageHeading(
                     eyebrow: "YOUR CIRCLE",
                     title: "People",
-                    detail: "One trusted person receives your alert and secure status link."
+                    detail: "Choose a primary person and build your consenting contact network."
                 )
                 if model.hasContactDraft && model.contactStatus != "disabled" {
                     recipientCard
@@ -56,6 +56,7 @@ struct PeopleScreen: View {
                         }
                     }
                 }
+                ContactNetworkPanel()
                 if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
                 if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
                 Text("TEST messages are labelled TEST. Acknowledgement does not identify the reader or mean help is coming.")
@@ -221,7 +222,8 @@ struct ContactEditorSheet: View {
                     if let message = model.contactValidationMessage {
                         Text(message).font(.footnote).foregroundStyle(SignalWordColor.secondaryText)
                     }
-                    if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
+                    ContactNetworkPanel()
+                if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
                     Text("Sending a new confirmation request invalidates the previous confirmation and clears earlier TEST evidence. The recipient must confirm again.")
                         .font(.caption)
                         .foregroundStyle(SignalWordColor.mutedText)

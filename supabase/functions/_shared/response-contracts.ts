@@ -31,7 +31,7 @@ const shapes = {
   resolveAlert: { required: { eventId: uuid, state: oneOf("resolved"), resolvedAt: timestamp } },
   deleteData: { required: { deletionId: uuid } },
 } satisfies Record<string, Shape>;
-export type ResponseContract = keyof typeof shapes | "recovery";
+export type ResponseContract = keyof typeof shapes | "recovery" | "contactNetwork" | "recipients";
 
 function invalid(): never {
   // Do not echo malformed upstream data, which may contain private fields.
@@ -58,6 +58,16 @@ function project(value: unknown, shape: Shape): Record<string, unknown> {
  * A database change cannot accidentally expose extra columns or report corrupt state.
  */
 export function parseUserResponse(contract: ResponseContract, value: unknown): unknown {
+  if (contract === "contactNetwork") {
+    const source = value as {policy?: unknown;contacts?:unknown[]};
+    if (!source || !oneOf("everyone","primary_then_others")(source.policy) || !Array.isArray(source.contacts) || source.contacts.length>3) return invalid();
+    return {policy:source.policy,contacts:source.contacts.map(c=>project(c,{required:{...contact.required,primary:boolean}}))};
+  }
+  if (contract === "recipients") {
+    if (!Array.isArray(value) || value.length>3) return invalid();
+    return value.map(v=>project(v,{required:{contactId:uuid,name,revoked:boolean,scheduledAt:timestamp,delivery},
+      optional:{acknowledgedAt:timestamp,resolutionDelivery:delivery,failureCode:text}}));
+  }
   if (contract === "recovery") {
     if (!Array.isArray(value)) return invalid();
     return value.map((entry) => project(entry, alertStatus));

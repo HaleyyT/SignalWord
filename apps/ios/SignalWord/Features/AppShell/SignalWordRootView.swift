@@ -23,6 +23,14 @@ private enum SignalTab: Hashable {
 
 struct SignalWordRootView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @State private var network: ContactNetworkModel = {
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            return ContactNetworkModel(api: ProcessInfo.processInfo.arguments.contains("--network-ui-testing") ? UITestNetworkService() : nil)
+        }
+        #endif
+        return ContactNetworkModel(api: AppCompositionRoot.lifecycleAPI)
+    }()
     @Bindable var model: AppShellModel
     @State private var selectedTab: SignalTab = .home
     @State private var showDeleteConfirmation = false
@@ -36,6 +44,8 @@ struct SignalWordRootView: View {
                 SignalWordSetupFlow(model: model)
             }
         }
+        .environment(network)
+        .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear() } }
         .tint(SignalWordColor.action)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
@@ -46,6 +56,7 @@ struct SignalWordRootView: View {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {
                 await model.recover()
+                if model.identityReady { await network.refresh(eventID: model.currentAlertEventID) }
                 do { try await Task.sleep(for: .seconds(10)) } catch { return }
             }
         }

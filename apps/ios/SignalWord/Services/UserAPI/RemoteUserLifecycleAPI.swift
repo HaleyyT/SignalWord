@@ -7,7 +7,7 @@ enum UserAPIError: Error, Sendable {
     case invalidResponse
 }
 
-struct RemoteUserLifecycleAPI: Sendable {
+struct RemoteUserLifecycleAPI: ContactNetworkServing {
     let baseURL: URL
     let sessionManager: SupabaseSessionManager
     let session: URLSession
@@ -21,6 +21,24 @@ struct RemoteUserLifecycleAPI: Sendable {
         configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         configuration.urlCache = nil
         session = URLSession(configuration: configuration)
+    }
+
+    func contactNetwork(primary: UUID? = nil, policy: ContactRoutingPolicy? = nil) async throws -> ContactNetwork {
+        struct Settings: Encodable, Sendable { let primary: UUID?; let policy: ContactRoutingPolicy? }
+        let updating = primary != nil || policy != nil
+        return try await send(path: "/v2/contact-network", method: updating ? "PUT" : "GET",
+            body: updating ? Settings(primary: primary, policy: policy) : nil, response: ContactNetwork.self)
+    }
+
+    func saveNetworkContact(contactID: UUID?, name: String, email: String) async throws -> TrustedContactProjection {
+        let suffix = contactID.map { "/" + $0.uuidString.lowercased() } ?? ""
+        return try await send(path: "/v2/contacts" + suffix, method: "POST",
+            body: ContactInput(name: name, email: email), response: TrustedContactProjection.self)
+    }
+
+    func recipientProgress(eventID: UUID) async throws -> [RecipientProgress] {
+        try await send(path: "/v2/alerts/\(eventID.uuidString.lowercased())/recipients", method: "GET",
+            body: Optional<EmptyBody>.none, response: [RecipientProgress].self)
     }
 
     func profile(displayName: String? = nil) async throws -> ProfileProjection {
