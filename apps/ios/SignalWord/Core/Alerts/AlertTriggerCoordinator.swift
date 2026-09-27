@@ -15,7 +15,7 @@ public actor AlertTriggerCoordinator {
         commandStore: any AlertCommandPersisting,
         locationProvider: any AlertLocationProviding = NoAlertLocationProvider(),
         cooldown: TimeInterval = 60,
-        attemptLease: TimeInterval = 10,
+        attemptLease: TimeInterval = 45,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.alertAPI = alertAPI
@@ -42,7 +42,19 @@ public actor AlertTriggerCoordinator {
             return .failedRetryable
         }
 
+        return await process(acquisition)
+    }
+
+    public func resumePending(kind: AlertKind, allowDelayed: Bool = false) async -> TriggerOutcome? {
+        do {
+            guard let acquisition = try await commandStore.acquirePending(kind: kind, at: now(), attemptLease: attemptLease, allowDelayed: allowDelayed) else { return nil }
+            return await process(acquisition)
+        } catch { return .failedRetryable }
+    }
+
+    private func process(_ acquisition: CanonicalCommandAcquisition) async -> TriggerOutcome {
         switch acquisition {
+        case .confirmationRequired: return .confirmationRequired
         case .created(_, let eventID):
             return .reused(eventID: eventID)
         case .pending:
@@ -70,7 +82,7 @@ public actor AlertTriggerCoordinator {
                 return .failedRetryable
             }
         } catch {
-            let retryable = (error as? any RetryClassifiableError)?.isRetryable == true
+            let retryable = (error as? any RetryClassifiableError)?.isRetryable ?? true
             do {
                 if retryable {
                     try await commandStore.markQueued(command, at: now())

@@ -10,9 +10,9 @@ enum AlertAPIError: RetryClassifiableError {
         case .networkUnavailable:
             return true
         case .rejected(let statusCode):
-            return statusCode == 429 || [502, 503, 504].contains(statusCode)
+            return statusCode == 408 || statusCode == 429 || (500...599).contains(statusCode)
         case .invalidResponse:
-            return false
+            return true
         }
     }
 }
@@ -66,7 +66,7 @@ struct RemoteAlertAPI: AlertCreating {
             do {
                 (data, response) = try await session.data(for: urlRequest)
             } catch is CancellationError {
-                throw CancellationError()
+                throw AlertAPIError.networkUnavailable
             } catch is URLError {
                 if attempt < maxAttempts { continue }
                 throw AlertAPIError.networkUnavailable
@@ -85,10 +85,9 @@ struct RemoteAlertAPI: AlertCreating {
                 continue
             }
 
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
+            let decoder = WireDate.decoder()
             do {
-                let payload = try decoder.decode(CreateAlertResponse.self, from: data)
+                let payload = try decoder.decode(AlertCreationWireResponse.self, from: data)
                 return CreatedAlert(eventID: payload.eventID, serverTriggeredAt: payload.serverTriggeredAt)
             } catch {
                 throw AlertAPIError.invalidResponse
@@ -102,15 +101,5 @@ struct RemoteAlertAPI: AlertCreating {
               let seconds = Double(value) else { return 250_000_000 }
         let boundedSeconds = min(max(seconds, 0), 2)
         return UInt64(boundedSeconds * 1_000_000_000)
-    }
-}
-
-private struct CreateAlertResponse: Decodable {
-    let eventID: UUID
-    let serverTriggeredAt: Date
-
-    private enum CodingKeys: String, CodingKey {
-        case eventID = "eventId"
-        case serverTriggeredAt
     }
 }
