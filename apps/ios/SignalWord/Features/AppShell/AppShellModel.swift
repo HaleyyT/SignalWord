@@ -44,7 +44,7 @@ enum AlertDisplayState: Equatable {
 final class AppShellModel {
     typealias Trigger = @Sendable (AlertKind, TriggerMethod) async -> TriggerOutcome
     struct LifecycleActions: Sendable {
-        let prepare: @Sendable () async throws -> Void
+        let prepare: @Sendable (String?) async throws -> Void
         let profile: @Sendable (String?) async throws -> String
         let recover: @Sendable (Bool) async throws -> AppRecovery
         let saveContact: @Sendable (String, String) async throws -> TrustedContactProjection
@@ -58,7 +58,7 @@ final class AppShellModel {
         let deleteAccount: @Sendable () async throws -> Void
 
         static let unconfigured = LifecycleActions(
-            prepare: { throw SessionError.configuration },
+            prepare: { _ in throw SessionError.configuration },
             profile: { _ in throw SessionError.configuration },
             recover: { _ in throw SessionError.configuration },
             saveContact: { _, _ in throw SessionError.configuration },
@@ -84,6 +84,7 @@ final class AppShellModel {
     private var savedContactName = ""
     private(set) var contactStatus = "not configured"
     private var contactID: UUID?
+    private(set) var needsIdentityVerification = false
     private(set) var identityReady = false
     private(set) var isSavingContact = false
     private(set) var shortcutConfigured = false { didSet { preferences.set(shortcutConfigured, forKey: "shortcutConfigured") } }
@@ -236,7 +237,7 @@ final class AppShellModel {
         beginContactEdit()
     }
 
-    func prepare() async {
+    func prepare(captchaToken: String? = nil) async {
         apply(await lifecycle.locationAuthorization())
         if preferences.bool(forKey: "serverDeletionConfirmed") ||
             preferences.string(forKey: "deletionReceiptToken") != nil {
@@ -247,11 +248,20 @@ final class AppShellModel {
         guard backendConfigured else { return }
         do {
             if !identityReady {
-                try await lifecycle.prepare()
+                try await lifecycle.prepare(captchaToken)
                 identityReady = true
+                needsIdentityVerification = false
+                accountMessage = nil
             }
             if displayName.isEmpty { displayName = try await lifecycle.profile(nil) }
             applyContact(try await lifecycle.getContact())
+        } catch SessionError.verificationRequired {
+            needsIdentityVerification = true
+            accountMessage = hasEnteredDashboard
+                ? "Your saved account credentials are missing. Contact support before creating another account. Earlier alerts cannot be recovered through a new identity."
+                : "Complete verification to protect your new account from automated signups."
+        } catch is KeychainError {
+            accountMessage = "Your saved identity is unavailable. Unlock the device and retry. Your account has not been replaced."
         } catch {
             accountMessage = "SignalWord could not create a protected device identity. Check the connection and try again."
         }

@@ -25,7 +25,7 @@ enum AppCompositionRoot {
     static func makeLifecycleActions() -> AppShellModel.LifecycleActions {
         guard let api = lifecycleAPI else { return .unconfigured }
         return AppShellModel.LifecycleActions(
-            prepare: { try await api.prepareIdentity() },
+            prepare: { token in try await api.prepareIdentity(captchaToken: token) },
             profile: { name in try await api.profile(displayName: name).displayName },
             recover: { allowDelayed in try await recover(api: api, allowDelayed: allowDelayed) },
             saveContact: { name, email in try await api.saveContact(name: name, email: email) },

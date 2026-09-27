@@ -16,7 +16,7 @@ enum UITestComposition {
         return AppShellModel(backendConfigured: true, trigger: { kind, _ in
             await service.trigger(kind)
         }, lifecycle: .init(
-            prepare: {}, profile: { name in await service.profile(name) },
+            prepare: { _ in }, profile: { name in await service.profile(name) },
             recover: { _ in await service.recover() },
             saveContact: { name, _ in await service.saveContact(name) },
             getContact: { await service.contact() },

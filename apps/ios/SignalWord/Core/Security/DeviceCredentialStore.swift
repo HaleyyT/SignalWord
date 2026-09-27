@@ -11,11 +11,11 @@ enum DeviceCredentialStore {
         let expiresAt: Date
     }
 
-    static func loadBearerToken() -> String? {
-        loadSession()?.accessToken
+    static func loadBearerToken() throws -> String? {
+        try loadSession()?.accessToken
     }
 
-    static func loadSession() -> Session? {
+    static func loadSession() throws -> Session? {
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
@@ -25,11 +25,14 @@ enum DeviceCredentialStore {
         ]
 
         var result: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data else {
-            return nil
-        }
-        return try? JSONDecoder().decode(Session.self, from: data)
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        // A locked/unavailable Keychain is not a new installation. Never replace
+        // an existing identity just because its credentials cannot be read now.
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess else { throw KeychainError.unexpectedStatus(status) }
+        guard let data = result as? Data else { throw KeychainError.invalidSession }
+        do { return try JSONDecoder().decode(Session.self, from: data) }
+        catch { throw KeychainError.invalidSession }
     }
 
     static func saveSession(_ session: Session) throws {
@@ -71,5 +74,6 @@ enum DeviceCredentialStore {
 }
 
 enum KeychainError: Error {
+    case invalidSession
     case unexpectedStatus(OSStatus)
 }
