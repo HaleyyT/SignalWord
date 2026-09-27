@@ -1,11 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { operationalProblems, checkOperations } from '../scripts/check-operations.mjs';
+import { operationalProblems, checkOperations, reportHeartbeat } from '../scripts/check-operations.mjs';
 const healthy = () => ({ dispatchConfigured: true,
+  dispatchHTTP: { lastCompletedAt: new Date().toISOString(), lastStatus: 200, timedOut: false, overdue: 0 },
+  abuse: { signupsLastHour: 0, invitationsLastHour: 0 },
   delivery: { queued: 0, unknown: 0, oldestQueuedSeconds: 0, expiredLeases: 0 },
   contactDelivery: { queued: 0, unknown: 0, oldestQueuedSeconds: 0, expiredLeases: 0 },
   schedules: ['signalword-dispatch-sweep','signalword-delivery-lease-recovery','signalword-hourly-retention']
     .map(name => ({ name, active: true, lastSuccessAt: new Date().toISOString() })),
+});
+test('cron SQL success cannot hide an HTTP failure or signup abuse', () => {
+  const health = healthy();
+  health.dispatchHTTP.lastStatus = 500;
+  health.abuse.signupsLastHour = 101;
+  assert.deepEqual(operationalProblems(health), ['DISPATCH_HTTP_UNHEALTHY', 'SIGNUP_VOLUME_HIGH']);
+});
+test('external heartbeat reports failure without including private diagnostics', async () => {
+  let path;
+  const ok = await reportHeartbeat('https://hc-ping.com/00000000-0000-4000-8000-000000000001', false, async (url, init) => {
+    path = url.pathname; assert.equal(init.body, undefined); assert.equal(init.redirect, 'error');
+    return new Response('OK');
+  });
+  assert.equal(ok, true); assert.ok(path.endsWith('/fail'));
+  assert.equal(await reportHeartbeat('https://hc-ping.com/00000000-0000-4000-8000-000000000001', true, async () => new Response('OK (not found)')), false);
 });
 test('operational readiness fails closed for missing configuration, invalid metrics, and stopped schedules', () => {
   assert.deepEqual(operationalProblems(healthy()), []);
