@@ -21,7 +21,7 @@ export function createDeliveryOutbox(configuration: { url: string; serviceRoleKe
   return {
     async claim(workerId, limit) {
       const response = await fetch(`${baseUrl}/rest/v1/rpc/claim_alert_deliveries`, {
-        method: "POST",
+        method: "POST", signal: AbortSignal.timeout(5000),
         headers,
         body: JSON.stringify({ p_worker_id: workerId, p_limit: limit }),
       });
@@ -41,6 +41,7 @@ export function createDeliveryOutbox(configuration: { url: string; serviceRoleKe
         return {
           deliveryId: row.delivery_id,
           eventId: row.event_id,
+          ...(typeof row.sender_name === "string" ? { senderName: row.sender_name.slice(0, 80) } : {}),
           kind: row.kind,
           messageType: row.message_type,
           provider: row.provider,
@@ -56,7 +57,7 @@ export function createDeliveryOutbox(configuration: { url: string; serviceRoleKe
 
     async finish(deliveryId, workerId, result) {
       const response = await fetch(`${baseUrl}/rest/v1/rpc/finish_alert_delivery`, {
-        method: "POST",
+        method: "POST", signal: AbortSignal.timeout(5000),
         headers,
         body: JSON.stringify({
           p_delivery_id: deliveryId,
@@ -80,7 +81,7 @@ export function createContactVerificationOutbox(
   return {
     async claim(workerId, limit) {
       const response = await fetch(`${baseUrl}/rest/v1/rpc/claim_contact_verification_deliveries`, {
-        method: "POST",
+        method: "POST", signal: AbortSignal.timeout(5000),
         headers,
         body: JSON.stringify({ p_worker_id: workerId, p_limit: limit }),
       });
@@ -110,7 +111,7 @@ export function createContactVerificationOutbox(
     },
     async finish(deliveryId, workerId, result) {
       const response = await fetch(`${baseUrl}/rest/v1/rpc/finish_contact_verification_delivery`, {
-        method: "POST",
+        method: "POST", signal: AbortSignal.timeout(5000),
         headers,
         body: JSON.stringify({
           p_delivery_id: deliveryId,

@@ -26,6 +26,15 @@ export function createContactConfirmHandler(dependencies: {
       const match = /\/v1\/contacts\/confirm\/([^/]+)$/.exec(new URL(request.url).pathname.replace(/\/+$/, ""));
       if (!match) throw new ApiError(404, "NOT_FOUND", "This confirmation link is unavailable.");
       const token = parseViewerToken(match[1]);
+      if (request.headers.get("X-SignalWord-Action") === "withdraw") {
+        const withdrawn = await dependencies.lifecycle.withdrawContact(await sha256Hex(token));
+        if (!withdrawn) throw new ApiError(410, "LINK_UNAVAILABLE", "This contact link is unavailable.");
+        status = 200;
+        return jsonResponse({ withdrawn: true }, status, { ...HEADERS, "X-Request-ID": id });
+      }
+      if (request.headers.has("X-SignalWord-Action")) {
+        throw new ApiError(400, "INVALID_REQUEST", "Invalid contact action.");
+      }
       const confirmed = await dependencies.lifecycle.confirmContact(await sha256Hex(token));
       if (!confirmed) throw new ApiError(410, "LINK_UNAVAILABLE", "This confirmation link is unavailable.");
       status = 200;

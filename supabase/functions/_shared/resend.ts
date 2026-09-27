@@ -56,24 +56,27 @@ export function renderAlertEmail(delivery: ProviderDelivery, viewerUrl: string):
   text: string;
   html: string;
 } {
+  const sender = delivery.senderName?.trim().replace(/[\r\n]/g, " ").slice(0, 80) || "Your trusted person";
+  const identityText = `${sender} sent this SignalWord message.\n\n`;
+  const identityHTML = `<p>${escapeHtml(sender)} sent this SignalWord message.</p>`;
   if (delivery.messageType === "resolved") {
     return {
       subject: "SignalWord alert resolved",
-      text: `The SignalWord alert has been marked resolved. Review the current status: ${viewerUrl}\n\nSignalWord does not contact emergency services or guarantee delivery or rescue.`,
-      html: `<p>The SignalWord alert has been marked resolved.</p><p><a href="${escapeHtml(viewerUrl)}">Review the current status</a></p><p>SignalWord does not contact emergency services or guarantee delivery or rescue.</p>`,
+      text: `${identityText}The SignalWord alert has been marked resolved. Review the current status: ${viewerUrl}\n\nSignalWord does not contact emergency services or guarantee delivery or rescue.`,
+      html: `${identityHTML}<p>The SignalWord alert has been marked resolved.</p><p><a href="${escapeHtml(viewerUrl)}">Review the current status</a></p><p>SignalWord does not contact emergency services or guarantee delivery or rescue.</p>`,
     };
   }
   if (delivery.kind === "test") {
     return {
       subject: "TEST — NO EMERGENCY: SignalWord rehearsal",
-      text: `TEST — NO EMERGENCY HAS BEEN REPORTED.\n\nThis is a SignalWord rehearsal message. Review the test status: ${viewerUrl}\n\nDo not contact emergency services because of this test message.`,
-      html: `<h1>TEST — NO EMERGENCY</h1><p>This is a SignalWord rehearsal message.</p><p><a href="${escapeHtml(viewerUrl)}">Review the test status</a></p><p>Do not contact emergency services because of this test message.</p>`,
+      text: `${identityText}TEST — NO EMERGENCY HAS BEEN REPORTED.\n\nThis is a SignalWord rehearsal message. Review the test status: ${viewerUrl}\n\nDo not contact emergency services because of this test message.`,
+      html: `${identityHTML}<h1>TEST — NO EMERGENCY</h1><p>This is a SignalWord rehearsal message.</p><p><a href="${escapeHtml(viewerUrl)}">Review the test status</a></p><p>Do not contact emergency services because of this test message.</p>`,
     };
   }
   return {
     subject: "SignalWord safety alert",
-    text: `A trusted contact started a SignalWord safety alert. Review the latest available status and location: ${viewerUrl}\n\nContact the person directly. If you believe there is immediate danger, call the appropriate local emergency number. SignalWord does not contact emergency services or guarantee delivery or rescue.`,
-    html: `<p>A trusted contact started a SignalWord safety alert.</p><p><a href="${escapeHtml(viewerUrl)}">Review the latest available status and location</a></p><p>Contact the person directly. If you believe there is immediate danger, call the appropriate local emergency number.</p><p>SignalWord does not contact emergency services or guarantee delivery or rescue.</p>`,
+    text: `${identityText}A trusted contact started a SignalWord safety alert. Review the latest available status and location: ${viewerUrl}\n\nContact the person directly. If you believe there is immediate danger, call the appropriate local emergency number. SignalWord does not contact emergency services or guarantee delivery or rescue.`,
+    html: `${identityHTML}<p>A trusted contact started a SignalWord safety alert.</p><p><a href="${escapeHtml(viewerUrl)}">Review the latest available status and location</a></p><p>Contact the person directly. If you believe there is immediate danger, call the appropriate local emergency number.</p><p>SignalWord does not contact emergency services or guarantee delivery or rescue.</p>`,
   };
 }
 
@@ -82,8 +85,8 @@ export function renderContactVerificationEmail(confirmationUrl: string): {
 } {
   return {
     subject: "Confirm your SignalWord trusted-contact role",
-    text: `Someone added this address as their SignalWord trusted contact. Confirm only if you recognise and accept this responsibility: ${confirmationUrl}\n\nThe link expires in 30 minutes and can be used once. SignalWord does not contact emergency services or guarantee delivery or rescue.`,
-    html: `<p>Someone added this address as their SignalWord trusted contact.</p><p><a href="${escapeHtml(confirmationUrl)}">Confirm trusted-contact role</a></p><p>Confirm only if you recognise and accept this responsibility. The link expires in 30 minutes and can be used once.</p><p>SignalWord does not contact emergency services or guarantee delivery or rescue.</p>`,
+    text: `Someone added this address as their SignalWord trusted contact. Confirm only if you recognise and accept this responsibility: ${confirmationUrl}\n\nConfirmation expires in 30 minutes. After confirming, keep this link to withdraw consent at any time. Withdrawal stops future and unclaimed sends, but cannot retract a message already submitted to the email provider. SignalWord does not contact emergency services or guarantee delivery or rescue.`,
+    html: `<p>Someone added this address as their SignalWord trusted contact.</p><p><a href="${escapeHtml(confirmationUrl)}">Confirm trusted-contact role or later withdraw consent</a></p><p>Confirm only if you recognise and accept this responsibility. Confirmation expires in 30 minutes. After confirming, keep this link to withdraw consent at any time. Withdrawal stops future and unclaimed sends, but cannot retract a message already submitted to the email provider.</p><p>SignalWord does not contact emergency services or guarantee delivery or rescue.</p>`,
   };
 }
 
@@ -155,16 +158,22 @@ export class ResendDeliveryAdapter implements DeliveryProviderAdapter, ContactVe
     if (!IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
       throw new DeliveryAttemptError("INVALID_PROVIDER_IDEMPOTENCY_KEY", false);
     }
+    // A signed callback can identify this attempt even if the send response is lost.
+    // Hash the stable key so tags contain no recipient, viewer capability, or account ID.
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(idempotencyKey));
+    const correlation = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
     let response: Response;
     try {
       response = await this.#fetch("https://api.resend.com/emails", {
         method: "POST",
+        signal: AbortSignal.timeout(5000),
         headers: {
           Authorization: `Bearer ${this.#configuration.apiKey}`,
           "Content-Type": "application/json",
           "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify({
+          tags: [{ name: "signalword_delivery", value: correlation }],
           from: this.#configuration.from,
           to: [recipient],
           subject: message.subject,
@@ -173,7 +182,8 @@ export class ResendDeliveryAdapter implements DeliveryProviderAdapter, ContactVe
         }),
       });
     } catch {
-      throw new DeliveryAttemptError("PROVIDER_NETWORK_ERROR", true);
+      // The request may have reached Resend even when its response was lost.
+      throw new DeliveryAttemptError("OUTCOME_UNKNOWN", false);
     }
     if (!response.ok) {
       const providerError = await response.json().catch(() => null) as { name?: unknown; code?: unknown } | null;
@@ -183,14 +193,14 @@ export class ResendDeliveryAdapter implements DeliveryProviderAdapter, ContactVe
         (response.status === 409 && ["concurrent_idempotent_requests", "resource_locked"].includes(providerCode));
       throw new DeliveryAttemptError(
         retryable
-          ? "PROVIDER_TEMPORARILY_UNAVAILABLE"
+          ? "OUTCOME_UNKNOWN"
           : "PROVIDER_REQUEST_REJECTED",
-        retryable,
+        false,
       );
     }
     const payload = await response.json().catch(() => null) as { id?: unknown } | null;
     if (!payload || typeof payload.id !== "string" || payload.id.length < 1 || payload.id.length > 200) {
-      throw new DeliveryAttemptError("INVALID_PROVIDER_RESPONSE", true);
+      throw new DeliveryAttemptError("OUTCOME_UNKNOWN", false);
     }
     return { providerMessageId: payload.id };
   }

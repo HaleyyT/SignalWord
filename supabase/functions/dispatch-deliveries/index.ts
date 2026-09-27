@@ -90,20 +90,29 @@ if (import.meta.main) {
   Deno.serve(createDispatchHandler({
     dispatchSecret,
     async run(workerId) {
-      const alerts = await runDeliveryWorker({
+      let alerts = { claimed: 0, sent: 0, failed: 0, leaseLost: 0 };
+      let confirmations = { claimed: 0, sent: 0, failed: 0, leaseLost: 0 };
+      const deadline = Date.now() + 20_000;
+      for (let iteration = 0; iteration < 10 && Date.now() < deadline; iteration++) {
+      const alertBatch = await runDeliveryWorker({
         workerId,
         outbox: createDeliveryOutbox(database),
         cipher: payloadCipher,
         destinationCipher: { decryptEmail: contactCipher.decryptDestination },
         adapter,
       });
-      const confirmations = await runContactVerificationWorker({
+      const contactBatch = await runContactVerificationWorker({
         workerId,
         outbox: createContactVerificationOutbox(database),
         confirmationCipher: { decryptToken: contactCipher.decryptConfirmationToken },
         destinationCipher: { decryptEmail: contactCipher.decryptDestination },
         adapter,
       });
+      for (const key of ["claimed", "sent", "failed", "leaseLost"] as const) {
+        alerts[key] += alertBatch[key]; confirmations[key] += contactBatch[key];
+      }
+      if (alertBatch.claimed + contactBatch.claimed === 0) break;
+      }
       return { alerts, confirmations };
     },
   }));

@@ -1,4 +1,6 @@
 export type ErrorCode =
+  | "EVENT_NOT_ACTIVE"
+  | "LINK_UNAVAILABLE"
   | "AUTH_REQUIRED"
   | "CONTACT_NOT_CONFIRMED"
   | "INVALID_REQUEST"
@@ -34,16 +36,14 @@ const JSON_HEADERS = {
 } as const;
 
 export function jsonResponse(body: unknown, status = 200, headers: HeadersInit = {}): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...JSON_HEADERS, ...headers },
-  });
+  const merged = new Headers(JSON_HEADERS);
+  new Headers(headers).forEach((value, key) => merged.set(key, value));
+  return new Response(JSON.stringify(body), { status, headers: merged });
 }
 
 export function errorResponse(error: ApiError, requestId: string, headers: HeadersInit = {}): Response {
-  const retryHeaders = error.retryAfterSeconds === undefined
-    ? {}
-    : { "Retry-After": String(error.retryAfterSeconds) };
+  const retryHeaders = new Headers(headers);
+  if (error.retryAfterSeconds !== undefined) retryHeaders.set("Retry-After", String(error.retryAfterSeconds));
   return jsonResponse({
     error: {
       code: error.code,
@@ -51,7 +51,7 @@ export function errorResponse(error: ApiError, requestId: string, headers: Heade
       retryable: error.retryable,
       requestId,
     },
-  }, error.status, { ...headers, ...retryHeaders });
+  }, error.status, retryHeaders);
 }
 
 export function requestId(request: Request): string {

@@ -74,7 +74,7 @@ test('Resend adapter sends an idempotent request without leaking credentials int
   assert.equal(captured.init.body.includes(resendConfiguration().apiKey), false);
 });
 
-test('Resend adapter classifies retryable and terminal provider errors', async () => {
+test('Resend adapter quarantines uncertain outcomes and distinguishes explicit rejection', async () => {
   const temporary = new ResendDeliveryAdapter(resendConfiguration(), async () => new Response(null, { status: 503 }));
   const terminal = new ResendDeliveryAdapter(resendConfiguration(), async () => new Response(null, { status: 422 }));
   const concurrent = new ResendDeliveryAdapter(resendConfiguration(), async () =>
@@ -83,10 +83,17 @@ test('Resend adapter classifies retryable and terminal provider errors', async (
     Response.json({ name: 'invalid_idempotent_request' }, { status: 409 }));
   const delivery = { eventId: EVENT_ID, kind: 'real', messageType: 'initial', recipient: 'trusted@example.com',
     viewerToken: TOKEN, idempotencyKey: `alert/${EVENT_ID}/initial` };
-  await assert.rejects(temporary.send(delivery), (error) => error instanceof DeliveryAttemptError && error.retryable);
+  await assert.rejects(temporary.send(delivery), (error) => error instanceof DeliveryAttemptError && error.safeCode === 'OUTCOME_UNKNOWN' && !error.retryable);
   await assert.rejects(terminal.send(delivery), (error) => error instanceof DeliveryAttemptError && !error.retryable);
-  await assert.rejects(concurrent.send(delivery), (error) => error instanceof DeliveryAttemptError && error.retryable);
+  await assert.rejects(concurrent.send(delivery), (error) => error instanceof DeliveryAttemptError && error.safeCode === 'OUTCOME_UNKNOWN' && !error.retryable);
   await assert.rejects(conflicting.send(delivery), (error) => error instanceof DeliveryAttemptError && !error.retryable);
+  for (const failingFetch of [
+    async () => { throw new Error('response lost'); },
+    async () => Response.json({}),
+  ]) {
+    const ambiguous = new ResendDeliveryAdapter(resendConfiguration(), failingFetch);
+    await assert.rejects(ambiguous.send(delivery), (error) => error instanceof DeliveryAttemptError && error.safeCode === 'OUTCOME_UNKNOWN' && !error.retryable);
+  }
 });
 
 test('contact encryption round-trips without storing plaintext destination or token', async () => {
@@ -173,4 +180,30 @@ test('webhook verifies the raw body before parsing and accepts replay-safe valid
   assert.deepEqual(applied[0], {
     providerEventId: 'msg_webhook_1', providerMessageId: 'provider-message-1', eventType: 'delivered',
   });
+});
+
+test('provider correlation contains only the hash of the stable send key', async () => {
+  let sent;
+  const adapter = new ResendDeliveryAdapter(resendConfiguration(), async (_, init) => {
+    sent = JSON.parse(init.body);
+    return Response.json({ id: 'correlated-message' });
+  });
+  const idempotencyKey = `alert/${EVENT_ID}/initial`;
+  await adapter.send({ eventId: EVENT_ID, kind: 'test', messageType: 'initial',
+    recipient: 'trusted@example.test', viewerToken: TOKEN, idempotencyKey });
+  const digest = Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(idempotencyKey))).toString('hex');
+  assert.deepEqual(sent.tags, [{ name: 'signalword_delivery', value: digest }]);
+});
+
+test('signed correlation reaches reconciliation; storage failures request retry', async () => {
+  const secret = `whsec_${Buffer.alloc(32, 7).toString('base64')}`;
+  const payload = { type: 'email.delivered', data: { email_id: 'correlated-message', tags: { signalword_delivery: 'a'.repeat(64) } } };
+  let received;
+  const handler = createResendWebhookHandler({ webhookSecret: secret, apply: async (event) => { received = event; throw new Error('database unavailable'); } });
+  const response = await handler(await signedWebhookRequest(JSON.stringify(payload), Buffer.alloc(32, 7)));
+  assert.equal(response.status, 503);
+  assert.equal(received.deliveryCorrelation, 'a'.repeat(64));
+  const invalid = createResendWebhookHandler({ webhookSecret: secret, apply: async () => { assert.fail('invalid tag must not reach storage'); } });
+  payload.data.tags.signalword_delivery = 'invalid';
+  assert.equal((await invalid(await signedWebhookRequest(JSON.stringify(payload), Buffer.alloc(32, 7)))).status, 400);
 });

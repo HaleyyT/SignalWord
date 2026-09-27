@@ -14,11 +14,16 @@ export interface AlertStatusProjection {
   state: "pending" | "active" | "resolved" | "expired";
   triggeredAt: string;
   resolvedAt?: string;
-  delivery: "queued" | "sent" | "delivered" | "failed";
+  delivery: "queued" | "sent" | "delivered" | "failed" | "unknown";
+  acknowledgedAt?: string;
+  resolutionDelivery?: "queued" | "sent" | "delivered" | "failed" | "unknown";
   latestLocationAt?: string;
 }
 
 export interface LifecycleGateway {
+  profile(userId: string, jwt: string, displayName?: string): Promise<unknown>;
+  recover(userId: string, jwt: string, key?: string): Promise<unknown>;
+  details(userId: string, eventId: string, jwt: string): Promise<unknown>;
   saveContact(input: {
     userId: string;
     name: string;
@@ -35,8 +40,9 @@ export interface LifecycleGateway {
   appendLocation(userId: string, eventId: string, location: unknown, jwt: string): Promise<{ accepted: boolean; receivedAt: string }>;
   getAlertStatus(userId: string, eventId: string, jwt: string): Promise<AlertStatusProjection | null>;
   resolveAlert(userId: string, eventId: string, jwt: string): Promise<{ eventId: string; state: "resolved"; resolvedAt: string }>;
-  deleteData(userId: string, jwt: string): Promise<{ deletionId: string }>;
+  deleteData(userId: string, jwt: string, receiptHashHex: string): Promise<{ deletionId: string }>;
   confirmContact(tokenHashHex: string): Promise<boolean>;
+  withdrawContact(tokenHashHex: string): Promise<boolean>;
 }
 
 type Row = Record<string, unknown>;
@@ -66,7 +72,7 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
     let response: Response;
     try {
       response = await fetch(`${baseUrl}/rest/v1/rpc/${name}`, {
-        method: "POST", headers: headers(authorization), body: JSON.stringify(body),
+        method: "POST", signal: AbortSignal.timeout(5000), headers: headers(authorization), body: JSON.stringify(body),
       });
     } catch {
       throw new ApiError(503, "SERVICE_UNAVAILABLE", `${message} is temporarily unavailable.`, true);
@@ -87,6 +93,15 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
   };
 
   return {
+    async profile(userId, jwt, displayName) {
+      return await rpc("signalword_profile", {p_user_id: userId, p_display_name: displayName ?? null}, `Bearer ${jwt}`, "Profile");
+    },
+    async recover(userId, jwt, key) {
+      return await rpc("recover_alerts", {p_user_id: userId, p_idempotency_key: key ?? null}, `Bearer ${jwt}`, "Recovery");
+    },
+    async details(userId, eventId, jwt) {
+      return await rpc("alert_details", {p_user_id: userId, p_event_id: eventId}, `Bearer ${jwt}`, "Alert status");
+    },
     async saveContact(input, jwt) {
       const rows = await rpc("create_or_replace_contact", {
         p_user_id: input.userId,
@@ -146,13 +161,16 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
       }
       return { eventId: row.event_id, state: "resolved", resolvedAt: row.event_resolved_at };
     },
-    async deleteData(userId, jwt) {
-      const deletionId = await rpc("delete_my_account", { p_user_id: userId }, `Bearer ${jwt}`, "Data deletion");
+    async deleteData(userId, jwt, receiptHashHex) {
+      const deletionId = await rpc("delete_my_account", { p_user_id: userId, p_receipt_hash: `\\x${receiptHashHex}` }, `Bearer ${jwt}`, "Data deletion");
       if (typeof deletionId !== "string") throw new ApiError(503, "SERVICE_UNAVAILABLE", "Data deletion returned an invalid result.", true);
       return { deletionId };
     },
     async confirmContact(tokenHashHex) {
       return await rpc("confirm_contact", { p_token_hash: `\\x${tokenHashHex}` }, `Bearer ${configuration.anonKey}`, "Contact confirmation") === true;
+    },
+    async withdrawContact(tokenHashHex) {
+      return await rpc("withdraw_contact", { p_token_hash: `\\x${tokenHashHex}` }, `Bearer ${configuration.anonKey}`, "Contact withdrawal") === true;
     },
   };
 }
