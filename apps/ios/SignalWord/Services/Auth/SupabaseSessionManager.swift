@@ -11,7 +11,11 @@ enum SessionError: RetryClassifiableError {
 actor SupabaseSessionManager {
     private let supabaseURL: URL
     private let publishableKey: String
-    private let session: URLSession
+    private let send: @Sendable (URLRequest) async throws -> (Data, URLResponse)
+    private let load: @Sendable () throws -> DeviceCredentialStore.Session?
+    private let save: @Sendable (DeviceCredentialStore.Session) throws -> Void
+    private let clear: @Sendable () throws -> Void
+    private var generation = 0
     private let now: @Sendable () -> Date
     private var tokenTask: Task<DeviceCredentialStore.Session, Error>?
 
@@ -19,43 +23,59 @@ actor SupabaseSessionManager {
         supabaseURL: URL,
         publishableKey: String,
         session: URLSession = SupabaseSessionManager.makeSession(),
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        load: @escaping @Sendable () throws -> DeviceCredentialStore.Session? = { try DeviceCredentialStore.loadSession() },
+        save: @escaping @Sendable (DeviceCredentialStore.Session) throws -> Void = { try DeviceCredentialStore.saveSession($0) },
+        clear: @escaping @Sendable () throws -> Void = { try DeviceCredentialStore.clear() },
+        transport: (@Sendable (URLRequest) async throws -> (Data, URLResponse))? = nil
     ) {
         self.supabaseURL = supabaseURL
         self.publishableKey = publishableKey
-        self.session = session
+        self.send = transport ?? { try await session.data(for: $0) }
+        self.load = load
+        self.save = save
+        self.clear = clear
         self.now = now
     }
 
     func accessToken(createIfMissing: Bool, forceRefresh: Bool = false, captchaToken: String? = nil) async throws -> String {
         if let tokenTask { return try await tokenTask.value.accessToken }
-        if let stored = try DeviceCredentialStore.loadSession() {
+        if let stored = try load() {
             if !forceRefresh && stored.expiresAt.timeIntervalSince(now()) > 120 {
                 return stored.accessToken
             }
-            let task = Task { try await self.refresh(stored) }
+            let requestGeneration = generation
+            let task = Task { try await self.refresh(stored, generation: requestGeneration) }
             tokenTask = task
-            defer { tokenTask = nil }
+            defer { if generation == requestGeneration { tokenTask = nil } }
             return try await task.value.accessToken
         }
         guard createIfMissing else { throw SessionError.unavailable }
         guard let captchaToken, SignupVerification.validToken(captchaToken) else { throw SessionError.verificationRequired }
-        let task = Task { try await self.signInAnonymously(captchaToken: captchaToken) }
+        let requestGeneration = generation
+        let task = Task { try await self.signInAnonymously(captchaToken: captchaToken, generation: requestGeneration) }
         tokenTask = task
-        defer { tokenTask = nil }
+        defer { if generation == requestGeneration { tokenTask = nil } }
         return try await task.value.accessToken
     }
 
-    func deleteLocalSession() throws { try DeviceCredentialStore.clear() }
+    func deleteLocalSession() throws {
+        // Invalidate outstanding responses even if their transport ignores cancellation.
+        // Otherwise a late refresh/signup could recreate credentials after deletion.
+        generation += 1
+        tokenTask?.cancel()
+        tokenTask = nil
+        try clear()
+    }
 
-    private func signInAnonymously(captchaToken: String) async throws -> DeviceCredentialStore.Session {
+    private func signInAnonymously(captchaToken: String, generation: Int) async throws -> DeviceCredentialStore.Session {
         var request = request(path: "/auth/v1/signup")
         request.httpMethod = "POST"
         request.httpBody = try SignupVerification.requestBody(token: captchaToken)
-        return try await perform(request, fallbackRefreshToken: nil)
+        return try await perform(request, fallbackRefreshToken: nil, generation: generation)
     }
 
-    private func refresh(_ existing: DeviceCredentialStore.Session) async throws -> DeviceCredentialStore.Session {
+    private func refresh(_ existing: DeviceCredentialStore.Session, generation: Int) async throws -> DeviceCredentialStore.Session {
         var components = URLComponents(
             url: supabaseURL.appending(path: "/auth/v1/token"), resolvingAgainstBaseURL: false
         )
@@ -66,7 +86,7 @@ actor SupabaseSessionManager {
         request.setValue(publishableKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": existing.refreshToken])
-        return try await perform(request, fallbackRefreshToken: existing.refreshToken)
+        return try await perform(request, fallbackRefreshToken: existing.refreshToken, generation: generation)
     }
 
     private func request(path: String) -> URLRequest {
@@ -78,16 +98,19 @@ actor SupabaseSessionManager {
 
     private func perform(
         _ request: URLRequest,
-        fallbackRefreshToken: String?
+        fallbackRefreshToken: String?,
+        generation requestGeneration: Int
     ) async throws -> DeviceCredentialStore.Session {
         let data: Data
         let response: URLResponse
-        do { (data, response) = try await session.data(for: request) }
+        do { (data, response) = try await send(request) }
         catch { throw SessionError.unavailable }
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw SessionError.unavailable
         }
-        let decoded = try JSONDecoder().decode(AuthResponse.self, from: data)
+        let decoded: AuthResponse
+        do { decoded = try JSONDecoder().decode(AuthResponse.self, from: data) }
+        catch { throw SessionError.invalidResponse }
         let refreshToken = decoded.refreshToken ?? fallbackRefreshToken
         guard !decoded.accessToken.isEmpty, let refreshToken, !refreshToken.isEmpty,
               decoded.expiresIn > 0 else { throw SessionError.invalidResponse }
@@ -96,7 +119,8 @@ actor SupabaseSessionManager {
             refreshToken: refreshToken,
             expiresAt: now().addingTimeInterval(TimeInterval(decoded.expiresIn))
         )
-        try DeviceCredentialStore.saveSession(stored)
+        guard generation == requestGeneration, !Task.isCancelled else { throw CancellationError() }
+        try save(stored)
         return stored
     }
 
