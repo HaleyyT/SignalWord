@@ -41,3 +41,17 @@ test('confirmation proxy maps expired and provider failures to safe states', asy
   assert.equal(failed.status, 503);
   assert.deepEqual(failed.body, { confirmed: false, retryable: true });
 });
+
+test('withdrawal proxy sends the action header and returns only the withdrawal result', async () => {
+  let action;
+  const result = await proxyContactConfirmation({
+    token: TOKEN, action: 'withdraw', upstreamOrigin: 'https://api.example.test/contact-confirm',
+    fetchImpl: async (_url, init) => {
+      action = init.headers['X-SignalWord-Action'];
+      return Response.json({ withdrawn: true, privateField: 'omit' });
+    },
+  });
+  assert.equal(action, 'withdraw');
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body, { withdrawn: true });
+});

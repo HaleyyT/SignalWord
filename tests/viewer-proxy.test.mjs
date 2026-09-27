@@ -1,9 +1,55 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
-import { proxyPublicEvent } from '../apps/viewer/api/v1/public/events/[token].mjs';
+import handler, { proxyPublicEvent } from '../apps/viewer/api/v1/public/events/[token].mjs';
 
 const TOKEN = 'v'.repeat(43);
+
+for (const method of ['GET', 'POST']) {
+  test(`hosted public URL routes ${method} to the event function`, async () => {
+    const config = JSON.parse(readFileSync(new URL('../apps/viewer/vercel.json', import.meta.url)));
+    const rewrite = config.rewrites.find(({ source }) => source === '/v1/public/events/:token');
+    assert.deepEqual(rewrite, {
+      source: '/v1/public/events/:token',
+      destination: '/api/v1/public/events/:token',
+    });
+    assert.equal(rewrite.destination.replace(':token', TOKEN), `/api/v1/public/events/${TOKEN}`);
+
+    const originalFetch = globalThis.fetch;
+    const originalOrigin = process.env.SIGNALWORD_PUBLIC_EVENT_ORIGIN;
+    const upstreamCalls = [];
+    globalThis.fetch = async (url, options) => {
+      upstreamCalls.push({ url, options });
+      return Response.json(method === 'GET' ? { kind: 'test' } : { acknowledged: true });
+    };
+    process.env.SIGNALWORD_PUBLIC_EVENT_ORIGIN = 'https://project.supabase.co/functions/v1/public-event';
+    const headers = {};
+    const response = {
+      setHeader(name, value) { headers[name] = value; return this; },
+      status(code) { this.statusCode = code; return this; },
+      json(body) { this.body = body; return this; },
+    };
+    try {
+      await handler({
+        method,
+        query: { token: TOKEN },
+        headers: method === 'POST' ? { 'x-signalword-action': 'acknowledge' } : {},
+      }, response);
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.body, method === 'GET' ? { kind: 'test' } : { acknowledged: true });
+      assert.equal(upstreamCalls.length, 1);
+      assert.equal(upstreamCalls[0].url, `https://project.supabase.co/functions/v1/public-event/v1/public/events/${TOKEN}`);
+      assert.equal(upstreamCalls[0].options.method, method);
+      assert.equal(upstreamCalls[0].options.headers['X-SignalWord-Action'], method === 'POST' ? 'acknowledge' : undefined);
+      assert.equal(headers['Cache-Control'], 'no-store');
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalOrigin === undefined) delete process.env.SIGNALWORD_PUBLIC_EVENT_ORIGIN;
+      else process.env.SIGNALWORD_PUBLIC_EVENT_ORIGIN = originalOrigin;
+    }
+  });
+}
 
 test('same-origin viewer proxy forwards only the opaque token to the configured public function', async () => {
   let requestUrl;

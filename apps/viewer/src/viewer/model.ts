@@ -16,6 +16,9 @@ export interface PublicEvent {
   state: EventState
   triggeredAt: string
   lastUpdatedAt: string
+  acknowledgedAt?: string
+  serverNow?: string
+  clientTriggeredAt?: string
   location?: PublicLocation
   guidance: { summary: string }
 }
@@ -37,4 +40,12 @@ export function locationMapURL(location: PublicLocation): string {
   const latitude = location.latitude.toFixed(6)
   const longitude = location.longitude.toFixed(6)
   return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`
+}
+
+/** Never let a cached sample become fresher during an outage or a clock rollback. */
+export function agedFreshness(location: PublicLocation, elapsedSeconds: number): Freshness {
+  const floor = location.freshness === 'stale' ? 121 : location.freshness === 'recent' ? 31 : 0
+  if (location.freshness === 'unavailable') return 'unavailable'
+  const age = floor + Math.max(0, elapsedSeconds)
+  return age > 120 ? 'stale' : age > 30 ? 'recent' : 'live'
 }

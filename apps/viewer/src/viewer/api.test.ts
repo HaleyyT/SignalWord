@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import publicEventFixture from '../../../../contracts/v1/public-event.response.json'
 import {
   fetchPublicEvent,
   MAX_RETRY_AFTER_MS,
@@ -23,6 +24,10 @@ afterEach(() => {
 })
 
 describe('public viewer boundaries', () => {
+  it('decodes the shared public-event contract example', () => {
+    expect(parsePublicEvent(publicEventFixture)).toEqual(publicEventFixture)
+  })
+
   it('only accepts a 256-bit event token in the exact route shape', () => {
     expect(viewerTokenFromPath('/events/short')).toBeNull()
     expect(viewerTokenFromPath(`/events/${token}`)).toBe(token)

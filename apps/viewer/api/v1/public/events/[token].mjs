@@ -8,7 +8,7 @@ const securityHeaders = {
   'X-Content-Type-Options': 'nosniff',
 };
 
-export async function proxyPublicEvent({ token, upstreamOrigin, fetchImpl = fetch }) {
+export async function proxyPublicEvent({ token, upstreamOrigin, fetchImpl = fetch, method = 'GET' }) {
   if (!TOKEN_PATTERN.test(token)) {
     return { status: 404, headers: securityHeaders, body: { error: { code: 'NOT_FOUND', message: 'This alert is unavailable.', retryable: false } } };
   }
@@ -27,7 +27,7 @@ export async function proxyPublicEvent({ token, upstreamOrigin, fetchImpl = fetc
   try {
     const response = await fetchImpl(
       `${origin.toString().replace(/\/$/, '')}/v1/public/events/${encodeURIComponent(token)}`,
-      { headers: { Accept: 'application/json' }, redirect: 'error', signal: controller.signal },
+      { method, headers: { Accept: 'application/json', ...(method === 'POST' ? {'X-SignalWord-Action': 'acknowledge'} : {}) }, redirect: 'error', signal: controller.signal },
     );
     const declaredLength = Number(response.headers.get('Content-Length') ?? 0);
     if (declaredLength > MAX_RESPONSE_BYTES) throw new Error('UPSTREAM_RESPONSE_TOO_LARGE');
@@ -53,14 +53,18 @@ export async function proxyPublicEvent({ token, upstreamOrigin, fetchImpl = fetc
 }
 
 export default async function handler(request, response) {
-  if (request.method !== 'GET') {
-    response.status(405).setHeader('Allow', 'GET').json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed.', retryable: false } });
+  if (!['GET', 'POST'].includes(request.method)) {
+    response.status(405).setHeader('Allow', 'GET, POST').json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed.', retryable: false } });
     return;
+  }
+  if (request.method === 'POST' && request.headers['x-signalword-action'] !== 'acknowledge') {
+    response.status(400).json({ error: { code: 'INVALID_REQUEST' } }); return;
   }
   const token = Array.isArray(request.query.token) ? request.query.token[0] : request.query.token;
   const result = await proxyPublicEvent({
     token: typeof token === 'string' ? token : '',
     upstreamOrigin: process.env.SIGNALWORD_PUBLIC_EVENT_ORIGIN ?? '',
+    method: request.method,
   });
   for (const [name, value] of Object.entries(result.headers)) response.setHeader(name, value);
   response.status(result.status).json(result.body);
