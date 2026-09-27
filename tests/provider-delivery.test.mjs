@@ -182,6 +182,42 @@ test('webhook verifies the raw body before parsing and accepts replay-safe valid
   });
 });
 
+test('webhook rejects altered bodies and correctly signed stale or future requests before storage', async () => {
+  const secretBytes = Buffer.alloc(32, 9);
+  const handler = createResendWebhookHandler({
+    webhookSecret: `whsec_${secretBytes.toString('base64')}`,
+    apply: async () => { assert.fail('untrusted webhook must not reach storage'); },
+  });
+  const body = JSON.stringify({ type: 'email.delivered', data: { email_id: 'provider-message-1' } });
+  const signed = await signedWebhookRequest(body, secretBytes);
+  // A valid signature for one body must not authorize a different event.
+  const altered = new Request(signed.url, {
+    method: 'POST', headers: signed.headers, body: body.replace('delivered', 'failed'),
+  });
+  assert.equal((await handler(altered)).status, 401);
+  for (const offset of [-600, 600]) {
+    const timestamp = String(Math.floor(Date.now() / 1000) + offset);
+    assert.equal((await handler(await signedWebhookRequest(body, secretBytes, { timestamp }))).status, 401);
+  }
+});
+
+test('webhook cancels oversized streamed bodies without trusting Content-Length', async () => {
+  let cancelled = false;
+  const body = new ReadableStream({
+    pull(controller) { controller.enqueue(new Uint8Array(8192)); },
+    cancel() { cancelled = true; },
+  });
+  const handler = createResendWebhookHandler({
+    webhookSecret: `whsec_${Buffer.alloc(32, 9).toString('base64')}`,
+    apply: async () => { assert.fail('oversized webhook must not reach storage'); },
+  });
+  const request = new Request('https://api.example.test/resend-webhook', {
+    method: 'POST', body, duplex: 'half',
+  });
+  assert.equal((await handler(request)).status, 413);
+  assert.equal(cancelled, true);
+});
+
 test('provider correlation contains only the hash of the stable send key', async () => {
   let sent;
   const adapter = new ResendDeliveryAdapter(resendConfiguration(), async (_, init) => {

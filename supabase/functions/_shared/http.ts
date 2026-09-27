@@ -68,28 +68,30 @@ export function bearerToken(request: Request): string {
   return match[1];
 }
 
-export async function readJson(request: Request, maximumBytes = 16_384): Promise<unknown> {
-  const contentType = request.headers.get("Content-Type")?.split(";", 1)[0].trim().toLowerCase();
-  if (contentType !== "application/json") {
-    throw new ApiError(400, "INVALID_REQUEST", "Content-Type must be application/json.");
-  }
+/** Bound allocation while reading, even when a caller omits Content-Length. */
+export async function readBodyBytes(request: Request, maximumBytes: number): Promise<Uint8Array> {
   const declaredLength = Number(request.headers.get("Content-Length") ?? 0);
   if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
     throw new ApiError(400, "INVALID_REQUEST", "Request body is too large.");
   }
-  if (!request.body) throw new ApiError(400, "INVALID_REQUEST", "Request body must be valid JSON.");
+  if (!request.body) return new Uint8Array();
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let byteLength = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    byteLength += value.byteLength;
-    if (byteLength > maximumBytes) {
-      await reader.cancel();
-      throw new ApiError(400, "INVALID_REQUEST", "Request body is too large.");
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteLength += value.byteLength;
+      if (byteLength > maximumBytes) {
+        // Do not wait for an untrusted stream's cancellation to settle.
+        void reader.cancel().catch(() => {});
+        throw new ApiError(400, "INVALID_REQUEST", "Request body is too large.");
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } finally {
+    reader.releaseLock();
   }
   const bytes = new Uint8Array(byteLength);
   let offset = 0;
@@ -97,6 +99,15 @@ export async function readJson(request: Request, maximumBytes = 16_384): Promise
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  return bytes;
+}
+
+export async function readJson(request: Request, maximumBytes = 16_384): Promise<unknown> {
+  const contentType = request.headers.get("Content-Type")?.split(";", 1)[0].trim().toLowerCase();
+  if (contentType !== "application/json") {
+    throw new ApiError(400, "INVALID_REQUEST", "Content-Type must be application/json.");
+  }
+  const bytes = await readBodyBytes(request, maximumBytes);
   let text: string;
   try {
     text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
