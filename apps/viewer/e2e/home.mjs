@@ -16,7 +16,7 @@ try {
       page.on('pageerror', error => errors.push(error.message));
       page.on('request', request => { if (/\/v1\/|supabase/.test(request.url())) privateRequests.push(request.url()); });
       await page.goto(origin);
-      await page.getByRole('heading', { level: 1, name: 'Reach someone you trust.' }).waitFor();
+      await page.getByRole('heading', { level: 1, name: 'Private phrase. Trusted response.' }).waitFor();
       // React may mount the image after the initial document load event.
       // Wait for its real network load instead of racing a hosted CDN response.
       await page.waitForFunction(() => {

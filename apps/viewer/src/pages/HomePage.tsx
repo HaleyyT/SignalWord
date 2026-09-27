@@ -6,40 +6,121 @@ export function HomePage() {
     <div className="home-page">
       <a className="home-skip" href="#main">Skip to content</a>
       <header className="home-header home-wrap">
-        <a className="wordmark" href="/" aria-label="SignalWord home">SignalWord</a>
+        <a className="wordmark" href="/" aria-label="SignalWord home">
+          <img src="/favicon.svg" width="30" height="30" alt="" />
+          <span>SignalWord</span>
+        </a>
         <nav aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
+          <a href="#why-signalword">Why SignalWord</a>
           <a href="/support">Support</a>
         </nav>
       </header>
       <main id="main">
         <section className="home-hero home-wrap" aria-labelledby="home-title">
           <div className="home-hero-copy">
-            <p className="eyebrow">A connection you choose</p>
-            <h1 id="home-title">Reach someone<br />you trust.</h1>
-            <p className="home-lede">An iPhone safety app designed to help you alert one trusted person when you need their attention.</p>
-            <a className="home-button" href="#how-it-works">How it works <span aria-hidden="true">↗</span></a>
+            <p className="eyebrow home-eyebrow"><span className="home-eyebrow-mark" aria-hidden="true" />Voice-triggered iPhone safety</p>
+            <h1 id="home-title">Private phrase.<br /><span>Trusted response.</span></h1>
+            <p className="home-lede">Set a private phrase with iPhone Vocal Shortcuts, or ask Siri to run a SignalWord Shortcut. In an urgent moment, SignalWord is designed to discreetly alert someone you trust when unlocking, typing, or calling feels difficult or unsafe.</p>
+            <div className="home-hero-actions">
+              <a className="home-button" href="#how-it-works">See how SignalWord works <span aria-hidden="true">→</span></a>
+              <a className="home-secondary-link" href="#for-trusted-contacts">For trusted contacts</a>
+            </div>
+            <p className="home-hero-note"><span aria-hidden="true">i</span>Development preview · Not for emergency use</p>
           </div>
-          <figure className="home-photo">
+          <figure className="home-photo" aria-labelledby="preview-caption">
             <img src="/images/trusted-connection.webp" width="1024" height="1280" fetchPriority="high" alt="Two friends walking together beside the sea at dusk." />
+            <div className="home-photo-shade" aria-hidden="true" />
+            <div className="home-preview">
+              <div className="home-preview-head">
+                <span className="home-preview-kicker">Illustrative flow</span>
+              </div>
+              <div className="home-preview-detected">
+                <div className="home-waveform" aria-hidden="true">
+                  {[12, 20, 30, 17, 26, 34, 21, 13, 23, 16, 10].map((height, index) => (
+                    <span key={index} style={{ height: `${height}px`, animationDelay: `${index * -0.13}s` }} />
+                  ))}
+                </div>
+                <div>
+                  <strong>Phrase detected</strong>
+                  <span>Private phrase recognised</span>
+                </div>
+              </div>
+              <ol className="home-preview-states" aria-label="Example alert states">
+                <li><span className="home-state-mark" aria-hidden="true">✓</span><span>Alert sent</span></li>
+                <li><span className="home-state-mark" aria-hidden="true">✓</span><span>Trusted contact notified</span></li>
+                <li className="home-state-current"><span className="home-state-mark" aria-hidden="true" /><span>Awaiting acknowledgement</span></li>
+              </ol>
+              <div className="home-preview-foot">
+                <span className="home-location-chip"><span aria-hidden="true" /> Optional location snapshot</span>
+              </div>
+            </div>
+            <figcaption id="preview-caption">Example states for illustration. Delivery and acknowledgement depend on connectivity and recipient action.</figcaption>
           </figure>
         </section>
 
-        <aside className="home-status home-wrap" aria-label="Availability">
-          <strong>Currently in development</strong>
-          <p>We’re testing an invitation-only email experience. Public enrollment is not open. Do not rely on this development version in an emergency.</p>
+        <aside className="home-status home-wrap" aria-label="Product availability">
+          <span className="home-status-icon" aria-hidden="true">i</span>
+          <div><strong>Currently in development</strong><p>We’re testing an invitation-only email experience. Public enrollment is not open. Do not rely on this version in an emergency.</p></div>
         </aside>
 
         <section className="home-section home-wrap" id="how-it-works" aria-labelledby="how-title">
-          <h2 id="how-title">Make the first alert a rehearsal.</h2>
+          <div className="home-section-intro">
+            <p className="eyebrow">A clear path to your person</p>
+            <h2 id="how-title">A small phrase.<br /><span>A considered response.</span></h2>
+            <p>Set up the connection before you need it, then practise the flow together.</p>
+          </div>
           <ol className="home-steps">
-            <li><h3>Choose your person</h3><p>Invite one trusted contact. They confirm by email before receiving your alerts, and can withdraw consent.</p></li>
-            <li><h3>Practise together</h3><p>Send a clearly labelled TEST. Your contact opens the private link and acknowledges it so you can practise the full journey.</p></li>
-            <li><h3>Know what happened</h3><p>Follow alert progress in the app. An acknowledgment means someone used the recipient link. It does not mean help is coming.</p></li>
+            <li>
+              <span className="home-step-number" aria-hidden="true">01</span>
+              <h3>Choose a private phrase</h3>
+              <p>Train a phrase in iPhone Vocal Shortcuts. iOS manages phrase recognition; SignalWord does not need the audio.</p>
+            </li>
+            <li>
+              <span className="home-step-number" aria-hidden="true">02</span>
+              <h3>Trigger with your voice</h3>
+              <p>Say your phrase or use the SignalWord action with Siri or the Shortcuts app when reaching for the screen is difficult.</p>
+            </li>
+            <li>
+              <span className="home-step-number" aria-hidden="true">03</span>
+              <h3>Alert someone you trust</h3>
+              <p>SignalWord creates a clearly labelled TEST or REAL alert for the person who confirmed your invitation.</p>
+            </li>
+            <li>
+              <span className="home-step-number" aria-hidden="true">04</span>
+              <h3>They acknowledge and respond</h3>
+              <p>Your person opens a private link, acknowledges what they’ve seen, and decides how to respond or whether to contact further help.</p>
+            </li>
           </ol>
         </section>
 
-        <section className="home-recipient home-wrap" aria-labelledby="recipient-title">
+        <section className="home-difference home-wrap" id="why-signalword" aria-labelledby="difference-title">
+          <div className="home-difference-intro">
+            <p className="eyebrow">Why SignalWord</p>
+            <h2 id="difference-title">Designed for the moment you can’t use your phone as usual.</h2>
+            <p>A familiar, voice-led route to a person you chose, with clear signals about what happened next.</p>
+          </div>
+          <div className="home-difference-list">
+            <article>
+              <span className="home-difference-index">01</span>
+              <div><h3>Discreet, hands-free activation</h3><p>A phrase or Shortcut can start the flow when typing, unlocking, or calling may not feel safe.</p></div>
+            </article>
+            <article>
+              <span className="home-difference-index">02</span>
+              <div><h3>Less to do under stress</h3><p>Choose and practise your route in advance, so the first step is familiar when it matters.</p></div>
+            </article>
+            <article>
+              <span className="home-difference-index">03</span>
+              <div><h3>A trusted-contact workflow</h3><p>Your person confirms consent before SignalWord can send them TEST or REAL alerts.</p></div>
+            </article>
+            <article>
+              <span className="home-difference-index">04</span>
+              <div><h3>Clear confirmation states</h3><p>Alert acceptance, email delivery, acknowledgement, and resolution stay distinct. An acknowledgement does not guarantee help is coming.</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section className="home-recipient home-wrap" id="for-trusted-contacts" aria-labelledby="recipient-title">
           <div><p className="eyebrow">For trusted contacts</p><h2 id="recipient-title">Received a SignalWord email?</h2></div>
           <div><p>Open the private link in that email to confirm an invitation or view an alert. You don’t need a SignalWord account.</p>
             <p>Keep the link private. If you receive an unexpected message, contact the sender directly before taking action.</p>
@@ -57,7 +138,7 @@ export function HomePage() {
         </section>
       </main>
       <footer className="home-footer home-wrap">
-        <a className="wordmark" href="/">SignalWord</a>
+        <a className="wordmark" href="/" aria-label="SignalWord home"><img src="/favicon.svg" width="26" height="26" alt="" /><span>SignalWord</span></a>
         <p>A little preparation. A person you trust.</p>
         <nav aria-label="Footer navigation"><a href="/privacy">Privacy</a><a href="/support">Support</a></nav>
       </footer>
