@@ -1,3 +1,5 @@
+> Historical baseline: current scope, implementation status, and open release gates are maintained in [the quality roadmap](implementation/QUALITY_ROADMAP.md). Conflicting scope or readiness claims below are superseded.
+
 # SafeWord V1 Product Requirements
 
 ## Product statement

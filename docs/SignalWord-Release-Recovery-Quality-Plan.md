@@ -1,3 +1,5 @@
+> Historical baseline: current scope, implementation status, and open release gates are maintained in [the quality roadmap](implementation/QUALITY_ROADMAP.md). Conflicting scope or readiness claims below are superseded.
+
 # SignalWord Release-Recovery and Quality Plan
 
 ## 1. Executive assessment and direction

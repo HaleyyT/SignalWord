@@ -1,3 +1,11 @@
+Current authority: [quality roadmap](implementation/QUALITY_ROADMAP.md), [operations](implementation/OPERATIONS.md), and [observed release evidence](RELEASE_EVIDENCE.md).
+
+Current Step 2 work: [repair report and verification](implementation/STEP2_REPAIR_REPORT.md).
+
+For practical execution, start with the [step-by-step launch guide](implementation/LAUNCH_GUIDE.md). It explains responsibilities, commands, prerequisites, and completion checks for deployment, device trials, the pilot, and SMS.
+
+For the first viewer deployment, use the [Vercel development checklist](implementation/VERCEL_DEVELOPMENT_DEPLOYMENT.md). It distinguishes website deployment from backend activation and public release.
+
 # SafeWord Planning Index
 
 Read in this order:

@@ -1,3 +1,5 @@
+> Historical baseline: current scope, implementation status, and open release gates are maintained in [the quality roadmap](implementation/QUALITY_ROADMAP.md). Conflicting scope or readiness claims below are superseded.
+
 # SafeWord Eight-Day Execution Plan
 
 **Sprint:** 20–27 September 2026  

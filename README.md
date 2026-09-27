@@ -19,6 +19,12 @@ scripts/           dependency-free repository checks
 tests/             fast repository automation tests
 ```
 
+## Current implementation
+
+Read the [quality roadmap and evidence matrix](docs/implementation/QUALITY_ROADMAP.md) for the implemented recovery/acknowledgement slice and remaining production blockers. Passing local tests does not mean release-ready.
+
+Follow the [step-by-step launch guide](docs/implementation/LAUNCH_GUIDE.md) for account setup, deployment, physical-device testing, the email pilot, SMS, and release evidence.
+
 ## Start here
 
 1. Read [the planning index](docs/README.md), then complete the Day-0 gates in the [release checklist](docs/RELEASE_CHECKLIST.md).
