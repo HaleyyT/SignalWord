@@ -100,6 +100,11 @@ select is((select accepted from public.append_alert_location(
 )), true, 'current valid location is accepted');
 select is((select count(*) from public.location_samples), 1::bigint, 'only valid location is stored');
 
+-- A resolution notification is needed only after initial submission. Unsent
+-- initial messages are cancelled (covered independently by escalation tests).
+reset role;
+update public.alert_deliveries set status='sent',provider_message_id='lifecycle-submitted' where message_type='initial';
+set local role authenticated;
 select lives_ok($$select * from public.resolve_alert(
   '41000000-0000-4000-8000-000000000001',
   (select id from public.alert_events where user_id = '41000000-0000-4000-8000-000000000001'))$$,

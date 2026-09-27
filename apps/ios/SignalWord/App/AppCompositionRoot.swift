@@ -96,7 +96,7 @@ enum AppCompositionRoot {
         return AppRecovery(alerts: alerts, needsConfirmation: needsConfirmation, pending: pending, pendingKind: pendingKind)
     }
 
-    private static var lifecycleAPI: RemoteUserLifecycleAPI? {
+    static var lifecycleAPI: RemoteUserLifecycleAPI? {
         guard let baseURL = SignalWordConfiguration.alertAPIBaseURL,
               let sessionManager else { return nil }
         return RemoteUserLifecycleAPI(baseURL: baseURL, sessionManager: sessionManager)

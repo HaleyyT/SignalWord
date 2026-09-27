@@ -13,6 +13,7 @@ struct HomeScreen: View {
                 header
                 if model.currentAlertPresentation != nil {
                     AlertProgressCard(model: model)
+                    RecipientProgressPanel(eventID: model.currentAlertEventID)
                 }
                 primaryAction
                 setupSummary

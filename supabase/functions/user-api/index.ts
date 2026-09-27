@@ -1,3 +1,4 @@
+import { createContactNetworkGateway, type ContactNetworkGateway } from "../_shared/contact-network.ts";
 import { parseUserResponse, type ResponseContract } from "../_shared/response-contracts.ts";
 import { wakeDispatch } from "../_shared/dispatch-wakeup.ts";
 import { createDeliveryPolicy, type DeliveryCreationPolicy, type RuntimeEnvironment } from "../_shared/delivery.ts";
@@ -10,6 +11,7 @@ import { generateViewerToken, sha256Hex } from "../_shared/tokens.ts";
 import { parseCreateAlert, parseIdempotencyKey } from "../_shared/validation.ts";
 
 export interface UserApiDependencies {
+  network?: ContactNetworkGateway;
   wake?: () => void;
   backend: BackendGateway;
   lifecycle: LifecycleGateway;
@@ -62,7 +64,54 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       let result: unknown;
       let contract: ResponseContract;
 
-      if (["GET", "PUT"].includes(request.method) && path.endsWith("/v1/profile")) {
+      if (path.includes("/v2/") && !dependencies.network) {
+        throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact network is unavailable.", true);
+      }
+      if (["GET", "PUT"].includes(request.method) && path.endsWith("/v2/contact-network")) {
+        let primary: string | undefined;
+        let policy: string | undefined;
+        if (request.method === "PUT") {
+          const body = await readJson(request) as Record<string, unknown>;
+          if (!body || typeof body !== "object" || Array.isArray(body) ||
+              Object.keys(body).some(k => !["primary", "policy"].includes(k)) ||
+              (body.primary !== undefined && (typeof body.primary !== "string" || !UUID_PATTERN.test(body.primary))) ||
+              (body.policy !== undefined && !["everyone", "primary_then_others"].includes(String(body.policy)))) {
+            throw new ApiError(400, "INVALID_REQUEST", "Invalid contact routing settings.");
+          }
+          primary=body.primary as string | undefined; policy=body.policy as string | undefined;
+        }
+        result=await dependencies.network!.network(user.id,jwt,primary,policy);
+        contract="contactNetwork"; status=200;
+      } else if (request.method === "GET" && /\/v2\/alerts\/[0-9a-f-]+\/recipients$/i.test(path)) {
+        const eventId=path.split("/").at(-2)!;
+        if (!UUID_PATTERN.test(eventId)) throw new ApiError(400,"INVALID_REQUEST","Invalid event.");
+        result=await dependencies.network!.recipients(user.id,eventId,jwt);
+        contract="recipients"; status=200;
+      } else if (request.method === "POST" && /\/v2\/contacts(?:\/[0-9a-f-]+)?$/i.test(path)) {
+        dependencies.delivery.assertAvailable("test");
+        const contactId=path.endsWith("/contacts") ? null : path.split("/").at(-1)!;
+        if (contactId && !UUID_PATTERN.test(contactId)) throw new ApiError(400,"INVALID_REQUEST","Invalid contact.");
+        const input=contactInput(await readJson(request));
+        const token=dependencies.generateToken();
+        const protectedData=await dependencies.protectContact(input.email,token);
+        result=await dependencies.network!.save({p_user_id:user.id,p_contact_id:contactId,p_name:input.name,p_channel:"email",
+          p_destination_ciphertext:protectedData.destinationCiphertext,p_destination_fingerprint:protectedData.destinationFingerprint,
+          p_destination_key_version:protectedData.destinationKeyVersion,p_confirmation_token_hash:`\\x${await sha256Hex(token)}`,
+          p_confirmation_payload_ciphertext:protectedData.confirmationPayloadCiphertext,p_payload_key_version:protectedData.payloadKeyVersion,
+          p_delivery_provider:dependencies.delivery.provider});
+        contract="contact"; status=202;
+      } else if (request.method === "POST" && path.endsWith("/v2/alerts")) {
+        const key=parseIdempotencyKey(request.headers.get("Idempotency-Key"));
+        const input=parseCreateAlert(await readJson(request),dependencies.now());
+        dependencies.delivery.assertAvailable(input.kind);
+        const recipients=[];
+        for (let i=0;i<3;i++) {
+          const token=dependencies.generateToken();
+          recipients.push({token,...await dependencies.encryptPayload(token)});
+        }
+        result=await dependencies.network!.create(input,user.id,key,dependencies.delivery.provider,recipients,jwt);
+        contract="createAlert"; reused=(result as {reused:boolean}).reused; status=reused ? 200 : 201;
+      } else if (["GET", "PUT"].includes(request.method) && path.endsWith("/v1/profile")) {
         let displayName: string | undefined;
         if (request.method === "PUT") {
           const body = await readJson(request) as { displayName?: unknown };
@@ -202,6 +251,7 @@ if (import.meta.main) {
     },
     backend: createBackendGateway({ url, anonKey }),
     lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey }),
+    network: createContactNetworkGateway({ url, anonKey, serviceRoleKey }),
     delivery: createDeliveryPolicy(environment, provider),
     encryptPayload: async (viewerToken) => ({
       ciphertext: await cipher.encrypt(viewerToken),

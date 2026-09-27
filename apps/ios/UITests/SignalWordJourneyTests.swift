@@ -45,6 +45,36 @@ final class SignalWordJourneyTests: XCTestCase {
         tap("Continue to home")
     }
 
+    func testContactNetworkInvitationRoutingAndRelaunch() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--network-ui-testing", "--reset-ui-state"]
+        app.launch()
+        completeContactSetup()
+        app.tabBars.buttons["People"].tap()
+        tap("Invite another person")
+        let name = app.textFields["Contact name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap(); name.typeText("Taylor")
+        let email = app.textFields["Email"]
+        email.tap(); email.typeText("taylor@example.test\n")
+        tap("Send invitation")
+        tap("Primary now, others after 2 minutes")
+        app.terminate()
+        app.launchArguments = ["--ui-testing", "--network-ui-testing"]
+        app.launch()
+        app.tabBars.buttons["People"].tap()
+        let invited = app.staticTexts["Taylor"]
+        reveal(invited)
+        XCTAssertTrue(invited.exists, "Server contact snapshot should recover on relaunch")
+        let routing = app.buttons["Primary now, others after 2 minutes"]
+        reveal(routing)
+        XCTAssertTrue(routing.isSelected, "Confirmed policy survives relaunch")
+        tap("Withdraw Taylor")
+        tap("Withdraw consent")
+        XCTAssertTrue(app.staticTexts["Disabled"].firstMatch.waitForExistence(timeout: 5))
+    }
+
     func testManualFallbackRecoveryResolutionAndDeletion() {
         launchFresh()
         completeContactSetup()
