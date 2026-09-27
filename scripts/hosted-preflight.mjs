@@ -14,8 +14,8 @@ export async function checkHostedViewer(origin, fetchImpl = fetch) {
     { name: 'Confirmation deep link', path: `/confirm/${token}`, method: 'GET', html: true },
     { name: 'Event GET routing', path: `/v1/public/events/${token}`, method: 'GET' },
     { name: 'Acknowledgement POST routing', path: `/v1/public/events/${token}`, method: 'POST', action: 'acknowledge' },
-    { name: 'Confirmation POST routing', path: `/api/v1/contacts/confirm/${token}`, method: 'POST' },
-    { name: 'Withdrawal POST routing', path: `/api/v1/contacts/confirm/${token}`, method: 'POST', action: 'withdraw' },
+    { name: 'Confirmation POST routing', path: `/api/v1/contacts/confirm/${token}`, method: 'POST', contact: true },
+    { name: 'Withdrawal POST routing', path: `/api/v1/contacts/confirm/${token}`, method: 'POST', action: 'withdraw', contact: true },
   ];
   const results = [];
   for (const check of checks) {
@@ -37,7 +37,11 @@ export async function checkHostedViewer(origin, fetchImpl = fetch) {
         if (![404, 410].includes(response.status)) problems.push('expected unavailable-token status');
         if (!response.headers.get('cache-control')?.includes('no-store')) problems.push('missing no-store');
         const body = await response.json().catch(() => null);
-        if (!['NOT_FOUND', 'LINK_UNAVAILABLE'].includes(body?.error?.code)) problems.push('expected JSON unavailable-link error');
+        // Contact links use a different public contract from event links.
+        const unavailable = check.contact
+          ? body?.confirmed === false && body?.unavailable === true
+          : ['NOT_FOUND', 'LINK_UNAVAILABLE'].includes(body?.error?.code);
+        if (!unavailable) problems.push('expected JSON unavailable-link error');
       }
       results.push({ name: check.name, passed: problems.length === 0, problems });
     } catch {
