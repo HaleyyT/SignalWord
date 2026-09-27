@@ -29,7 +29,7 @@ export function createPublicEventHandler(dependencies: PublicEventDependencies) 
     let code: string | undefined;
 
     try {
-      if (request.method !== "GET") {
+      if (!["GET", "POST"].includes(request.method)) {
         throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.");
       }
       const path = new URL(request.url).pathname.replace(/\/+$/, "");
@@ -37,6 +37,12 @@ export function createPublicEventHandler(dependencies: PublicEventDependencies) 
       if (!match) throw unavailable();
 
       const token = parseViewerToken(match[1]);
+      if (request.method === "POST") {
+        if (request.headers.get("X-SignalWord-Action") !== "acknowledge") throw new ApiError(400, "INVALID_REQUEST", "An explicit acknowledgement is required.");
+        if (!await dependencies.backend.acknowledge(await sha256Hex(token))) throw unavailable();
+        status = 200;
+        return jsonResponse({ acknowledged: true }, status, SECURITY_HEADERS);
+      }
       const projection = await dependencies.backend.publicEvent(await sha256Hex(token));
       if (projection === null) throw unavailable();
 

@@ -1,3 +1,4 @@
+import { parseUserResponse } from "../supabase/functions/_shared/response-contracts.ts";
 import { readFileSync } from 'node:fs';
 
 function fixture(name) {
@@ -42,3 +43,10 @@ if (publicEvent.location && !['live', 'recent', 'stale', 'unavailable'].includes
 }
 
 console.log('Shared API contract fixtures are valid.');
+
+for (const [contract, name] of Object.entries({
+  profile: 'profile', contact: 'contact', alertStatus: 'alert-status', recovery: 'recovery',
+  resolveAlert: 'resolve-alert', deleteData: 'delete-data', disableContact: 'disable-contact',
+  appendLocation: 'append-location', createAlert: 'create-alert',
+})) parseUserResponse(contract, fixture(`${name}.response`));
+console.log('Authenticated response contract fixtures are valid.');

@@ -23,12 +23,15 @@ export function createResendWebhookHandler(dependencies: WebhookDependencies) {
       secret: dependencies.webhookSecret,
     });
     if (!verified || !providerEventId) return new Response(null, { status: 401 });
+    let event: ResendWebhookEvent;
+    try { event = parseResendWebhook(rawBody, providerEventId); }
+    catch { return new Response(null, { status: 400 }); }
     try {
-      const event = parseResendWebhook(rawBody, providerEventId);
       await dependencies.apply(event);
       return new Response(null, { status: 202 });
     } catch {
-      return new Response(null, { status: 400 });
+      // A valid receipt must be retried when storage is unavailable.
+      return new Response(null, { status: 503, headers: { "Retry-After": "5" } });
     }
   };
 }
@@ -38,12 +41,13 @@ if (import.meta.main) {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const webhookSecret = Deno.env.get("RESEND_WEBHOOK_SECRET");
   if (!url || !serviceRoleKey || !webhookSecret) throw new Error("Webhook configuration is required");
-  const rpcUrl = `${url.replace(/\/$/, "")}/rest/v1/rpc/apply_resend_webhook`;
+  const rpcUrl = `${url.replace(/\/$/, "")}/rest/v1/rpc/reconcile_resend_webhook`;
   Deno.serve(createResendWebhookHandler({
     webhookSecret,
     async apply(event) {
       const response = await fetch(rpcUrl, {
         method: "POST",
+        signal: AbortSignal.timeout(5000),
         headers: {
           apikey: serviceRoleKey,
           Authorization: `Bearer ${serviceRoleKey}`,
@@ -53,6 +57,7 @@ if (import.meta.main) {
           p_provider_event_id: event.providerEventId,
           p_provider_message_id: event.providerMessageId,
           p_event_type: event.eventType,
+          p_correlation: event.deliveryCorrelation ?? null,
         }),
       });
       if (!response.ok) throw new Error("WEBHOOK_RECONCILIATION_FAILED");

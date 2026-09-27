@@ -1,3 +1,5 @@
+import { parseUserResponse, type ResponseContract } from "../_shared/response-contracts.ts";
+import { wakeDispatch } from "../_shared/dispatch-wakeup.ts";
 import { createDeliveryPolicy, type DeliveryCreationPolicy, type RuntimeEnvironment } from "../_shared/delivery.ts";
 import { createContactDataProtection, createDeliveryPayloadCipher } from "../_shared/encryption.ts";
 import { ApiError, asApiError, bearerToken, errorResponse, jsonResponse, readJson, requestId } from "../_shared/http.ts";
@@ -8,6 +10,7 @@ import { generateViewerToken, sha256Hex } from "../_shared/tokens.ts";
 import { parseCreateAlert, parseIdempotencyKey } from "../_shared/validation.ts";
 
 export interface UserApiDependencies {
+  wake?: () => void;
   backend: BackendGateway;
   lifecycle: LifecycleGateway;
   delivery: DeliveryCreationPolicy;
@@ -57,13 +60,33 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       const jwt = bearerToken(request);
       const user = await dependencies.backend.authenticate(jwt);
       let result: unknown;
+      let contract: ResponseContract;
 
-      if (request.method === "POST" && path.endsWith("/v1/alerts")) {
+      if (["GET", "PUT"].includes(request.method) && path.endsWith("/v1/profile")) {
+        let displayName: string | undefined;
+        if (request.method === "PUT") {
+          const body = await readJson(request) as { displayName?: unknown };
+          if (typeof body?.displayName !== "string" || !body.displayName.trim() || body.displayName.trim().length > 80) {
+            throw new ApiError(400, "INVALID_REQUEST", "Enter a name between 1 and 80 characters.");
+          }
+          displayName = body.displayName.trim();
+        }
+        contract = "profile";
+        result = await dependencies.lifecycle.profile(user.id, jwt, displayName);
+        status = 200;
+      } else if (request.method === "GET" && path.endsWith("/v1/alerts/recovery")) {
+        const key = new URL(request.url).searchParams.get("key") ?? undefined;
+        if (key && !UUID_PATTERN.test(key)) throw new ApiError(400, "INVALID_REQUEST", "Invalid command key.");
+        contract = "recovery";
+        result = await dependencies.lifecycle.recover(user.id, jwt, key);
+        status = 200;
+      } else if (request.method === "POST" && path.endsWith("/v1/alerts")) {
         const idempotencyKey = parseIdempotencyKey(request.headers.get("Idempotency-Key"));
         const input = parseCreateAlert(await readJson(request), dependencies.now());
         dependencies.delivery.assertAvailable(input.kind);
         const viewerToken = dependencies.generateToken();
         const encrypted = await dependencies.encryptPayload(viewerToken);
+        contract = "createAlert";
         result = await dependencies.backend.createAlert(input, user.id, idempotencyKey, {
           viewerToken,
           provider: dependencies.delivery.provider,
@@ -77,6 +100,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         const input = contactInput(await readJson(request));
         const confirmationToken = dependencies.generateToken();
         const protectedData = await dependencies.protectContact(input.email, confirmationToken);
+        contract = "contact";
         result = await dependencies.lifecycle.saveContact({
           userId: user.id,
           name: input.name,
@@ -86,6 +110,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         }, jwt);
         status = 202;
       } else if (request.method === "GET" && path.endsWith("/v1/contact")) {
+        contract = "contact";
         result = await dependencies.lifecycle.getContact(user.id, jwt);
         if (result === null) throw new ApiError(404, "NOT_FOUND", "No trusted contact is configured.");
         status = 200;
@@ -95,6 +120,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         const resolveMatch = /\/v1\/alerts\/([0-9a-f-]+)\/resolve$/i.exec(path);
         const statusMatch = /\/v1\/alerts\/([0-9a-f-]+)$/i.exec(path);
         if (request.method === "DELETE" && contactMatch && UUID_PATTERN.test(contactMatch[1])) {
+          contract = "disableContact";
           result = { disabled: await dependencies.lifecycle.disableContact(user.id, contactMatch[1], jwt) };
           status = 200;
         } else if (request.method === "POST" && locationMatch && UUID_PATTERN.test(locationMatch[1])) {
@@ -104,23 +130,32 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
             clientTriggeredAt: new Date(dependencies.now()).toISOString(), location: body?.location,
           }, dependencies.now());
           if (!parsed.location) throw new ApiError(400, "INVALID_REQUEST", "A current valid location is required.");
+          contract = "appendLocation";
           result = await dependencies.lifecycle.appendLocation(user.id, locationMatch[1], parsed.location, jwt);
           status = 202;
         } else if (request.method === "POST" && resolveMatch && UUID_PATTERN.test(resolveMatch[1])) {
+          contract = "resolveAlert";
           result = await dependencies.lifecycle.resolveAlert(user.id, resolveMatch[1], jwt);
           status = 200;
         } else if (request.method === "GET" && statusMatch && UUID_PATTERN.test(statusMatch[1])) {
-          result = await dependencies.lifecycle.getAlertStatus(user.id, statusMatch[1], jwt);
+          contract = "alertStatus";
+          result = await (dependencies.lifecycle.details ? dependencies.lifecycle.details(user.id, statusMatch[1], jwt) : dependencies.lifecycle.getAlertStatus(user.id, statusMatch[1], jwt));
           if (result === null) throw new ApiError(404, "NOT_FOUND", "Alert not found.");
           status = 200;
         } else if (request.method === "DELETE" && path.endsWith("/v1/data")) {
-          result = await dependencies.lifecycle.deleteData(user.id, jwt);
+          const receiptToken = request.headers.get("X-Deletion-Receipt") ?? "";
+          if (!/^[A-Za-z0-9_-]{43}$/.test(receiptToken)) {
+            throw new ApiError(400, "INVALID_REQUEST", "A deletion receipt is required.");
+          }
+          contract = "deleteData";
+          result = await dependencies.lifecycle.deleteData(user.id, jwt, await sha256Hex(receiptToken));
           status = 200;
         } else {
           throw new ApiError(404, "NOT_FOUND", "Route not found.");
         }
       }
-      return jsonResponse(result, status, { ...RESPONSE_HEADERS, "X-Request-ID": id });
+      if (request.method === "POST") dependencies.wake?.();
+      return jsonResponse(parseUserResponse(contract, result), status, { ...RESPONSE_HEADERS, "X-Request-ID": id });
     } catch (caught) {
       const error = asApiError(caught);
       status = error.status;
@@ -159,6 +194,11 @@ if (import.meta.main) {
     contactEncryptionKey, contactFingerprintKey, destinationKeyVersion,
   );
   Deno.serve(createUserApiHandler({
+    wake: () => {
+      const task = wakeDispatch(url, Deno.env.get("DISPATCH_SECRET") ?? "");
+      const runtime = (globalThis as unknown as { EdgeRuntime?: { waitUntil(task: Promise<void>): void } }).EdgeRuntime;
+      runtime?.waitUntil(task);
+    },
     backend: createBackendGateway({ url, anonKey }),
     lifecycle: createLifecycleGateway({ url, anonKey }),
     delivery: createDeliveryPolicy(environment, provider),

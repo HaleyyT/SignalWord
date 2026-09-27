@@ -35,6 +35,7 @@ export function createDeliveryPolicy(
 }
 
 export interface ClaimedDelivery {
+  senderName?: string;
   deliveryId: string;
   eventId: string;
   kind: AlertKind;
@@ -67,6 +68,7 @@ export interface DeliveryDestinationCipher {
 }
 
 export interface ProviderDelivery {
+  senderName?: string;
   eventId: string;
   kind: AlertKind;
   messageType: "initial" | "resolved";
@@ -151,7 +153,7 @@ export async function runDeliveryWorker(dependencies: {
   adapter: DeliveryProviderAdapter;
   limit?: number;
 }): Promise<{ claimed: number; sent: number; failed: number; leaseLost: number }> {
-  const deliveries = await dependencies.outbox.claim(dependencies.workerId, dependencies.limit ?? 10);
+  const deliveries = await dependencies.outbox.claim(dependencies.workerId, 1);
   let sent = 0;
   let failed = 0;
   let leaseLost = 0;
@@ -170,6 +172,7 @@ export async function runDeliveryWorker(dependencies: {
         delivery.destinationKeyVersion,
       );
       const result = await dependencies.adapter.send({
+        senderName: delivery.senderName,
         eventId: delivery.eventId,
         kind: delivery.kind,
         messageType: delivery.messageType,
@@ -216,7 +219,7 @@ export async function runContactVerificationWorker(dependencies: {
   adapter: ContactVerificationProviderAdapter;
   limit?: number;
 }): Promise<{ claimed: number; sent: number; failed: number; leaseLost: number }> {
-  const deliveries = await dependencies.outbox.claim(dependencies.workerId, dependencies.limit ?? 10);
+  const deliveries = await dependencies.outbox.claim(dependencies.workerId, 1);
   let sent = 0;
   let failed = 0;
   let leaseLost = 0;

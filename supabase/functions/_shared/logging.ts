@@ -1,6 +1,6 @@
 export interface SafeLogEvent {
   requestId: string;
-  route: "user-api" | "public-event";
+  route: "user-api" | "public-event" | "contact-confirm";
   method: string;
   status: number;
   durationMs: number;
@@ -16,7 +16,11 @@ export const structuredLogger: SafeLogger = {
   write(event) {
     // The explicit type is the allowlist: tokens, auth, destinations, location,
     // request bodies, and user identifiers cannot be passed to this logger.
-    console.info(JSON.stringify(event));
+    console.info(JSON.stringify({ requestId: event.requestId, route: event.route,
+      method: event.method, status: event.status, durationMs: event.durationMs,
+      ...(event.code === undefined ? {} : { code: event.code }),
+      ...(event.reused === undefined ? {} : { reused: event.reused }),
+    }));
   },
 };
 

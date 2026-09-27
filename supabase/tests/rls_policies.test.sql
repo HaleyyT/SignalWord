@@ -148,7 +148,7 @@ set status = 'delivered', completed_at = now() - interval '8 days', created_at =
 where provider_idempotency_key = 'alert/b/initial';
 
 select lives_ok('select public.purge_expired_alert_data()', 'retention purge executes successfully');
-select is((select count(*) from public.contact_confirmation_tokens where consumed_at is not null), 0::bigint, 'consumed confirmation tokens are purged');
+select is((select count(*) from public.contact_confirmation_tokens where consumed_at is not null), 1::bigint, 'confirmed recipient capability remains available for withdrawal');
 select is((select count(*) from public.rate_limit_buckets where expires_at <= now()), 0::bigint, 'expired rate-limit buckets are purged');
 select is((select count(*) from public.location_samples where expires_at <= now()), 0::bigint, 'expired locations are purged');
 select is((select count(*) from public.viewer_tokens where revoked_at is not null), 0::bigint, 'revoked viewer tokens are purged');

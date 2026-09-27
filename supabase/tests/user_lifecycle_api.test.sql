@@ -1,6 +1,6 @@
 begin;
 
-select plan(21);
+select no_plan();
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -40,6 +40,24 @@ select is((select status from public.trusted_contacts where user_id = '41000000-
 set local role anon;
 select is(public.confirm_contact(extensions.digest('confirm-a', 'sha256')), false,
   'confirmation token is single use');
+reset role;
+
+set local role authenticated;
+select lives_ok($$
+  select * from public.create_or_replace_contact(
+    '41000000-0000-4000-8000-000000000001', 'Trusted A', 'email',
+    repeat('d', 48), repeat('f', 64), 1,
+    extensions.digest('confirm-a-resend', 'sha256'), repeat('c', 48), 1, 'fake'
+  )
+$$, 'sender can resend a confirmation to the same address');
+reset role;
+select is((select count(*) from public.contact_verification_deliveries where status='queued'), 1::bigint,
+  'resend cancels the earlier unclaimed invitation');
+set local role anon;
+select is(public.confirm_contact(extensions.digest('confirm-a', 'sha256')), false,
+  'replaced confirmation link cannot be reused');
+select is(public.confirm_contact(extensions.digest('confirm-a-resend', 'sha256')), true,
+  'new invitation can be confirmed');
 reset role;
 
 select set_config('request.jwt.claim.sub', '42000000-0000-4000-8000-000000000002', true);
@@ -98,13 +116,41 @@ reset role;
 select is((select count(*) from public.alert_deliveries where message_type = 'resolved'), 1::bigint,
   'idempotent resolution does not duplicate delivery');
 
+select is((select count(*) from public.claim_alert_deliveries('45000000-0000-4000-8000-000000000005', 1)), 1::bigint,
+  'one send can already be in flight when withdrawal arrives');
+
+set local role anon;
+select is(public.withdraw_contact(extensions.digest('confirm-a-resend', 'sha256')), true,
+  'recipient can withdraw with the previously consumed confirmation capability');
+select is(public.withdraw_contact(extensions.digest('confirm-a-resend', 'sha256')), true,
+  'recipient withdrawal is idempotent after a lost response');
+reset role;
+select is((select status from public.trusted_contacts where user_id = '41000000-0000-4000-8000-000000000001'),
+  'disabled', 'withdrawal disables future sends');
+select is((select count(*) from public.alert_deliveries where status = 'queued'), 0::bigint,
+  'withdrawal cancels unclaimed initial and resolution deliveries');
+select is((select count(*) from public.viewer_tokens where revoked_at is null), 0::bigint,
+  'withdrawal revokes existing viewer capabilities');
+select is((select count(*) from public.claim_alert_deliveries(gen_random_uuid(), 1)), 0::bigint,
+  'worker cannot claim a withdrawn recipient delivery');
+select is(public.finish_alert_delivery(
+  (select id from public.alert_deliveries where message_type='initial'),
+  '45000000-0000-4000-8000-000000000005', true, 'accepted-before-withdrawal'), false,
+  'late worker completion cannot revive a withdrawn delivery');
+
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
 set local role authenticated;
-select isnt(public.delete_my_account('41000000-0000-4000-8000-000000000001'), null,
+select isnt(public.delete_my_account('41000000-0000-4000-8000-000000000001', extensions.digest('saved-deletion-capability', 'sha256')), null,
   'delete data returns a deletion receipt');
 reset role;
 select is((select count(*) from auth.users where id = '41000000-0000-4000-8000-000000000001'),
   0::bigint, 'auth identity is deleted');
+select isnt(public.find_deletion_receipt(extensions.digest('saved-deletion-capability', 'sha256')), null,
+  'lost response can be reconciled after auth identity disappears');
+select is(public.find_deletion_receipt(extensions.digest('wrong-capability', 'sha256')), null::uuid,
+  'another capability cannot confirm this deletion');
+select is(has_function_privilege('authenticated', 'public.delete_my_account(uuid)', 'EXECUTE'), false,
+  'legacy deletion without a durable receipt is disabled');
 
 select * from finish();
 rollback;

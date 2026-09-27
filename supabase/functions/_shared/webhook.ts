@@ -1,6 +1,6 @@
 const SIGNATURE_TOLERANCE_SECONDS = 300;
 
-function decodeBase64(value: string): Uint8Array | null {
+function decodeBase64(value: string): Uint8Array<ArrayBuffer> | null {
   try {
     const binary = atob(value);
     return Uint8Array.from(binary, (character) => character.charCodeAt(0));
@@ -19,7 +19,7 @@ function constantTimeEqual(left: Uint8Array, right: Uint8Array): boolean {
   return difference === 0;
 }
 
-function webhookSecretBytes(secret: string): Uint8Array {
+function webhookSecretBytes(secret: string): Uint8Array<ArrayBuffer> {
   const encoded = secret.startsWith("whsec_") ? secret.slice(6) : secret;
   const bytes = decodeBase64(encoded);
   if (!bytes || bytes.byteLength < 16) throw new Error("Invalid webhook secret");
@@ -38,7 +38,7 @@ export async function verifyResendWebhookSignature(input: {
   const timestamp = Number(input.timestamp);
   const now = input.nowSeconds ?? Math.floor(Date.now() / 1000);
   if (!Number.isSafeInteger(timestamp) || Math.abs(now - timestamp) > SIGNATURE_TOLERANCE_SECONDS) return false;
-  let secret: Uint8Array;
+  let secret: Uint8Array<ArrayBuffer>;
   try {
     secret = webhookSecretBytes(input.secret);
   } catch {
@@ -61,6 +61,7 @@ export async function verifyResendWebhookSignature(input: {
 
 export interface ResendWebhookEvent {
   providerEventId: string;
+  deliveryCorrelation?: string;
   providerMessageId: string;
   eventType: "sent" | "delivered" | "bounced" | "complained" | "failed" | "delivery_delayed";
 }
@@ -73,7 +74,7 @@ export function parseResendWebhook(rawBody: Uint8Array, providerEventId: string)
     throw new Error("INVALID_WEBHOOK_PAYLOAD");
   }
   if (!value || typeof value !== "object") throw new Error("INVALID_WEBHOOK_PAYLOAD");
-  const payload = value as { type?: unknown; data?: { email_id?: unknown } };
+  const payload = value as { type?: unknown; data?: { email_id?: unknown; tags?: Record<string, unknown> } };
   const typeMap: Record<string, ResendWebhookEvent["eventType"]> = {
     "email.sent": "sent",
     "email.delivered": "delivered",
@@ -83,8 +84,14 @@ export function parseResendWebhook(rawBody: Uint8Array, providerEventId: string)
     "email.delivery_delayed": "delivery_delayed",
   };
   const eventType = typeof payload.type === "string" ? typeMap[payload.type] : undefined;
-  if (!eventType || typeof payload.data?.email_id !== "string" || payload.data.email_id.length > 200) {
+  if (!eventType || typeof payload.data?.email_id !== "string" || payload.data.email_id.length < 1 || payload.data.email_id.length > 200) {
     throw new Error("INVALID_WEBHOOK_PAYLOAD");
   }
-  return { providerEventId, providerMessageId: payload.data.email_id, eventType };
+  const correlation = payload.data.tags?.signalword_delivery;
+  if (correlation !== undefined && (typeof correlation !== "string" || !/^[a-f0-9]{64}$/.test(correlation))) {
+    throw new Error("INVALID_WEBHOOK_CORRELATION");
+  }
+  return { providerEventId, providerMessageId: payload.data.email_id, eventType,
+    ...(typeof correlation === "string" ? { deliveryCorrelation: correlation } : {}) };
+
 }

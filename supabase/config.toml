@@ -399,6 +399,11 @@ verify_jwt = false
 [functions.resend-webhook]
 verify_jwt = false
 
+# The client proves knowledge of a one-time 256-bit receipt after its auth user
+# has been deleted. The function returns only a boolean and never accepts a JWT.
+[functions.deletion-status]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

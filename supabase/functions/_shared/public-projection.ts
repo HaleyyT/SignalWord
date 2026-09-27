@@ -51,6 +51,9 @@ export function parsePublicProjection(value: unknown): Record<string, unknown> {
     state,
     triggeredAt,
     lastUpdatedAt,
+    ...(isTimestamp(value.acknowledgedAt) ? { acknowledgedAt: value.acknowledgedAt } : {}),
+    ...(isTimestamp(value.serverNow) ? { serverNow: value.serverNow } : {}),
+    ...(isTimestamp(value.clientTriggeredAt) ? { clientTriggeredAt: value.clientTriggeredAt } : {}),
     ...(safeLocation ? { location: safeLocation } : {}),
     guidance: { summary: guidance.summary },
   };

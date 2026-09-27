@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createPublicEventHandler } from '../supabase/functions/public-event/index.ts';
 import { createContactConfirmHandler } from '../supabase/functions/contact-confirm/index.ts';
 import { createUserApiHandler } from '../supabase/functions/user-api/index.ts';
+import { createDeletionStatusHandler } from '../supabase/functions/deletion-status/index.ts';
 import { createBackendGateway } from '../supabase/functions/_shared/supabase.ts';
 import { createLifecycleGateway } from '../supabase/functions/_shared/lifecycle.ts';
 import { createDeliveryPolicy, FakeDeliveryAdapter, runDeliveryWorker } from '../supabase/functions/_shared/delivery.ts';
@@ -225,8 +226,8 @@ test('authenticated lifecycle routes preserve ownership-scoped identifiers', asy
       calls.push(['resolve', userId, eventId]);
       return { eventId, state: 'resolved', resolvedAt: '2026-09-24T00:05:00Z' };
     },
-    deleteData: async (userId) => {
-      calls.push(['delete', userId]);
+    deleteData: async (userId, _jwt, receiptHash) => {
+      calls.push(['delete', userId, receiptHash]);
       return { deletionId: '00000000-0000-4000-8000-000000000070' };
     },
   });
@@ -234,14 +235,36 @@ test('authenticated lifecycle routes preserve ownership-scoped identifiers', asy
   const auth = { Authorization: 'Bearer user-jwt' };
   const status = await handler(new Request(`https://api.example.test/user-api/v1/alerts/${EVENT_ID}`, { headers: auth }));
   const resolve = await handler(new Request(`https://api.example.test/user-api/v1/alerts/${EVENT_ID}/resolve`, { method: 'POST', headers: auth }));
-  const deletion = await handler(new Request('https://api.example.test/user-api/v1/data', { method: 'DELETE', headers: auth }));
+  const deletion = await handler(new Request('https://api.example.test/user-api/v1/data', {
+    method: 'DELETE', headers: { ...auth, 'X-Deletion-Receipt': TOKEN },
+  }));
 
   assert.equal(status.status, 200);
   assert.equal(resolve.status, 200);
   assert.equal(deletion.status, 200);
   assert.deepEqual(calls, [
-    ['status', USER_ID, EVENT_ID], ['resolve', USER_ID, EVENT_ID], ['delete', USER_ID],
+    ['status', USER_ID, EVENT_ID], ['resolve', USER_ID, EVENT_ID,], ['delete', USER_ID, await sha256Hex(TOKEN)],
   ]);
+});
+
+test('deletion status settles a lost DELETE response by receipt without auth', async () => {
+  const seen = [];
+  const handler = createDeletionStatusHandler(async (hash) => {
+    seen.push(hash);
+    return '00000000-0000-4000-8000-000000000070';
+  });
+  const url = 'https://api.example.test/deletion-status/v1/deletions/status';
+  const missing = await handler(new Request(url));
+  const confirmed = await handler(new Request(url, { headers: { 'X-Deletion-Receipt': TOKEN } }));
+  assert.equal(missing.status, 400);
+  assert.equal(confirmed.status, 200);
+  assert.deepEqual(await confirmed.json(), { deleted: true });
+  assert.deepEqual(seen, [await sha256Hex(TOKEN)]);
+  assert.equal(confirmed.headers.get('Cache-Control'), 'no-store');
+  const unavailable = await createDeletionStatusHandler(async () => { throw new Error('database unavailable'); })(
+    new Request(url, { headers: { 'X-Deletion-Receipt': TOKEN } }),
+  );
+  assert.equal(unavailable.status, 503);
 });
 
 test('location enrichment uses the canonical plural route and preserves ownership', async () => {
@@ -305,6 +328,21 @@ test('contact confirmation consumes only a valid one-time token and hides token 
   assert.equal(hash, await sha256Hex(TOKEN));
   assert.equal(invalid.status, 410);
   assert.equal((await invalid.json()).error.message, 'This confirmation link is unavailable.');
+});
+
+test('recipient withdrawal requires an explicit action and hashes the same capability', async () => {
+  let hash;
+  const handler = createContactConfirmHandler({
+    lifecycle: baseLifecycle({ withdrawContact: async (value) => { hash = value; return true; } }),
+    logger: { write() {} }, now: () => Date.now(),
+  });
+  const request = new Request(`https://api.example.test/contact-confirm/v1/contacts/confirm/${TOKEN}`, {
+    method: 'POST', headers: { 'X-SignalWord-Action': 'withdraw' },
+  });
+  const response = await handler(request);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { withdrawn: true });
+  assert.equal(hash, await sha256Hex(TOKEN));
 });
 
 test('public API hashes the token and returns only the viewer projection', async () => {

@@ -20,6 +20,7 @@ export interface BackendGateway {
     payloadCiphertext: string;
     payloadKeyVersion: number;
   }, jwt: string): Promise<CreatedAlert>;
+  acknowledge(tokenHashHex: string): Promise<boolean>;
   publicEvent(tokenHashHex: string): Promise<unknown | null>;
 }
 
@@ -37,8 +38,11 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
     async authenticate(jwt) {
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/auth/v1/user`, { headers: headers(`Bearer ${jwt}`) });
+        response = await fetch(`${baseUrl}/auth/v1/user`, { headers: headers(`Bearer ${jwt}`), signal: AbortSignal.timeout(5000) });
       } catch {
+        throw new ApiError(503, "SERVICE_UNAVAILABLE", "Authentication is temporarily unavailable.", true);
+      }
+      if (response.status === 429 || response.status >= 500) {
         throw new ApiError(503, "SERVICE_UNAVAILABLE", "Authentication is temporarily unavailable.", true);
       }
       if (!response.ok) throw new ApiError(401, "AUTH_REQUIRED", "Authentication is required.");
@@ -51,7 +55,7 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
       let response: Response;
       try {
         response = await fetch(`${baseUrl}/rest/v1/rpc/create_or_reuse_alert`, {
-          method: "POST",
+          method: "POST", signal: AbortSignal.timeout(5000),
           headers: headers(`Bearer ${jwt}`),
           body: JSON.stringify({
             p_user_id: userId,
@@ -63,6 +67,7 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
             p_delivery_payload_ciphertext: delivery.payloadCiphertext,
             p_delivery_payload_key_version: delivery.payloadKeyVersion,
             p_location: input.location ?? null,
+            p_client_triggered_at: input.clientTriggeredAt,
           }),
         });
       } catch {
@@ -98,11 +103,19 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
       };
     },
 
+    async acknowledge(tokenHashHex) {
+      const response = await fetch(`${baseUrl}/rest/v1/rpc/acknowledge_public_event`, {
+        method: "POST", signal: AbortSignal.timeout(5000), headers: headers(`Bearer ${configuration.anonKey}`),
+        body: JSON.stringify({p_token_hash: `\\x${tokenHashHex}`}),
+      });
+      if (!response.ok) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Acknowledgement is temporarily unavailable.", true);
+      return await response.json() === true;
+    },
     async publicEvent(tokenHashHex) {
       let response: Response;
       try {
         response = await fetch(`${baseUrl}/rest/v1/rpc/get_public_event`, {
-          method: "POST",
+          method: "POST", signal: AbortSignal.timeout(5000),
           headers: headers(`Bearer ${configuration.anonKey}`),
           body: JSON.stringify({ p_token_hash: `\\x${tokenHashHex}` }),
         });
