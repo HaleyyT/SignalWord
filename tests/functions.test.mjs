@@ -293,14 +293,37 @@ test('location enrichment uses the canonical plural route and preserves ownershi
   assert.equal(received.location.latitude, -33.8688);
 });
 
-test('lifecycle gateway exposes contact rate limits as bounded retry guidance', async () => {
+test('contact setup cannot select another owner through its request body', async () => {
+  const handler = userHandler(baseBackend(), [], baseLifecycle({
+    saveContact: async () => { assert.fail('untrusted ownership must not reach the privileged write'); },
+  }));
+  const response = await handler(new Request('https://api.example.test/user-api/v1/contacts', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer user-jwt', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Trusted', email: 'trusted@example.test', userId: EVENT_ID }),
+  }));
+  assert.equal(response.status, 400);
+});
+
+test('contact setup fails closed without backend credentials', async () => {
+  const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key' });
+  await assert.rejects(gateway.saveContact({}, 'user-jwt'),
+    (error) => error.status === 503 && error.code === 'SERVICE_UNAVAILABLE');
+});
+
+test('contact setup uses backend credentials and exposes rate limits as bounded retry guidance', async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(JSON.stringify({ message: 'RATE_LIMITED' }), {
+  globalThis.fetch = async (_url, options) => {
+    assert.equal(options.headers.Authorization, 'Bearer backend-only-key');
+    assert.equal(options.headers.apikey, 'backend-only-key');
+    assert.equal(JSON.parse(options.body).p_user_id, USER_ID);
+    return new Response(JSON.stringify({ message: 'RATE_LIMITED' }), {
     status: 400,
     headers: { 'Content-Type': 'application/json' },
-  });
+    });
+  };
   try {
-    const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key' });
+    const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'backend-only-key' });
     await assert.rejects(
       gateway.saveContact({
         userId: USER_ID, name: 'Trusted', destinationCiphertext: 'encrypted-destination',

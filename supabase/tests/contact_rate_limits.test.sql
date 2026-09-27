@@ -15,7 +15,8 @@ insert into public.profiles (id, display_name)
 select ('71000000-0000-4000-8000-00000000000' || n)::uuid, 'Rate user ' || n
 from generate_series(1, 5) n;
 
-set local role authenticated;
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '71000000-0000-4000-8000-000000000001', true);
 
 select lives_ok(format($sql$select * from public.create_or_replace_contact(
@@ -35,7 +36,8 @@ reset role;
 select is((select request_count from public.rate_limit_buckets where scope = 'user'),
   5, 'blocked attempt cannot roll back or increment the five accepted user requests');
 
-set local role authenticated;
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '71000000-0000-4000-8000-000000000002', true);
 select lives_ok($$select * from public.create_or_replace_contact(
   '71000000-0000-4000-8000-000000000002', 'Trusted', 'email', repeat('d', 48),

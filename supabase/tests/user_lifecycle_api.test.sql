@@ -15,7 +15,8 @@ insert into public.profiles (id, display_name) values
   ('41000000-0000-4000-8000-000000000001', 'Lifecycle A'),
   ('42000000-0000-4000-8000-000000000002', 'Lifecycle B');
 
-set local role authenticated;
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
 
 select lives_ok($$
@@ -24,8 +25,10 @@ select lives_ok($$
     repeat('d', 48), repeat('f', 64), 1,
     extensions.digest('confirm-a', 'sha256'), repeat('c', 48), 1, 'fake'
   )
-$$, 'user A can create an encrypted pending contact');
+$$, 'backend creates an encrypted pending contact for verified user A');
 
+set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select is((select status from public.trusted_contacts where user_id = '41000000-0000-4000-8000-000000000001'),
   'pending', 'new contact is pending');
 reset role;
@@ -42,7 +45,8 @@ select is(public.confirm_contact(extensions.digest('confirm-a', 'sha256')), fals
   'confirmation token is single use');
 reset role;
 
-set local role authenticated;
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
 select lives_ok($$
   select * from public.create_or_replace_contact(
     '41000000-0000-4000-8000-000000000001', 'Trusted A', 'email',
@@ -62,6 +66,7 @@ reset role;
 
 select set_config('request.jwt.claim.sub', '42000000-0000-4000-8000-000000000002', true);
 set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select is((select count(*) from public.get_my_contact('41000000-0000-4000-8000-000000000001')),
   0::bigint, 'user B cannot read user A contact through the RPC');
 select throws_ok($$select public.disable_contact(
@@ -108,6 +113,7 @@ select is((select count(*) from public.alert_deliveries where message_type = 're
   'resolution queues exactly one status delivery');
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
 set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select lives_ok($$select * from public.resolve_alert(
   '41000000-0000-4000-8000-000000000001',
   (select id from public.alert_events where user_id = '41000000-0000-4000-8000-000000000001'))$$,
@@ -140,6 +146,7 @@ select is(public.finish_alert_delivery(
 
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
 set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select isnt(public.delete_my_account('41000000-0000-4000-8000-000000000001', extensions.digest('saved-deletion-capability', 'sha256')), null,
   'delete data returns a deletion receipt');
 reset role;
