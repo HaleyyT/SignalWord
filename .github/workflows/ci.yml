@@ -22,6 +22,8 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run verify
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser --workspace=@signalword/viewer
 
   functions:
     name: Type-check Edge Functions
@@ -40,6 +42,7 @@ jobs:
           supabase/functions/contact-confirm/index.ts
           supabase/functions/dispatch-deliveries/index.ts
           supabase/functions/resend-webhook/index.ts
+          supabase/functions/deletion-status/index.ts
 
   secrets:
     name: Scan committed history for secrets
@@ -74,6 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: swift run --package-path apps/ios SignalWordCoreVerification
+      - run: swift test --package-path apps/ios
       - name: Build SignalWord for iOS Simulator
         run: >-
           xcodebuild -quiet
@@ -84,3 +88,6 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
           build
+
+      - name: Test iOS application journeys
+        run: bash scripts/test-ios-ui.sh
