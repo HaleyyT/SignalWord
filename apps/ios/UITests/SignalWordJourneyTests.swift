@@ -11,10 +11,21 @@ final class SignalWordJourneyTests: XCTestCase {
         app.launch()
     }
 
-    private func reveal(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+    private func reveal(_ element: XCUIElement, scrollingUp: Bool = true, useMargin: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
         for _ in 0..<8 {
             if element.exists && element.isHittable { return }
-            app.swipeUp()
+            // Drag the scroll margin: a centre-screen swipe can land on the
+            // safety hold control, which intentionally consumes that gesture.
+            if useMargin {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: scrollingUp ? 0.75 : 0.25))
+                    .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: scrollingUp ? 0.25 : 0.75)))
+            } else if scrollingUp { app.swipeUp() } else { app.swipeDown() }
+        }
+        if !element.exists || !element.isHittable {
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            print(app.debugDescription)
         }
         XCTAssertTrue(element.exists && element.isHittable, "Expected visible control: \(element)", file: file, line: line)
     }
@@ -73,6 +84,42 @@ final class SignalWordJourneyTests: XCTestCase {
         tap("Withdraw Taylor")
         tap("Withdraw consent")
         XCTAssertTrue(app.staticTexts["Disabled"].firstMatch.waitForExistence(timeout: 5))
+    }
+
+    func testEscalatedTimerRequiresExplicitIncidentResolution() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--timer-ui-testing", "--timer-escalated", "--reset-ui-state"]
+        app.launch()
+        completeContactSetup()
+        let warning = app.staticTexts["An alert already exists"]
+        reveal(warning, useMargin: true)
+        XCTAssertTrue(warning.exists)
+        XCTAssertFalse(app.buttons["Check in now"].exists)
+        let resolve = app.buttons["alert.resolve"]
+        // Return to the persistent incident card above the timer panel.
+        reveal(resolve, scrollingUp: false, useMargin: true)
+        resolve.press(forDuration: 1.8)
+        XCTAssertTrue(app.buttons["alert.trigger"].waitForExistence(timeout: 5))
+    }
+
+    func testConfirmedCheckInTimerRelaunchAndCompletion() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--timer-ui-testing", "--reset-ui-state"]
+        app.launch()
+        completeContactSetup()
+        tap("Start 15-minute check-in")
+        XCTAssertTrue(app.staticTexts["timer.active"].waitForExistence(timeout: 5))
+        tap("Extend by 30 minutes")
+        app.terminate()
+        app.launchArguments = ["--ui-testing", "--timer-ui-testing"]
+        app.launch()
+        tap("Check in now")
+        XCTAssertTrue(app.staticTexts["Checked in — confirmed by server"].waitForExistence(timeout: 5))
+        tap("Start 60-minute check-in")
+        tap("Cancel check-in timer")
+        XCTAssertTrue(app.staticTexts["Cancelled — confirmed by server"].waitForExistence(timeout: 5))
     }
 
     func testManualFallbackRecoveryResolutionAndDeletion() {

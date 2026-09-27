@@ -139,3 +139,10 @@ describe('Retry-After parsing', () => {
     expect(retryAfterMilliseconds('invalid', now)).toBeUndefined()
   })
 })
+
+it('preserves missed-check-in cause and deadline without private timer state', () => {
+  const result = parsePublicEvent({...publicEventFixture, cause: 'missed_check_in', checkInDeadline: '2026-09-28T00:15:00Z', recipient_payloads: 'private'})
+  expect(result.cause).toBe('missed_check_in')
+  expect(result.checkInDeadline).toBe('2026-09-28T00:15:00Z')
+  expect(result).not.toHaveProperty('recipient_payloads')
+})

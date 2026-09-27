@@ -31,6 +31,15 @@ struct SignalWordRootView: View {
         #endif
         return ContactNetworkModel(api: AppCompositionRoot.lifecycleAPI)
     }()
+    @State private var timer: CheckInModel = {
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            return CheckInModel(api: ProcessInfo.processInfo.arguments.contains("--timer-ui-testing") ? UITestCheckInService() : nil,
+                preferences: UserDefaults(suiteName: "SignalWord.UIJourney")!, remindersEnabled: false)
+        }
+        #endif
+        return CheckInModel(api: AppCompositionRoot.lifecycleAPI)
+    }()
     @Bindable var model: AppShellModel
     @State private var selectedTab: SignalTab = .home
     @State private var showDeleteConfirmation = false
@@ -45,7 +54,11 @@ struct SignalWordRootView: View {
             }
         }
         .environment(network)
-        .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear() } }
+        .environment(timer)
+        .onChange(of: timer.snapshot?.incidentId) { _, incident in
+            if incident != nil { Task { await model.recover() } }
+        }
+        .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear(); timer.clear() } }
         .tint(SignalWordColor.action)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
@@ -56,7 +69,10 @@ struct SignalWordRootView: View {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {
                 await model.recover()
-                if model.identityReady { await network.refresh(eventID: model.currentAlertEventID) }
+                if model.identityReady {
+                    await network.refresh(eventID: model.currentAlertEventID)
+                    await timer.refresh()
+                }
                 do { try await Task.sleep(for: .seconds(10)) } catch { return }
             }
         }

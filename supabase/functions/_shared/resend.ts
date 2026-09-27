@@ -73,6 +73,13 @@ export function renderAlertEmail(delivery: ProviderDelivery, viewerUrl: string):
       html: `${identityHTML}<h1>TEST — NO EMERGENCY</h1><p>This is a SignalWord rehearsal message.</p><p><a href="${escapeHtml(viewerUrl)}">Review the test status</a></p><p>Do not contact emergency services because of this test message.</p>`,
     };
   }
+  if (delivery.cause === "missed_check_in") {
+    return {
+      subject: "SignalWord missed check-in",
+      text: `${sender} did not complete a scheduled check-in within its grace period. This does not confirm danger. Contact them directly. Review status: ${viewerUrl}\n\nSignalWord does not contact emergency services or guarantee delivery or rescue.`,
+      html: `<p>${escapeHtml(sender)} did not complete a scheduled check-in within its grace period.</p><p>This does not confirm danger. Contact them directly.</p><p><a href="${escapeHtml(viewerUrl)}">Review status</a></p><p>SignalWord does not contact emergency services or guarantee delivery or rescue.</p>`,
+    };
+  }
   return {
     subject: "SignalWord safety alert",
     text: `${identityText}A trusted contact started a SignalWord safety alert. Review the latest available status and location: ${viewerUrl}\n\nContact the person directly. If you believe there is immediate danger, call the appropriate local emergency number. SignalWord does not contact emergency services or guarantee delivery or rescue.`,

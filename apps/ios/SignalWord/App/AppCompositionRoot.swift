@@ -40,7 +40,7 @@ enum AppCompositionRoot {
                 try await api.deleteAccount()
                 guard let containerURL = SignalWordConfiguration.appGroupContainerURL else { throw SessionError.configuration }
                 try await SQLiteAlertCommandStore(directoryURL: containerURL).clearAll()
-                for key in ["onboardingComplete", "shortcutConfigured", "verifiedRehearsals", "rehearsalContactID", "serverDeletionConfirmed", "deletionReceiptToken"] {
+                for key in ["onboardingComplete", "shortcutConfigured", "verifiedRehearsals", "rehearsalContactID", "serverDeletionConfirmed", "deletionReceiptToken", CheckInModel.pendingKey] {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
             }

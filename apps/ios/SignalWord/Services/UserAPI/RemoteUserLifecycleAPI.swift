@@ -7,7 +7,7 @@ enum UserAPIError: Error, Sendable {
     case invalidResponse
 }
 
-struct RemoteUserLifecycleAPI: ContactNetworkServing {
+struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
     let baseURL: URL
     let sessionManager: SupabaseSessionManager
     let session: URLSession
@@ -21,6 +21,19 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing {
         configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         configuration.urlCache = nil
         session = URLSession(configuration: configuration)
+    }
+
+    func recoverCheckIn(command: UUID? = nil) async throws -> CheckInSnapshot? {
+        try await send(path: "/v2/check-in", method: "GET", body: Optional<EmptyBody>.none,
+            response: Optional<CheckInSnapshot>.self, query: command.map { [URLQueryItem(name: "command", value: $0.uuidString)] } ?? [])
+    }
+
+    func changeCheckIn(_ command: CheckInCommand) async throws -> CheckInSnapshot {
+        struct Input: Encodable, Sendable { let action: CheckInCommand.Action; let timerId: UUID?; let minutes: Int? }
+        do { return try await send(path: "/v2/check-in", method: "POST",
+            body: Input(action: command.action, timerId: command.timerId, minutes: command.minutes), response: CheckInSnapshot.self,
+            extraHeaders: ["Idempotency-Key": command.id.uuidString])
+        } catch UserAPIError.rejected(statusCode: 409) { throw CheckInFailure.conflict }
     }
 
     func contactNetwork(primary: UUID? = nil, policy: ContactRoutingPolicy? = nil) async throws -> ContactNetwork {

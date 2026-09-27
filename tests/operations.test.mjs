@@ -53,3 +53,8 @@ test('a healthy check does not send an operator message', async () => {
   assert.equal(requests, 1);
   assert.deepEqual(result.problems, []);
 });
+test('timer metrics detect overdue work, failed escalation and missing sweeps',()=>{
+  const health=healthy();
+  health.checkIns={overdue:1,failed:1,schedules:[]};
+  assert.deepEqual(operationalProblems(health),['CHECK_IN_OVERDUE','CHECK_IN_FAILED','SCHEDULE_UNHEALTHY:signalword-check-in-expiry','SCHEDULE_UNHEALTHY:signalword-check-in-retention']);
+});

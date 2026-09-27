@@ -14,12 +14,16 @@ let package = Package(
             name: "SignalWordCore",
             path: "SignalWord",
             exclude: [
-                "App", "DesignSystem", "Features", "SignalWord.entitlements",
+                "App", "DesignSystem", "SignalWord.entitlements",
+                "Features/AppShell/AppShellModel.swift", "Features/AppShell/CheckInPanel.swift",
+                "Features/AppShell/ContactNetworkPanel.swift", "Features/AppShell/HomeScreen.swift",
+                "Features/AppShell/PeopleScreen.swift", "Features/AppShell/SettingsScreen.swift",
+                "Features/AppShell/SignalWordRootView.swift", "Features/AppShell/SignalWordSetupFlow.swift",
                 "Core/Configuration", "Core/Security/DeviceOwnerAuthenticator.swift",
                 "Services/AlertAPI", "Services/AppIntents", "Services/Location", "Services/UserAPI",
                 "Services/Auth/SignupVerificationView.swift",
             ],
-            sources: ["Core/Alerts", "Core/Security/DeviceCredentialStore.swift", "Services/Auth/SupabaseSessionManager.swift"]
+            sources: ["Features/AppShell/CheckInModel.swift", "Features/AppShell/ContactNetworkModel.swift", "Core/Alerts", "Core/Security/DeviceCredentialStore.swift", "Services/Auth/SupabaseSessionManager.swift"]
         ),
         .executableTarget(
             name: "SignalWordCoreVerification",
