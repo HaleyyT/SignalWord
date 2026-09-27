@@ -17,7 +17,12 @@ try {
       page.on('request', request => { if (/\/v1\/|supabase/.test(request.url())) privateRequests.push(request.url()); });
       await page.goto(origin);
       await page.getByRole('heading', { level: 1, name: 'Reach someone you trust.' }).waitFor();
-      assert.equal(await page.locator('.home-photo img').evaluate(img => img.complete && img.naturalWidth > 0), true);
+      // React may mount the image after the initial document load event.
+      // Wait for its real network load instead of racing a hosted CDN response.
+      await page.waitForFunction(() => {
+        const img = document.querySelector('.home-photo img');
+        return img?.complete && img.naturalWidth > 0;
+      });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${width}px overflow`);
       await page.keyboard.press('Tab');
       await page.getByRole('link', { name: 'Skip to content' }).press('Enter');
