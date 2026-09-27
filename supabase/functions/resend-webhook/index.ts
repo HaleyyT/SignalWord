@@ -1,4 +1,5 @@
 import { parseResendWebhook, verifyResendWebhookSignature, type ResendWebhookEvent } from "../_shared/webhook.ts";
+import { ApiError, readBodyBytes } from "../_shared/http.ts";
 
 const MAX_WEBHOOK_BYTES = 128 * 1024;
 
@@ -10,10 +11,13 @@ interface WebhookDependencies {
 export function createResendWebhookHandler(dependencies: WebhookDependencies) {
   return async (request: Request): Promise<Response> => {
     if (request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
-    const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_WEBHOOK_BYTES) return new Response(null, { status: 413 });
-    const rawBody = new Uint8Array(await request.arrayBuffer());
-    if (rawBody.byteLength > MAX_WEBHOOK_BYTES) return new Response(null, { status: 413 });
+    let rawBody: Uint8Array;
+    try {
+      // Preserve the exact signed bytes without buffering an unbounded upload.
+      rawBody = await readBodyBytes(request, MAX_WEBHOOK_BYTES);
+    } catch (error) {
+      return new Response(null, { status: error instanceof ApiError ? 413 : 400 });
+    }
     const providerEventId = request.headers.get("svix-id");
     const verified = await verifyResendWebhookSignature({
       rawBody,
