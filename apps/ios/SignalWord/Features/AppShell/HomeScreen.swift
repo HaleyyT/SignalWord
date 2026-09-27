@@ -17,6 +17,7 @@ struct HomeScreen: View {
                 }
                 primaryAction
                 setupSummary
+                CheckInPanel()
                 recentActivity
                 safetyNote
             }

@@ -54,3 +54,4 @@ for (const [contract, name] of [['contactNetwork','contact-network'],['recipient
   parseUserResponse(contract, JSON.parse(readFileSync(`contracts/v2/${name}.response.json`, 'utf8')));
 }
 console.log('Recipient-scoped v2 response fixtures are valid.');
+parseUserResponse('checkIn', JSON.parse(readFileSync('contracts/v2/check-in.response.json', 'utf8')));

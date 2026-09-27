@@ -40,10 +40,17 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, '320px layout must not overflow');
   await page.screenshot({ path: process.env.SIGNALWORD_VIEWER_SCREENSHOT ?? `${tmpdir()}/signalword-viewer-ack.png`, fullPage: true });
 
+  const missed = await browser.newPage({viewport:{width:320,height:700}});
+  await missed.route('**/v1/public/events/*', route => route.fulfill({json:{...event,kind:'real',cause:'missed_check_in',checkInDeadline:'2026-09-26T07:59:00Z',guidance:{summary:'Contact Alex directly.'}}}));
+  await missed.goto(`${process.env.SIGNALWORD_VIEWER_TEST_URL ?? 'http://127.0.0.1:4174'}/events/${token}`);
+  await missed.getByRole('heading',{name:'Alex missed a check-in'}).waitFor();
+  await missed.getByText('This does not confirm danger.',{exact:false}).waitFor();
+  assert.equal(await missed.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),true);
+
   const unavailable = await browser.newPage();
   await unavailable.route('**/v1/public/events/*', route => route.fulfill({ status: 404, json: {} }));
   await unavailable.goto(`${process.env.SIGNALWORD_VIEWER_TEST_URL ?? 'http://127.0.0.1:4174'}/events/${token}`);
   await unavailable.getByRole('heading', { name: 'This alert link is unavailable' }).waitFor();
   assert.equal(await unavailable.getByRole('button', { name: 'Acknowledge this alert' }).count(), 0);
-  console.log('Browser regression passed: explicit acknowledgement, failed POST recovery, revoked link, 320px layout.');
+  console.log('Browser regression passed: explicit acknowledgement, failed POST recovery, revoked link, missed-check-in guidance, 320px layout.');
 } finally { await browser?.close(); await server?.close(); }

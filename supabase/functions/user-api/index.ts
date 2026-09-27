@@ -1,3 +1,4 @@
+import { createCheckInGateway, parseCheckIn, type CheckInGateway } from "../_shared/check-in.ts";
 import { createContactNetworkGateway, type ContactNetworkGateway } from "../_shared/contact-network.ts";
 import { parseUserResponse, type ResponseContract } from "../_shared/response-contracts.ts";
 import { wakeDispatch } from "../_shared/dispatch-wakeup.ts";
@@ -11,6 +12,7 @@ import { generateViewerToken, sha256Hex } from "../_shared/tokens.ts";
 import { parseCreateAlert, parseIdempotencyKey } from "../_shared/validation.ts";
 
 export interface UserApiDependencies {
+  checkIn?: CheckInGateway;
   network?: ContactNetworkGateway;
   wake?: () => void;
   backend: BackendGateway;
@@ -67,7 +69,28 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       if (path.includes("/v2/") && !dependencies.network) {
         throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact network is unavailable.", true);
       }
-      if (["GET", "PUT"].includes(request.method) && path.endsWith("/v2/contact-network")) {
+      if (["GET","POST"].includes(request.method) && path.endsWith("/v2/check-in")) {
+        if (!dependencies.checkIn) throw new ApiError(503,"SERVICE_UNAVAILABLE","Timers are unavailable.",true);
+        contract="checkIn";
+        if (request.method === "GET") {
+          const command=new URL(request.url).searchParams.get("command") ?? undefined;
+          if (command && !UUID_PATTERN.test(command)) throw new ApiError(400,"INVALID_REQUEST","Invalid command.");
+          result=await dependencies.checkIn.recover(user.id,jwt,command);
+        } else {
+          const input=parseCheckIn(await readJson(request));
+          const command=parseIdempotencyKey(request.headers.get("Idempotency-Key"));
+          const payloads=[];
+          if (input.action === "start") {
+            dependencies.delivery.assertAvailable("real");
+            for (let i=0;i<3;i++) {
+              const token=dependencies.generateToken();
+              payloads.push({hash:await sha256Hex(token),...await dependencies.encryptPayload(token)});
+            }
+          }
+          result=await dependencies.checkIn.change(user.id,jwt,command,input,dependencies.delivery.provider,payloads);
+        }
+        status=200;
+      } else if (["GET", "PUT"].includes(request.method) && path.endsWith("/v2/contact-network")) {
         let primary: string | undefined;
         let policy: string | undefined;
         if (request.method === "PUT") {
@@ -252,6 +275,7 @@ if (import.meta.main) {
     backend: createBackendGateway({ url, anonKey }),
     lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey }),
     network: createContactNetworkGateway({ url, anonKey, serviceRoleKey }),
+    checkIn: createCheckInGateway({ url, anonKey }),
     delivery: createDeliveryPolicy(environment, provider),
     encryptPayload: async (viewerToken) => ({
       ciphertext: await cipher.encrypt(viewerToken),

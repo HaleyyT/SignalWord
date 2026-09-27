@@ -31,7 +31,7 @@ const shapes = {
   resolveAlert: { required: { eventId: uuid, state: oneOf("resolved"), resolvedAt: timestamp } },
   deleteData: { required: { deletionId: uuid } },
 } satisfies Record<string, Shape>;
-export type ResponseContract = keyof typeof shapes | "recovery" | "contactNetwork" | "recipients";
+export type ResponseContract = keyof typeof shapes | "recovery" | "contactNetwork" | "recipients" | "checkIn";
 
 function invalid(): never {
   // Do not echo malformed upstream data, which may contain private fields.
@@ -58,6 +58,11 @@ function project(value: unknown, shape: Shape): Record<string, unknown> {
  * A database change cannot accidentally expose extra columns or report corrupt state.
  */
 export function parseUserResponse(contract: ResponseContract, value: unknown): unknown {
+  if (contract === "checkIn") {
+    if (value === null) return null;
+    return project(value,{required:{timerId:uuid,state:oneOf("active","checked_in","cancelled","escalated","failed"),deadline:timestamp,graceEndsAt:timestamp,serverNow:timestamp},
+      optional:{incidentId:uuid,failureCode:text,incidentState:state}});
+  }
   if (contract === "contactNetwork") {
     const source = value as {policy?: unknown;contacts?:unknown[]};
     if (!source || !oneOf("everyone","primary_then_others")(source.policy) || !Array.isArray(source.contacts) || source.contacts.length>3) return invalid();
