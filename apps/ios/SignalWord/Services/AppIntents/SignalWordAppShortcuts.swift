@@ -6,6 +6,8 @@ struct SignalWordAppShortcuts: AppShortcutsProvider {
     static let shortcutTileColor: ShortcutTileColor = .red
 
     static var appShortcuts: [AppShortcut] {
+        AppShortcut(intent: TestAlertIntent(), phrases: ["Send a test with \(.applicationName)"],
+                    shortTitle: "Send TEST Alert", systemImageName: "checkmark.shield")
         AppShortcut(
             intent: TriggerAlertIntent(),
             phrases: [

@@ -14,4 +14,15 @@ struct TriggerAlertIntent: AppIntent {
         return .result()
     }
 }
+@available(iOS 18.0, *)
+struct TestAlertIntent: AppIntent {
+    static let title: LocalizedStringResource = "Send TEST Alert"
+    static let description = IntentDescription("Rehearse with your confirmed contact. TEST — NO EMERGENCY.")
+    static let openAppWhenRun = false
+    static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
+    func perform() async throws -> some IntentResult {
+        _ = await AppCompositionRoot.trigger(kind: .test, method: .vocalShortcut)
+        return .result()
+    }
+}
 #endif

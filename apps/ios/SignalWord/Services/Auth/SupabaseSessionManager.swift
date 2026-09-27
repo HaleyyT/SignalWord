@@ -1,6 +1,7 @@
 import Foundation
 
-enum SessionError: Error, Sendable {
+enum SessionError: RetryClassifiableError {
+    var isRetryable: Bool { self != .configuration }
     case configuration
     case unavailable
     case invalidResponse
@@ -11,6 +12,7 @@ actor SupabaseSessionManager {
     private let publishableKey: String
     private let session: URLSession
     private let now: @Sendable () -> Date
+    private var tokenTask: Task<DeviceCredentialStore.Session, Error>?
 
     init(
         supabaseURL: URL,
@@ -25,14 +27,21 @@ actor SupabaseSessionManager {
     }
 
     func accessToken(createIfMissing: Bool, forceRefresh: Bool = false) async throws -> String {
+        if let tokenTask { return try await tokenTask.value.accessToken }
         if let stored = DeviceCredentialStore.loadSession() {
             if !forceRefresh && stored.expiresAt.timeIntervalSince(now()) > 120 {
                 return stored.accessToken
             }
-            return try await refresh(stored).accessToken
+            let task = Task { try await self.refresh(stored) }
+            tokenTask = task
+            defer { tokenTask = nil }
+            return try await task.value.accessToken
         }
         guard createIfMissing else { throw SessionError.unavailable }
-        return try await signInAnonymously().accessToken
+        let task = Task { try await self.signInAnonymously() }
+        tokenTask = task
+        defer { tokenTask = nil }
+        return try await task.value.accessToken
     }
 
     func deleteLocalSession() throws { try DeviceCredentialStore.clear() }

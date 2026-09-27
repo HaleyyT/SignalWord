@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const project = readFileSync('apps/ios/SignalWord.xcodeproj/project.pbxproj', 'utf8');
-const rootView = readFileSync('apps/ios/SignalWord/Features/AppShell/SignalWordRootView.swift', 'utf8');
+const setupFlow = readFileSync('apps/ios/SignalWord/Features/AppShell/SignalWordSetupFlow.swift', 'utf8');
+const homeView = readFileSync('apps/ios/SignalWord/Features/AppShell/HomeScreen.swift', 'utf8');
 const intent = readFileSync('apps/ios/SignalWord/Services/AppIntents/TriggerAlertIntent.swift', 'utf8');
 const model = readFileSync('apps/ios/SignalWord/Features/AppShell/AppShellModel.swift', 'utf8');
 const session = readFileSync('apps/ios/SignalWord/Services/Auth/SupabaseSessionManager.swift', 'utf8');
@@ -43,11 +44,13 @@ test('iOS lifecycle uses refreshable device identity and real authenticated APIs
   assert.doesNotMatch(model, /Resolution is not available until/);
 });
 
-test('iOS shell preserves honest safety language and deliberate real triggering', () => {
-  assert.match(rootView, /does not contact police or emergency services/i);
-  assert.match(rootView, /LongPressGesture\(minimumDuration: 1\.5\)/);
-  assert.match(rootView, /TEST — NO EMERGENCY/);
-  assert.doesNotMatch(rootView, /police (?:were|have been) notified/i);
+test('iOS shell preserves honest safety language and a discoverable real action', () => {
+  assert.match(setupFlow, /does not contact police or emergency services/i);
+  // Hold completion and early-release cancellation are exercised through XCUITest.
+  // Matching a particular SwiftUI modifier cannot establish gesture behavior.
+  assert.match(setupFlow, /TEST — NO EMERGENCY/);
+  assert.match(homeView, /alert\.trigger/);
+  assert.doesNotMatch(setupFlow, /police (?:were|have been) notified/i);
 });
 
 test('locked App Intent remains silent and does not open the app', () => {

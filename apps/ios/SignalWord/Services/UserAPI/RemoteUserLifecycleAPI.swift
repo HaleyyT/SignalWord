@@ -1,49 +1,10 @@
 import Foundation
+import Security
 
 enum UserAPIError: Error, Sendable {
     case unavailable
     case rejected(statusCode: Int)
     case invalidResponse
-}
-
-struct TrustedContactProjection: Decodable, Equatable, Sendable {
-    let contactID: UUID
-    let name: String
-    let status: String
-    let confirmationExpiresAt: Date?
-
-    enum CodingKeys: String, CodingKey {
-        case contactID = "contactId"
-        case name
-        case status
-        case confirmationExpiresAt
-    }
-}
-
-struct AlertStatusProjection: Decodable, Equatable, Sendable {
-    let eventID: UUID
-    let state: String
-    let delivery: String
-    let resolvedAt: Date?
-
-    enum CodingKeys: String, CodingKey {
-        case eventID = "eventId"
-        case state
-        case delivery
-        case resolvedAt
-    }
-}
-
-struct ResolvedAlertProjection: Decodable, Equatable, Sendable {
-    let eventID: UUID
-    let state: String
-    let resolvedAt: Date
-
-    enum CodingKeys: String, CodingKey {
-        case eventID = "eventId"
-        case state
-        case resolvedAt
-    }
 }
 
 struct RemoteUserLifecycleAPI: Sendable {
@@ -60,6 +21,16 @@ struct RemoteUserLifecycleAPI: Sendable {
         configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         configuration.urlCache = nil
         session = URLSession(configuration: configuration)
+    }
+
+    func profile(displayName: String? = nil) async throws -> ProfileProjection {
+        try await send(path: "/v1/profile", method: displayName == nil ? "GET" : "PUT",
+            body: displayName.map { ProfileProjection(displayName: $0) }, response: ProfileProjection.self)
+    }
+
+    func recover(key: UUID? = nil) async throws -> [AlertStatusProjection] {
+        try await send(path: "/v1/alerts/recovery", method: "GET", body: Optional<EmptyBody>.none,
+            response: [AlertStatusProjection].self, query: key.map { [URLQueryItem(name: "key", value: $0.uuidString)] } ?? [])
     }
 
     func prepareIdentity() async throws {
@@ -86,6 +57,15 @@ struct RemoteUserLifecycleAPI: Sendable {
         }
     }
 
+    func disableContact(contactID: UUID) async throws -> Bool {
+        struct Result: Decodable { let disabled: Bool }
+        let result = try await send(
+            path: "/v1/contacts/\(contactID.uuidString.lowercased())", method: "DELETE",
+            body: Optional<EmptyBody>.none, response: Result.self
+        )
+        return result.disabled
+    }
+
     func getAlertStatus(eventID: UUID) async throws -> AlertStatusProjection {
         try await send(
             path: "/v1/alerts/\(eventID.uuidString.lowercased())", method: "GET",
@@ -108,29 +88,70 @@ struct RemoteUserLifecycleAPI: Sendable {
     }
 
     func deleteAccount() async throws {
-        let _: DeletionReceipt = try await send(
-            path: "/v1/data", method: "DELETE", body: Optional<EmptyBody>.none,
-            response: DeletionReceipt.self
-        )
+        if !UserDefaults.standard.bool(forKey: "serverDeletionConfirmed") {
+            let receipt = try deletionReceiptToken()
+            if (try? await deletionConfirmed(receipt)) != true {
+                do {
+                    let _: DeletionReceipt = try await send(
+                        path: "/v1/data", method: "DELETE", body: Optional<EmptyBody>.none,
+                        response: DeletionReceipt.self,
+                        extraHeaders: ["X-Deletion-Receipt": receipt]
+                    )
+                } catch {
+                    guard (try? await deletionConfirmed(receipt)) == true else { throw error }
+                }
+            }
+            UserDefaults.standard.set(true, forKey: "serverDeletionConfirmed")
+        }
         try await sessionManager.deleteLocalSession()
+    }
+
+    private func deletionReceiptToken() throws -> String {
+        if let stored = UserDefaults.standard.string(forKey: "deletionReceiptToken") { return stored }
+        var bytes = [UInt8](repeating: 0, count: 32)
+        guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else {
+            throw UserAPIError.unavailable
+        }
+        let token = Data(bytes).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        UserDefaults.standard.set(token, forKey: "deletionReceiptToken")
+        return token
+    }
+
+    private func deletionConfirmed(_ receipt: String) async throws -> Bool {
+        let url = baseURL.deletingLastPathComponent().appending(path: "deletion-status/v1/deletions/status")
+        var request = URLRequest(url: url)
+        request.setValue(receipt, forHTTPHeaderField: "X-Deletion-Receipt")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw UserAPIError.unavailable
+        }
+        return try JSONDecoder().decode(DeletionStatus.self, from: data).deleted
     }
 
     private func send<Body: Encodable & Sendable, Output: Decodable & Sendable>(
         path: String,
         method: String,
         body: Body?,
-        response: Output.Type
+        response: Output.Type, query: [URLQueryItem] = [], extraHeaders: [String: String] = [:]
     ) async throws -> Output {
         for attempt in 0...1 {
             let token = try await sessionManager.accessToken(
                 createIfMissing: false,
                 forceRefresh: attempt == 1
             )
-            var request = URLRequest(url: baseURL.appending(path: path))
+            var components = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
+            if !query.isEmpty { components.queryItems = query }
+            guard let url = components.url else { throw UserAPIError.invalidResponse }
+            var request = URLRequest(url: url)
             request.httpMethod = method
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Accept")
             request.setValue(UUID().uuidString, forHTTPHeaderField: "X-Request-ID")
+            for (name, value) in extraHeaders { request.setValue(value, forHTTPHeaderField: name) }
             if let body {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 request.httpBody = try JSONEncoder().encode(body)
@@ -144,8 +165,7 @@ struct RemoteUserLifecycleAPI: Sendable {
             guard (200..<300).contains(http.statusCode) else {
                 throw UserAPIError.rejected(statusCode: http.statusCode)
             }
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
+            let decoder = WireDate.decoder()
             do { return try decoder.decode(response, from: data) }
             catch { throw UserAPIError.invalidResponse }
         }
@@ -163,3 +183,4 @@ private struct LocationAcceptedProjection: Decodable, Sendable {
 private struct DeletionReceipt: Decodable, Sendable { let deletionID: UUID
     enum CodingKeys: String, CodingKey { case deletionID = "deletionId" }
 }
+private struct DeletionStatus: Decodable, Sendable { let deleted: Bool }

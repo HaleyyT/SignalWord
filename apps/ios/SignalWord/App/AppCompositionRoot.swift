@@ -26,8 +26,11 @@ enum AppCompositionRoot {
         guard let api = lifecycleAPI else { return .unconfigured }
         return AppShellModel.LifecycleActions(
             prepare: { try await api.prepareIdentity() },
+            profile: { name in try await api.profile(displayName: name).displayName },
+            recover: { allowDelayed in try await recover(api: api, allowDelayed: allowDelayed) },
             saveContact: { name, email in try await api.saveContact(name: name, email: email) },
             getContact: { try await api.getContact() },
+            disableContact: { contactID in try await api.disableContact(contactID: contactID) },
             getAlertStatus: { eventID in try await api.getAlertStatus(eventID: eventID) },
             authenticateResolution: { await DeviceOwnerAuthenticator.authenticateResolution() },
             resolve: { eventID in try await api.resolve(eventID: eventID) },
@@ -35,9 +38,10 @@ enum AppCompositionRoot {
             requestLocationAccess: { await locationService.requestAccess() },
             deleteAccount: {
                 try await api.deleteAccount()
-                if let containerURL = SignalWordConfiguration.appGroupContainerURL,
-                   let store = try? FileLockedAlertCommandStore(directoryURL: containerURL) {
-                    try? await store.clearAll()
+                guard let containerURL = SignalWordConfiguration.appGroupContainerURL else { throw SessionError.configuration }
+                try await SQLiteAlertCommandStore(directoryURL: containerURL).clearAll()
+                for key in ["onboardingComplete", "shortcutConfigured", "verifiedRehearsals", "rehearsalContactID", "serverDeletionConfirmed", "deletionReceiptToken"] {
+                    UserDefaults.standard.removeObject(forKey: key)
                 }
             }
         )
@@ -61,6 +65,37 @@ enum AppCompositionRoot {
         return outcome
     }
 
+    private static func recover(api: RemoteUserLifecycleAPI, allowDelayed: Bool) async throws -> AppRecovery {
+        guard let directory = SignalWordConfiguration.appGroupContainerURL else { throw SessionError.configuration }
+        let store = try SQLiteAlertCommandStore(directoryURL: directory)
+        let coordinator = try makeCoordinator()
+        var needsConfirmation = false
+        var pending = false
+        var pendingKind: AlertKind?
+        for record in try await store.allRecords() where record.phase == .attempting || record.phase == .queuedOffline {
+            // Reconcile possible server commits before considering another send, including old commands.
+            let existing = try await api.recover(key: record.command.idempotencyKey)
+            if let status = existing.first {
+                try await store.markCreated(record.command, alert: CreatedAlert(eventID: status.eventID, serverTriggeredAt: Date()), at: Date())
+            } else if let outcome = await coordinator.resumePending(kind: record.command.kind, allowDelayed: allowDelayed) {
+                if outcome == .confirmationRequired {
+                    needsConfirmation = true
+                    pendingKind = record.command.kind
+                }
+                if outcome == .queuedOffline || outcome == .failedRetryable {
+                    pending = true
+                    pendingKind = record.command.kind
+                }
+            }
+        }
+        var alerts = try await api.recover()
+        for record in try await store.allRecords() {
+            if let id = record.canonicalEventID, !alerts.contains(where: { $0.eventID == id }),
+               let status = try? await api.getAlertStatus(eventID: id) { alerts.append(status) }
+        }
+        return AppRecovery(alerts: alerts, needsConfirmation: needsConfirmation, pending: pending, pendingKind: pendingKind)
+    }
+
     private static var lifecycleAPI: RemoteUserLifecycleAPI? {
         guard let baseURL = SignalWordConfiguration.alertAPIBaseURL,
               let sessionManager else { return nil }
@@ -73,7 +108,7 @@ enum AppCompositionRoot {
               let containerURL = SignalWordConfiguration.appGroupContainerURL else {
             throw SessionError.configuration
         }
-        let store = try FileLockedAlertCommandStore(directoryURL: containerURL)
+        let store = try SQLiteAlertCommandStore(directoryURL: containerURL)
         let api = RemoteAlertAPI(baseURL: baseURL) { forceRefresh in
             try await sessionManager.accessToken(
                 createIfMissing: false,

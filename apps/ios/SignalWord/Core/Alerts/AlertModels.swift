@@ -1,6 +1,6 @@
 import Foundation
 
-public enum AlertKind: String, Codable, Sendable {
+public enum AlertKind: String, Codable, Equatable, Sendable {
     case test
     case real
 }
@@ -94,12 +94,27 @@ public struct CreatedAlert: Equatable, Sendable {
     }
 }
 
+/// The complete alert-creation wire response shared by the app and fixture tests.
+public struct AlertCreationWireResponse: Decodable, Sendable {
+    public let eventID: UUID
+    public let state: String
+    public let delivery: String
+    public let serverTriggeredAt: Date
+    public let reused: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case eventID = "eventId"
+        case state, delivery, serverTriggeredAt, reused
+    }
+}
+
 public enum TriggerOutcome: Equatable, Sendable {
     case created(eventID: UUID)
     case reused(eventID: UUID)
     case queuedOffline
     case rejected
     case failedRetryable
+    case confirmationRequired
 }
 
 public enum PersistedTriggerPhase: String, Codable, Sendable {
@@ -138,6 +153,7 @@ public struct PersistedTriggerRecord: Codable, Equatable, Sendable {
 
 public enum CanonicalCommandAcquisition: Equatable, Sendable {
     case attempt(AlertCommand)
+    case confirmationRequired(AlertCommand)
     case pending(AlertCommand)
     case created(AlertCommand, eventID: UUID)
     case rejected(AlertCommand)
@@ -152,6 +168,7 @@ public protocol AlertCommandPersisting: Sendable {
         attemptLease: TimeInterval
     ) async throws -> CanonicalCommandAcquisition
 
+    func acquirePending(kind: AlertKind, at: Date, attemptLease: TimeInterval, allowDelayed: Bool) async throws -> CanonicalCommandAcquisition?
     func markCreated(_ command: AlertCommand, alert: CreatedAlert, at: Date) async throws
     func markQueued(_ command: AlertCommand, at: Date) async throws
     func markRejected(_ command: AlertCommand, at: Date) async throws
@@ -203,4 +220,8 @@ public enum LocationFreshness: String, Codable, Sendable {
         if age <= 120 { return .recent }
         return .stale
     }
+}
+
+public extension AlertCommandPersisting {
+    func acquirePending(kind: AlertKind, at: Date, attemptLease: TimeInterval, allowDelayed: Bool) async throws -> CanonicalCommandAcquisition? { nil }
 }

@@ -252,7 +252,10 @@ private func withTemporaryStore(
     try await body(FileLockedAlertCommandStore(directoryURL: directory))
 }
 
-private enum StubError: Error { case unauthorized }
+private enum StubError: RetryClassifiableError {
+    var isRetryable: Bool { false }
+    case unauthorized
+}
 private enum RetryableStubError: RetryClassifiableError {
     case offline
     var isRetryable: Bool { true }

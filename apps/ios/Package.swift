@@ -9,6 +9,7 @@ let package = Package(
         .executable(name: "SignalWordCoreVerification", targets: ["SignalWordCoreVerification"]),
     ],
     targets: [
+        .testTarget(name: "SignalWordCoreTests", dependencies: ["SignalWordCore"], path: "Tests"),
         .target(
             name: "SignalWordCore",
             path: "SignalWord/Core/Alerts"
