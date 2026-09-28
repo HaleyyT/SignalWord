@@ -29,7 +29,8 @@
     "release:manifest": "node scripts/release-manifest.mjs",
     "release:configuration": "node scripts/release-manifest.mjs --check-environment",
     "test:restore": "node scripts/test-restore-authority.mjs",
-    "test:integration": "node scripts/test-local-journey.mjs"
+    "test:integration": "node scripts/test-local-journey.mjs",
+    "test:monitor:runtime": "node scripts/test-monitor-runtime.mjs"
   },
   "devDependencies": {
     "supabase": "2.117.0"
