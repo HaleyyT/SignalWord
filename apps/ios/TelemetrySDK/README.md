@@ -1,11 +1,13 @@
-# Crash SDK dependency — verification pending
+# Optional crash SDK: local integration verified
 
-This local package selects only the official Sentry 9.29.0 static XCFramework and its C++ link dependency. The version and SHA-256 come from Sentry's official `sentry-apple-binaries` 9.29.0 manifest. SDK code is not forked. Swift Package Manager must verify the complete artifact before building.
+The package uses official Sentry 9.29.0 with its pinned SHA-256. Swift Package Manager successfully downloaded and validated the artifact on 29 September 2026.
 
-The artifact download did not complete in this implementation session. The application integration and privacy test therefore remain **uncompiled and unverified**. Do not enable reporting or promote this candidate until `swift test --package-path apps/ios`, the Release simulator build and UI journeys pass. The previous successful Swift test run predates this integration.
+Use `SIGNALWORD_WITH_SENTRY=1 swift test --package-path apps/ios` to run the actual serializer privacy test. Without that environment variable the package deliberately tests the SDK-unavailable fallback instead. Both paths are maintained; the SDK-enabled CI job prevents the fallback from concealing integration errors.
 
-Source: https://github.com/getsentry/sentry-apple-binaries/blob/9.29.0/Package.swift
+SDK-enabled compilation exposed UIKit-only options in the macOS test target. Those options are guarded by `canImport(UIKit)`; they remain explicitly disabled in the iOS app. The SDK serializer privacy regression and an SDK-linked Release simulator build passed. See the current release-readiness report for exact application journey results.
 
-No DSN is configured. To activate later, configure the development Sentry project, privacy/retention and symbol upload first, then set `SIGNALWORD_CRASH_REPORTING_ENABLED=YES` and `SIGNALWORD_SENTRY_DSN` in the signed development build configuration. A signed-device crash/relaunch and an inspection of the actual received event remain required. The app does not contain a crash-test button.
+No DSN is configured and no telemetry was sent. Activation still requires a development Sentry project, retention/IP-filtering review, symbol upload, and explicit build configuration. Set `SIGNALWORD_CRASH_REPORTING_ENABLED=YES` and `SIGNALWORD_SENTRY_DSN` only after those prerequisites. A signed-device crash/relaunch and inspection of the received event remain mandatory.
 
-The event filter builds a new event containing only numeric crash addresses, image UUIDs, build identity and fixed error text. Request payloads, capability URLs, locations, contacts, arbitrary exception text, breadcrumbs, registers and frame variables are not copied. Its serializer-level regression is included but has not yet run. This does not independently verify provider-side IP/retention configuration.
+The privacy filter constructs a new event containing only validated crash addresses, image UUIDs, build identity and fixed error text. It excludes contacts, coordinates, capability URLs, secret phrases, arbitrary messages, request data, breadcrumbs and frame variables. Local serializer tests do not prove provider-side IP handling or hosted retention.
+
+Official artifact manifest: https://github.com/getsentry/sentry-apple-binaries/blob/9.29.0/Package.swift

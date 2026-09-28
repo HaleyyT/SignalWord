@@ -27,15 +27,21 @@ enum CrashReporting {
             options.enableSwizzling = false
             options.enableFileIOTracing = false
             options.enableCoreDataTracing = false
+            // Sentry exposes UIKit interaction tracing only on UIKit platforms.
+            // The macOS serializer test still exercises the same privacy filter.
+            #if canImport(UIKit)
             options.enableUserInteractionTracing = false
+            #endif
             options.enableAutoSessionTracking = false
             options.enableWatchdogTerminationTracking = false
             options.enableAppHangTracking = false
             options.enableMetricKit = false
             options.enableMetrics = false
             options.enableLogs = false
+            #if canImport(UIKit)
             options.attachScreenshot = false
             options.attachViewHierarchy = false
+            #endif
             options.beforeBreadcrumb = { _ in nil }
             options.beforeSend = sanitized
         }
