@@ -68,7 +68,7 @@ function baseLifecycle(overrides = {}) {
   };
 }
 
-function userHandler(backend, logs = [], lifecycle = baseLifecycle()) {
+function userHandler(backend, logs = [], lifecycle = baseLifecycle(), overrides = {}) {
   return createUserApiHandler({
     backend,
     lifecycle,
@@ -84,6 +84,7 @@ function userHandler(backend, logs = [], lifecycle = baseLifecycle()) {
       confirmationPayloadCiphertext: 'encrypted-confirmation-token',
       payloadKeyVersion: 1,
     }),
+    ...overrides,
   });
 }
 
@@ -574,4 +575,16 @@ test('implausibly old or future location is omitted without blocking the alert',
   assert.ok(parseCreateAlert(input('2026-09-24T11:59:50Z'), now).location);
   assert.equal(parseCreateAlert(input('2026-09-23T11:59:59Z'), now).location, undefined);
   assert.equal(parseCreateAlert(input('2026-09-24T12:05:01Z'), now).location, undefined);
+});
+
+test('accepted alerts survive logger and best-effort wakeup failures',async()=>{
+ const logs={push(){throw Error('telemetry unavailable');}};
+ const handler=userHandler(baseBackend(),logs,baseLifecycle(),{wake(){throw Error('wakeup unavailable');}});
+ const response=await handler(alertRequest());assert.equal(response.status,201);
+ assert.equal((await response.json()).eventId,EVENT_ID);
+});
+test('contact confirmation survives logging failure',async()=>{
+ const handler=createContactConfirmHandler({lifecycle:baseLifecycle({confirmContact:async()=>true}),now:()=>1000,logger:{write(){throw Error('unavailable');}}});
+ const response=await handler(new Request(`https://api.example.test/v1/contacts/confirm/${TOKEN}`,{method:'POST'}));
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),{confirmed:true});
 });

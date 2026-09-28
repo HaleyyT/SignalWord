@@ -57,6 +57,13 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
       if (!response.ok) throw new ApiError(401, "AUTH_REQUIRED", "Authentication is required.");
       const user = await response.json() as { id?: unknown };
       if (typeof user.id !== "string") throw new ApiError(401, "AUTH_REQUIRED", "Authentication is required.");
+      let gate: Response;
+      try {
+        gate = await fetch(`${baseUrl}/rest/v1/rpc/assert_current_session`, {
+          method: "POST", headers: headers(`Bearer ${jwt}`), body: "{}", signal: AbortSignal.timeout(5000),
+        });
+      } catch { throw new ApiError(503, "SERVICE_UNAVAILABLE", "Session verification is temporarily unavailable.", true); }
+      if (!gate.ok || await gate.json().catch(() => false) !== true) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Session verification is temporarily unavailable.", true);
       return { id: user.id };
     },
 

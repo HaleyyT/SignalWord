@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 select no_plan();
 select ok(not has_function_privilege(r, p.oid, 'EXECUTE'),r||' cannot execute '||p.oid::regprocedure)
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
