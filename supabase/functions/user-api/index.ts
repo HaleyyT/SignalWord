@@ -138,7 +138,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         let displayName: string | undefined;
         if (request.method === "PUT") {
           const body = await readJson(request) as { displayName?: unknown };
-          if (typeof body?.displayName !== "string" || !body.displayName.trim() || body.displayName.trim().length > 80) {
+          if (!body || Array.isArray(body) || Object.keys(body).some(key => key !== "displayName") || typeof body?.displayName !== "string" || !body.displayName.trim() || body.displayName.trim().length > 80) {
             throw new ApiError(400, "INVALID_REQUEST", "Enter a name between 1 and 80 characters.");
           }
           displayName = body.displayName.trim();
@@ -197,6 +197,9 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
           status = 200;
         } else if (request.method === "POST" && locationMatch && UUID_PATTERN.test(locationMatch[1])) {
           const body = await readJson(request) as { location?: unknown };
+          if (!body || Array.isArray(body) || Object.keys(body).some(key => key !== "location")) {
+            throw new ApiError(400, "INVALID_REQUEST", "Only location is accepted.");
+          }
           const parsed = parseCreateAlert({
             kind: "real", triggerMethod: "manual",
             clientTriggeredAt: new Date(dependencies.now()).toISOString(), location: body?.location,
@@ -272,10 +275,10 @@ if (import.meta.main) {
       const runtime = (globalThis as unknown as { EdgeRuntime?: { waitUntil(task: Promise<void>): void } }).EdgeRuntime;
       runtime?.waitUntil(task);
     },
-    backend: createBackendGateway({ url, anonKey }),
+    backend: createBackendGateway({ url, anonKey, serviceRoleKey }),
     lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey }),
     network: createContactNetworkGateway({ url, anonKey, serviceRoleKey }),
-    checkIn: createCheckInGateway({ url, anonKey }),
+    checkIn: createCheckInGateway({ url, anonKey, serviceRoleKey }),
     delivery: createDeliveryPolicy(environment, provider),
     encryptPayload: async (viewerToken) => ({
       ciphertext: await cipher.encrypt(viewerToken),

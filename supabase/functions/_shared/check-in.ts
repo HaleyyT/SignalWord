@@ -43,9 +43,9 @@ export function parseCheckIn(value: unknown): CheckInInput {
   return input;
 }
 export function createCheckInGateway(
-  config: { url: string; anonKey: string },
+  config: { url: string; anonKey: string; serviceRoleKey: string },
 ): CheckInGateway {
-  async function rpc(name: string, body: unknown, jwt: string) {
+  async function rpc(name: string, body: unknown, jwt: string, privileged = false) {
     let response: Response;
     try {
       response = await fetch(
@@ -54,7 +54,7 @@ export function createCheckInGateway(
           method: "POST",
           signal: AbortSignal.timeout(5000),
           headers: {
-            apikey: config.anonKey,
+            apikey: privileged ? config.serviceRoleKey : config.anonKey,
             Authorization: `Bearer ${jwt}`,
             "Content-Type": "application/json",
           },
@@ -114,7 +114,7 @@ export function createCheckInGateway(
         p_command_id: command ?? null,
       }, jwt),
     change: (userId, jwt, command, input, provider, payloads) =>
-      rpc("change_check_in", {
+      rpc("gateway_change_check_in", {
         p_user_id: userId,
         p_command_id: command,
         p_action: input.action,
@@ -122,6 +122,6 @@ export function createCheckInGateway(
         p_minutes: input.minutes ?? null,
         p_provider: provider,
         p_payloads: payloads,
-      }, jwt),
+      }, config.serviceRoleKey, true),
   };
 }

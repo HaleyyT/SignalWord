@@ -75,6 +75,8 @@ select throws_ok($$select public.disable_contact(
   '42501', 'NOT_AUTHORIZED', 'user B cannot disable user A contact');
 
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$
   select * from public.create_or_reuse_alert(
     '41000000-0000-4000-8000-000000000001',
@@ -82,6 +84,7 @@ select lives_ok($$
     'real', 'manual', repeat('v', 43), 'fake', repeat('p', 48), 1, null
   )
 $$, 'confirmed user can create an alert');
+set local role authenticated;
 select is((select count(*) from public.alert_events where user_id = '41000000-0000-4000-8000-000000000001'),
   1::bigint, 'one alert exists');
 

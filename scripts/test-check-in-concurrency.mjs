@@ -30,7 +30,7 @@ function sql(statement) {
   });
 }
 const auth =
-  `set local role authenticated;set local request.jwt.claim.sub='${user}';`;
+  `set local role service_role;set local request.jwt.claim.sub='${user}';`;
 async function wait(label) {
   for (let i = 0; i < 100; i++) {
     if (
@@ -52,7 +52,7 @@ async function start() {
     })),
   );
   await sql(
-    `begin;${auth}select public.change_check_in('${user}','${key}','start',null,15,'fake','${payloads}');commit;`,
+    `begin;${auth}select public.gateway_change_check_in('${user}','${key}','start',null,15,'fake','${payloads}');commit;`,
   );
   return await sql(
     `select id from public.check_in_timers where user_id='${user}' and state='active';`,
@@ -77,7 +77,7 @@ try {
   );
   const label = `timer-${user}`;
   const cancel = sql(
-    `begin;set local application_name='${label}';${auth}select public.change_check_in('${user}','${randomUUID()}','cancel','${timer}');select pg_sleep(4);commit;`,
+    `begin;set local application_name='${label}';${auth}select public.gateway_change_check_in('${user}','${randomUUID()}','cancel','${timer}');select pg_sleep(4);commit;`,
   );
   await wait(label);
   await sql("select pg_sleep(2.1);");
@@ -101,7 +101,7 @@ try {
     `update public.check_in_timers set deadline=now()-interval '58 seconds',grace_ends_at=now()+interval '2 seconds' where id='${timer}';`,
   );
   const extend = sql(
-    `begin;set local application_name='${label}';${auth}select public.change_check_in('${user}','${randomUUID()}','extend','${timer}',15);select pg_sleep(4);commit;`,
+    `begin;set local application_name='${label}';${auth}select public.gateway_change_check_in('${user}','${randomUUID()}','extend','${timer}',15);select pg_sleep(4);commit;`,
   );
   await wait(label);
   await sql("select pg_sleep(2.1);");
@@ -125,7 +125,7 @@ try {
   await wait(label);
   assert.equal(await sql("select public.sweep_check_ins();"), "0");
   const late = sql(
-    `begin;${auth}select public.change_check_in('${user}','${randomUUID()}','cancel','${timer}')->>'state';commit;`,
+    `begin;${auth}select public.gateway_change_check_in('${user}','${randomUUID()}','cancel','${timer}')->>'state';commit;`,
   );
   await expire;
   assert.equal(await late, "escalated");

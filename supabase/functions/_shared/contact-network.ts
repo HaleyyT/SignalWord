@@ -116,7 +116,7 @@ export function createContactNetworkGateway(
       };
     },
     async create(input, userId, key, provider, recipients, jwt) {
-      const rows = await rpc("create_routed_alert", {
+      const rows = await rpc("gateway_create_routed_alert", {
         p_user_id: userId,
         p_idempotency_key: key,
         p_kind: input.kind,
@@ -125,7 +125,7 @@ export function createContactNetworkGateway(
         p_recipients: recipients,
         p_location: input.location ?? null,
         p_client_triggered_at: input.clientTriggeredAt,
-      }, jwt) as Record<string, unknown>[];
+      }, config.serviceRoleKey, true) as Record<string, unknown>[];
       const row = rows?.[0];
       return {
         eventId: row?.event_id,

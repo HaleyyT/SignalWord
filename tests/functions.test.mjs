@@ -306,7 +306,7 @@ test('contact setup cannot select another owner through its request body', async
 });
 
 test('contact setup fails closed without backend credentials', async () => {
-  const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key' });
+  const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'server-key' });
   await assert.rejects(gateway.saveContact({}, 'user-jwt'),
     (error) => error.status === 503 && error.code === 'SERVICE_UNAVAILABLE');
 });
@@ -323,7 +323,7 @@ test('contact setup uses backend credentials and exposes rate limits as bounded 
     });
   };
   try {
-    const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'backend-only-key' });
+    const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'server-key', serviceRoleKey: 'backend-only-key' });
     await assert.rejects(
       gateway.saveContact({
         userId: USER_ID, name: 'Trusted', destinationCiphertext: 'encrypted-destination',
@@ -432,7 +432,7 @@ test('viewer tokens contain 256 random bits encoded as unpadded base64url', () =
   for (const token of tokens) assert.match(token, /^[A-Za-z0-9_-]{43}$/);
 });
 
-test('backend gateway forwards caller auth and maps the internal RPC result', async () => {
+test('backend gateway uses server credentials and maps the internal RPC result', async () => {
   const originalFetch = globalThis.fetch;
   let request;
   globalThis.fetch = async (url, init) => {
@@ -446,7 +446,7 @@ test('backend gateway forwards caller auth and maps the internal RPC result', as
     }]), { status: 200, headers: { 'Content-Type': 'application/json' } });
   };
   try {
-    const gateway = createBackendGateway({ url: 'https://project.supabase.co/', anonKey: 'publishable-key' });
+    const gateway = createBackendGateway({ url: 'https://project.supabase.co/', anonKey: 'publishable-key', serviceRoleKey: 'server-key' });
     const result = await gateway.createAlert({
       kind: 'real', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',
     }, USER_ID, IDEMPOTENCY_KEY, {
@@ -457,9 +457,9 @@ test('backend gateway forwards caller auth and maps the internal RPC result', as
     }, 'user-jwt');
 
     assert.equal(result.eventId, EVENT_ID);
-    assert.equal(request.url, 'https://project.supabase.co/rest/v1/rpc/create_or_reuse_alert');
-    assert.equal(request.init.headers.Authorization, 'Bearer user-jwt');
-    assert.equal(request.init.headers.apikey, 'publishable-key');
+    assert.equal(request.url, 'https://project.supabase.co/rest/v1/rpc/gateway_create_or_reuse_alert');
+    assert.equal(request.init.headers.Authorization, 'Bearer server-key');
+    assert.equal(request.init.headers.apikey, 'server-key');
     const rpcBody = JSON.parse(request.init.body);
     assert.equal(rpcBody.p_idempotency_key, IDEMPOTENCY_KEY);
     assert.equal(rpcBody.p_viewer_token, TOKEN);
@@ -478,7 +478,7 @@ test('malformed successful database results fail closed as retryable', async () 
     headers: { 'Content-Type': 'application/json' },
   });
   try {
-    const gateway = createBackendGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key' });
+    const gateway = createBackendGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'server-key' });
     await assert.rejects(
       gateway.createAlert({
         kind: 'real', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',

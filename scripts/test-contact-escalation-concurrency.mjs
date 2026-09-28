@@ -75,7 +75,7 @@ try {
       ).join("\n")
     }
     begin; ${asUser}
-    select * from public.create_routed_alert('${user}','${command}','real','manual','fake','${payload}'::jsonb);
+    set local role service_role; select * from public.gateway_create_routed_alert('${user}','${command}','real','manual','fake','${payload}'::jsonb);
     commit;`,
   );
   const event = await sql(
@@ -125,7 +125,7 @@ try {
   );
   const nextKey = randomUUID();
   const nextPayload = JSON.stringify(['a','b','c'].map(i => ({token:(i+user.replaceAll('-','')).padEnd(43,i),ciphertext:i.repeat(48),keyVersion:1})));
-  const create = `begin;${asUser}select * from public.create_routed_alert('${user}','${nextKey}','test','manual','fake','${nextPayload}'::jsonb);commit;`;
+  const create = `begin;${asUser}set local role service_role; select * from public.gateway_create_routed_alert('${user}','${nextKey}','test','manual','fake','${nextPayload}'::jsonb);commit;`;
   await Promise.all([sql(create),sql(create)]);
   assert.equal(await sql(`select count(*) from public.alert_events where user_id='${user}' and idempotency_key='${nextKey}';`),'1');
   const nextEvent=await sql(`select id from public.alert_events where user_id='${user}' and idempotency_key='${nextKey}';`);

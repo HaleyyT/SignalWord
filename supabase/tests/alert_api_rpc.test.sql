@@ -26,6 +26,8 @@ insert into public.trusted_contacts (
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 
 select lives_ok($$
   select * from public.create_or_reuse_alert(
@@ -34,12 +36,15 @@ select lives_ok($$
     'test', 'manual', repeat('a', 43), 'fake', repeat('x', 48), 1, null
   )
 $$, 'authenticated user can create a test alert');
+set local role authenticated;
 
 reset role;
 select is((select count(*) from public.alert_events), 1::bigint, 'first request creates one event');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$
   select * from public.create_or_reuse_alert(
     '10000000-0000-4000-8000-000000000001',
@@ -47,12 +52,15 @@ select lives_ok($$
     'test', 'manual', repeat('z', 43), 'fake', repeat('y', 48), 1, null
   )
 $$, 'same idempotency key is safely reused');
+set local role authenticated;
 
 reset role;
 select is((select count(*) from public.alert_events), 1::bigint, 'idempotent retry creates no event');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$
   select * from public.create_or_reuse_alert(
     '10000000-0000-4000-8000-000000000001',
@@ -60,6 +68,7 @@ select lives_ok($$
     'real', 'vocalShortcut', repeat('b', 43), 'fake', repeat('w', 48), 1, null
   )
 $$, 'a recent test alert never suppresses a real alert');
+set local role authenticated;
 
 reset role;
 select is((select count(*) from public.alert_events), 2::bigint, 'test and real alerts are distinct canonical events');
@@ -68,6 +77,8 @@ select is((select count(*) from public.viewer_tokens), 2::bigint, 'each canonica
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select throws_ok($$
   select * from public.create_or_reuse_alert(
     '10000000-0000-4000-8000-000000000001',
@@ -75,6 +86,7 @@ select throws_ok($$
     'real', 'manual', repeat('c', 43), 'fake', repeat('v', 48), 1, null
   )
 $$, '42501', 'NOT_AUTHORIZED', 'user B cannot create an alert for user A');
+set local role authenticated;
 
 reset role;
 select is(

@@ -24,7 +24,7 @@ export interface BackendGateway {
   publicEvent(tokenHashHex: string): Promise<unknown | null>;
 }
 
-interface GatewayConfiguration { url: string; anonKey: string }
+interface GatewayConfiguration { url: string; anonKey: string; serviceRoleKey?: string }
 
 export function createBackendGateway(configuration: GatewayConfiguration): BackendGateway {
   const baseUrl = configuration.url.replace(/\/$/, "");
@@ -33,6 +33,15 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
     Authorization: authorization,
     "Content-Type": "application/json",
   });
+
+  async function checkPublicResult(response: Response): Promise<void> {
+    if (response.ok) return;
+    const body = await response.json().catch(() => null);
+    if (body?.message === "RATE_LIMITED") {
+      throw new ApiError(429, "RATE_LIMITED", "Please retry shortly.", true, 60);
+    }
+    throw new ApiError(503, "SERVICE_UNAVAILABLE", "The alert is temporarily unavailable.", true);
+  }
 
   return {
     async authenticate(jwt) {
@@ -51,12 +60,13 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
       return { id: user.id };
     },
 
-    async createAlert(input, userId, idempotencyKey, delivery, jwt) {
+    async createAlert(input, userId, idempotencyKey, delivery, _jwt) {
+      if (!configuration.serviceRoleKey) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Alert creation is unavailable.", true);
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/rest/v1/rpc/create_or_reuse_alert`, {
+        response = await fetch(`${baseUrl}/rest/v1/rpc/gateway_create_or_reuse_alert`, {
           method: "POST", signal: AbortSignal.timeout(5000),
-          headers: headers(`Bearer ${jwt}`),
+          headers: { ...headers(`Bearer ${configuration.serviceRoleKey}`), apikey: configuration.serviceRoleKey },
           body: JSON.stringify({
             p_user_id: userId,
             p_idempotency_key: idempotencyKey,
@@ -108,7 +118,7 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
         method: "POST", signal: AbortSignal.timeout(5000), headers: headers(`Bearer ${configuration.anonKey}`),
         body: JSON.stringify({p_token_hash: `\\x${tokenHashHex}`}),
       });
-      if (!response.ok) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Acknowledgement is temporarily unavailable.", true);
+      await checkPublicResult(response);
       return await response.json() === true;
     },
     async publicEvent(tokenHashHex) {
@@ -122,7 +132,7 @@ export function createBackendGateway(configuration: GatewayConfiguration): Backe
       } catch {
         throw new ApiError(503, "SERVICE_UNAVAILABLE", "The alert is temporarily unavailable.", true);
       }
-      if (!response.ok) throw new ApiError(503, "SERVICE_UNAVAILABLE", "The alert is temporarily unavailable.", true);
+      await checkPublicResult(response);
       const rows = await response.json() as Array<{ projection?: unknown }>;
       return rows[0]?.projection ?? null;
     },
