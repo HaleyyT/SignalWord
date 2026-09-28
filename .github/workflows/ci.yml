@@ -72,6 +72,17 @@ jobs:
       - run: npm ci
       - run: npx supabase start
       - run: npm run test:db
+      - run: npm run test:restore
+      - run: node scripts/test-contact-escalation-concurrency.mjs
+      - run: node scripts/test-check-in-concurrency.mjs
+      - run: npm run test:integration
+      - name: Retain candidate manifest
+        run: npm run --silent release:manifest > /tmp/signalword-release-manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-manifest
+          path: /tmp/signalword-release-manifest.json
+          retention-days: 30
 
   ios:
     name: Build iOS app and verify trigger core

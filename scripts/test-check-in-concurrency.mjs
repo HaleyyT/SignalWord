@@ -1,3 +1,4 @@
+import { localContainer, localRestContainer, localWorkdir } from "./local-fixture.mjs";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
@@ -7,7 +8,7 @@ function sql(statement) {
     const child = spawn("docker", [
       "exec",
       "-i",
-      "supabase_db_SignalWord",
+      localContainer,
       "psql",
       "-X",
       "-qAt",
@@ -26,7 +27,7 @@ function sql(statement) {
       "exit",
       (code) => code === 0 ? resolve(output.trim()) : reject(new Error(error)),
     );
-    child.stdin.end(statement);
+    child.stdin.end("set signalword.local_fixture='true';"+statement);
   });
 }
 const auth =

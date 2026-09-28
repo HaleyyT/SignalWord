@@ -1,3 +1,4 @@
+import { localWorkdir } from "./local-fixture.mjs";
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
@@ -24,7 +25,7 @@ if (!existsSync(supabase)) {
   process.exit(1);
 }
 
-const standard = run(supabase, ['test', 'db']);
+const standard = run(supabase, ['--workdir', localWorkdir, 'test', 'db', testsDirectory]);
 if (standard.status === 0) {
   output(standard);
   process.exit(0);
@@ -42,7 +43,7 @@ if (!dockerDesktopMountDenied) {
 // Desktop-hosted test directory. Copy the exact committed suites into that
 // project's local database container and run them there. CI and all other
 // environments continue to use `supabase test db` above.
-const config = readFileSync(`${root}/supabase/config.toml`, 'utf8');
+const config = readFileSync(`${localWorkdir}/supabase/config.toml`, 'utf8');
 const projectID = /^project_id\s*=\s*"([A-Za-z0-9_-]+)"/m.exec(config)?.[1];
 if (!projectID) {
   console.error('Could not resolve a safe Supabase project_id for the Docker fallback.');

@@ -1,3 +1,4 @@
+import { localContainer, localRestContainer, localWorkdir } from "./local-fixture.mjs";
 // Local Docker-only fault tests. Never accepts a hosted database connection.
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -6,7 +7,7 @@ const user = randomUUID();
 const contacts = [randomUUID(), randomUUID(), randomUUID()];
 const command = randomUUID();
 const worker = randomUUID();
-const database = "supabase_db_SignalWord";
+const database = localContainer;
 function sql(statement) {
   return new Promise((resolve, reject) => {
     const child = spawn("docker", [
@@ -31,7 +32,7 @@ function sql(statement) {
       "exit",
       (code) => code === 0 ? resolve(output.trim()) : reject(new Error(error)),
     );
-    child.stdin.end(statement);
+    child.stdin.end("set signalword.local_fixture='true';"+statement);
   });
 }
 const asUser =

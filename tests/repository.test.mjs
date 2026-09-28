@@ -76,7 +76,7 @@ test('database policy integration tests are committed and exercised in CI', () =
 
 test('database runner keeps the standard path and narrowly handles the Docker Desktop mount failure', () => {
   const runner = readFileSync('scripts/test-database.mjs', 'utf8');
-  assert.match(runner, /\['test', 'db'\]/);
+  assert.match(runner, /'test', 'db', testsDirectory/);
   assert.match(runner, /error while creating mount source path/);
   assert.match(runner, /operation not permitted/);
   assert.match(runner, /PGOPTIONS=-c search_path=public,extensions/);
