@@ -60,6 +60,15 @@ export function renderAlertEmail(delivery: ProviderDelivery, viewerUrl: string):
   const identityText = `${sender} sent this SignalWord message.\n\n`;
   const identityHTML = `<p>${escapeHtml(sender)} sent this SignalWord message.</p>`;
   if (delivery.messageType === "resolved") {
+    // Resolution is still part of the rehearsal. Preserve TEST labelling in
+    // notifications as well as the recipient page, including plain-text inboxes.
+    if (delivery.kind === "test") {
+      return {
+        subject: "TEST — NO EMERGENCY: SignalWord rehearsal resolved",
+        text: `${identityText}TEST — NO EMERGENCY HAS BEEN REPORTED.\n\nThe SignalWord rehearsal has been marked resolved. Review the test status: ${viewerUrl}\n\nDo not contact emergency services because of this test message.`,
+        html: `${identityHTML}<h1>TEST — NO EMERGENCY</h1><p>The SignalWord rehearsal has been marked resolved.</p><p><a href="${escapeHtml(viewerUrl)}">Review the test status</a></p><p>Do not contact emergency services because of this test message.</p>`,
+      };
+    }
     return {
       subject: "SignalWord alert resolved",
       text: `${identityText}The SignalWord alert has been marked resolved. Review the current status: ${viewerUrl}\n\nSignalWord does not contact emergency services or guarantee delivery or rescue.`,

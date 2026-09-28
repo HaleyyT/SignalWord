@@ -45,6 +45,17 @@ test('alert copy unmistakably separates TEST, REAL, and resolved messages', () =
   assert.match(resolved.subject, /resolved/i);
 });
 
+test('resolved rehearsals remain unmistakably TEST in every email format', () => {
+  const message = renderAlertEmail({ eventId: EVENT_ID, recipient: 'trusted@example.com',
+    viewerToken: TOKEN, idempotencyKey: `alert/${EVENT_ID}/resolved`,
+    messageType: 'resolved', kind: 'test' }, 'https://signalword.example/events/token');
+  assert.match(message.subject, /^TEST — NO EMERGENCY:/);
+  assert.match(message.subject, /resolved/i);
+  assert.match(message.text, /TEST — NO EMERGENCY/);
+  assert.match(message.html, /TEST — NO EMERGENCY/);
+  assert.match(message.text, /Do not contact emergency services because of this test/);
+});
+
 test('contact confirmation copy explains consent, expiry, and limitations', () => {
   const message = renderContactVerificationEmail(`https://signalword.example/confirm/${TOKEN}`);
   assert.match(message.text, /Confirm only if/);
