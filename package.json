@@ -25,7 +25,11 @@
     "test:ios:ui": "bash scripts/test-ios-ui.sh",
     "monitor:operations": "node scripts/check-operations.mjs",
     "test:signup:browser": "node apps/viewer/e2e/signup.mjs",
-    "test:home:browser": "node apps/viewer/e2e/home.mjs"
+    "test:home:browser": "node apps/viewer/e2e/home.mjs",
+    "release:manifest": "node scripts/release-manifest.mjs",
+    "release:configuration": "node scripts/release-manifest.mjs --check-environment",
+    "test:restore": "node scripts/test-restore-authority.mjs",
+    "test:integration": "node scripts/test-local-journey.mjs"
   },
   "devDependencies": {
     "supabase": "2.117.0"
