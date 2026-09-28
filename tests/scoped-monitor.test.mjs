@@ -26,3 +26,30 @@ test('monitor deduplicates incidents, retries failed notifications, and reports 
   problems=[];await monitor.fetch();await monitor.fetch();assert.equal(notifications.length,3);assert.equal(notifications[2].state,'recovered');
  }finally{globalThis.fetch=original;}
 });
+
+test('Healthchecks separates backend failures from monitor liveness and retries reporting',async()=>{
+ const original=globalThis.fetch;
+ const heartbeat='https://hc-ping.com/00000000-0000-4000-8000-000000000001';
+ const operations='https://hc-ping.com/00000000-0000-4000-8000-000000000002';
+ let problems=['ALERT_OUTCOME_UNKNOWN'],reply='OK';const calls=[];
+ globalThis.fetch=async(url,init)=>{
+  if(String(url).includes('operational-health')) return Response.json({problems});
+  calls.push(String(url));assert.equal(init.body,undefined);assert.equal(init.redirect,'error');
+  return new Response(String(url).startsWith(operations)?reply:'OK');
+ };
+ const monitor=new Monitor({blockConcurrencyWhile:fn=>fn(),storage:{get:async()=>undefined}},
+  {BACKEND_ORIGIN:'https://backend.example',MONITOR_SECRET:key,OPERATIONS_PING_URL:operations,HEARTBEAT_URL:heartbeat});
+ try {
+  await monitor.fetch();await monitor.fetch();
+  assert.deepEqual(calls,[operations+'/fail',heartbeat,operations+'/fail',heartbeat]);
+  problems=[];calls.length=0;assert.equal((await monitor.fetch()).status,200);
+  assert.deepEqual(calls,[operations,heartbeat]);
+  reply='OK (not found)';calls.length=0;assert.equal((await monitor.fetch()).status,503);
+  assert.deepEqual(calls,[operations,heartbeat+'/fail']);
+  reply='OK';calls.length=0;assert.equal((await monitor.fetch()).status,200);
+  monitor.env.BACKEND_ORIGIN='invalid';calls.length=0;await monitor.fetch();
+  assert.deepEqual(calls,[operations+'/fail',heartbeat]);
+  monitor.env.OPERATIONS_PING_URL=heartbeat;calls.length=0;
+  assert.equal((await monitor.fetch()).status,503);assert.deepEqual(calls,[heartbeat+'/fail']);
+ }finally{globalThis.fetch=original;}
+});
