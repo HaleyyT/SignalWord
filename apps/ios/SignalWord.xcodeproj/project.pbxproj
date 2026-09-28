@@ -4,6 +4,9 @@
 	classes = {};
 	objectVersion = 77;
 	objects = {
+        300000000000000000000001 = {isa = XCLocalSwiftPackageReference; relativePath = TelemetrySDK; };
+        300000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = 300000000000000000000001; productName = SignalWordSentry; };
+        300000000000000000000003 = {isa = PBXBuildFile; productRef = 300000000000000000000002; };
 
         200000000000000000000001 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = SignalWordUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
         200000000000000000000002 = {isa = PBXFileSystemSynchronizedRootGroup; path = UITests; sourceTree = "<group>"; };
@@ -27,7 +30,7 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		100000000000000000000003 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		100000000000000000000003 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (300000000000000000000003,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -61,7 +64,7 @@
 			dependencies = ();
 			fileSystemSynchronizedGroups = (100000000000000000000002 /* SignalWord */,);
 			name = SignalWord;
-			packageProductDependencies = ();
+			packageProductDependencies = (300000000000000000000002,);
 			productName = SignalWord;
 			productReference = 100000000000000000000001 /* SignalWord.app */;
 			productType = "com.apple.product-type.application";
@@ -71,6 +74,7 @@
 /* Begin PBXProject section */
 		10000000000000000000000A /* Project object */ = {
 			isa = PBXProject;
+            packageReferences = (300000000000000000000001,);
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2700;
@@ -120,7 +124,9 @@
 			INFOPLIST_KEY_SignalWordSupabaseURL = "$(SIGNALWORD_SUPABASE_URL)";
 			INFOPLIST_KEY_SignalWordUserAPIURL = "$(SIGNALWORD_USER_API_URL)";
             INFOPLIST_KEY_SignalWordVerificationURL = "$(SIGNALWORD_VERIFICATION_URL)";
-            INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
+            INFOPLIST_KEY_SignalWordCrashReportingEnabled = "$(SIGNALWORD_CRASH_REPORTING_ENABLED)";
+                INFOPLIST_KEY_SignalWordSentryDSN = "$(SIGNALWORD_SENTRY_DSN)";
+                INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
 			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 			MARKETING_VERSION = 1.0;
 			PRODUCT_BUNDLE_IDENTIFIER = com.signalword.app;
@@ -150,7 +156,9 @@
 			INFOPLIST_KEY_SignalWordSupabaseURL = "$(SIGNALWORD_SUPABASE_URL)";
 			INFOPLIST_KEY_SignalWordUserAPIURL = "$(SIGNALWORD_USER_API_URL)";
             INFOPLIST_KEY_SignalWordVerificationURL = "$(SIGNALWORD_VERIFICATION_URL)";
-            INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
+            INFOPLIST_KEY_SignalWordCrashReportingEnabled = "$(SIGNALWORD_CRASH_REPORTING_ENABLED)";
+                INFOPLIST_KEY_SignalWordSentryDSN = "$(SIGNALWORD_SENTRY_DSN)";
+                INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
 			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 			MARKETING_VERSION = 1.0;
 			PRODUCT_BUNDLE_IDENTIFIER = com.signalword.app;

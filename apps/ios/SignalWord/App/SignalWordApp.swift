@@ -9,6 +9,8 @@ struct SignalWordApp: App {
         return AppShellModel.live()
     }()
 
+    init() { CrashReporting.start() }
+
     var body: some Scene {
         WindowGroup {
             SignalWordRootView(model: model)
