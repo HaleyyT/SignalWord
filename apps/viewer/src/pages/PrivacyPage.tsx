@@ -22,7 +22,7 @@ export function PrivacyPage() {
         </section>
         <section className="information-section">
           <h2>Retention</h2>
-          <p>Location samples are scheduled for deletion 24 hours after resolution or expiry. Redacted delivery diagnostics are retained for no more than seven days.</p>
+          <p>Location samples are scheduled for deletion 24 hours after resolution or expiry. Redacted delivery diagnostics are retained for no more than seven days. A separate recovery journal retains opaque account/contact identifiers and consent generations for at least 90 days so a backup restore cannot undo deletion or withdrawal. That journal does not contain contact addresses, locations or private alert links.</p>
         </section>
         <section className="information-section">
           <h2>Links and recipients</h2>
@@ -30,7 +30,7 @@ export function PrivacyPage() {
         </section>
         <section className="information-section information-section-emphasis">
           <h2>Delete your data</h2>
-          <p>When the in-app deletion flow is available, it revokes viewer links, removes server data, clears local storage, and signs out the device identity. Until then, do not rely on this page as a deletion request mechanism.</p>
+          <p>Use the in-app deletion flow to revoke viewer links, remove your profile and alert data, clear local storage, and sign out the device identity. Completion requires the recovery journal and local cleanup to succeed; interrupted requests may need a retry. A hashed completion receipt and the recovery journal remain to prevent deleted access from being restored. This page does not submit a deletion request.</p>
         </section>
       </article>
     </main>
