@@ -1,4 +1,5 @@
-import { localWorkdir } from "./local-fixture.mjs";
+import { acquireLocalFixtureLock, localWorkdir } from "./local-fixture.mjs";
+acquireLocalFixtureLock();
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 

@@ -1,4 +1,8 @@
+import { createServer as createViteServer } from "vite";
+import { chromium } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 import {
+  acquireLocalFixtureLock,
   localContainer,
   localRestContainer,
   localWorkdir,
@@ -92,6 +96,7 @@ if (!process.env.SIGNALWORD_FIXTURE_CERT) {
 } else await journey();
 
 async function journey() {
+  acquireLocalFixtureLock();
   const databaseHost = process.env.SIGNALWORD_FIXTURE_DB_HOST;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (input, options) => {
@@ -213,6 +218,7 @@ async function journey() {
   await new Promise((r) => control.listen(0, "0.0.0.0", r));
   const origin = `https://localhost:${control.address().port}`;
   const certName = `/tmp/signalword-fixture-${crypto.randomUUID()}.crt`;
+  let viewerServer, browser;
   let userId;
   let receipt;
   const vaultIds = [];
@@ -471,6 +477,45 @@ async function journey() {
     await Promise.all([alertWorker(), alertWorker()]);
     assert.equal(sent.length, 2);
     const token = sent[1].viewerToken;
+    viewerServer = await createViteServer({
+      root: fileURLToPath(new URL("../apps/viewer/", import.meta.url)),
+      server: {
+        host: "127.0.0.1",
+        port: 0,
+        proxy: { "/v1": { target: apiOrigin } },
+      },
+    });
+    await viewerServer.listen();
+    browser = await chromium.launch({
+      headless: true,
+      ...(process.env.SIGNALWORD_CHROME_PATH
+        ? { executablePath: process.env.SIGNALWORD_CHROME_PATH }
+        : {}),
+    });
+    const page = await browser.newPage({
+      viewport: { width: 320, height: 700 },
+    });
+    await page.route(
+      "**/*",
+      (route) =>
+        ["127.0.0.1", "localhost"].includes(
+            new URL(route.request().url()).hostname,
+          )
+          ? route.continue()
+          : route.abort(),
+    );
+    await page.goto(
+      `http://127.0.0.1:${viewerServer.httpServer.address().port}/events/${token}`,
+    );
+    await page.getByRole("button", { name: "Acknowledge this alert" })
+      .waitFor();
+    assert.equal(
+      await page.evaluate(() =>
+        document.documentElement.scrollWidth <= window.innerWidth
+      ),
+      true,
+    );
+
     const view = await request(`/v1/public/events/${token}`);
     assert.equal(view.kind, "test");
     assert.equal(view.acknowledgedAt, undefined);
@@ -508,15 +553,27 @@ async function journey() {
       "Local pilot burst budget: 5 seconds",
     );
 
-    await request(`/v1/public/events/${token}`, "POST", undefined, {
-      "X-SignalWord-Action": "acknowledge",
-    });
+    await page.getByRole("button", { name: "Acknowledge this alert" }).click();
+    await page.getByText("Acknowledged through this recipient link.", {
+      exact: false,
+    }).waitFor();
+    assert.ok((await request(`/v1/public/events/${token}`)).acknowledgedAt);
+
     await request(`/v1/public/events/${token}`, "POST", undefined, {
       "X-SignalWord-Action": "acknowledge",
     });
     const recovered = await request("/v1/alerts/recovery");
     assert.ok(JSON.stringify(recovered).includes(event.eventId));
     await request(`/v1/alerts/${event.eventId}/resolve`, "POST");
+    await page.reload();
+    await page.getByRole("heading", {
+      name: "Local journey fixture resolved the alert",
+    }).waitFor();
+    await browser.close();
+    browser = undefined;
+    await viewerServer.close();
+    viewerServer = undefined;
+
     await alertWorker();
     assert.equal(sent.length, 3);
     const otherContacts = [];
@@ -640,7 +697,7 @@ async function journey() {
     );
     assert.ok(objects.size >= 1);
     console.log(
-      "PASS: real local Auth/API/database; three contacts; duplicate workers; provider rejection/retry/lost response; signed/duplicate/out-of-order callbacks; acknowledgement/escalation; withdrawal; timer cancellation/expiry; resolution; durable deletion. No messages sent.",
+      "PASS: real local Auth/API/database/React browser; three contacts; duplicate workers; provider rejection/retry/lost response; signed/duplicate/out-of-order callbacks; acknowledgement/escalation; withdrawal; timer cancellation/expiry; resolution; durable deletion. No messages sent.",
     );
   } finally {
     try {
@@ -690,6 +747,8 @@ async function journey() {
         await sql(`delete from vault.secrets where id='${id}';`);
       }
     } finally {
+      if (browser) await browser.close();
+      if (viewerServer) await viewerServer.close();
       if (originalTrust) {
         await run([
           "exec",

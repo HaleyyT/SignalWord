@@ -1,4 +1,5 @@
-import { localContainer, localRestContainer, localWorkdir } from "./local-fixture.mjs";
+import { acquireLocalFixtureLock, localContainer, localRestContainer, localWorkdir } from "./local-fixture.mjs";
+acquireLocalFixtureLock();
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
@@ -146,5 +147,10 @@ try {
     "PASS expiry winning the lock produces one incident and cannot be silently cancelled",
   );
 } finally {
-  await sql(`delete from auth.users where id='${user}';`);
+  await sql(`delete from public.rate_limit_buckets where subject_hash in (
+    select extensions.digest(t.token_hash || convert_to(a.action,'UTF8'),'sha256')
+    from public.viewer_tokens t join public.alert_events e on e.id=t.alert_event_id
+    cross join (values ('read'),('ack')) a(action) where e.user_id='${user}');
+    delete from auth.users where id='${user}';
+    delete from public.safety_journal_outbox where user_id='${user}';`);
 }
