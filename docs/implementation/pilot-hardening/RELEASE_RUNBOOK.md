@@ -73,7 +73,7 @@ npx supabase db push --dry-run
 npx supabase db push
 ```
 
-Apply every missing repository migration in timestamp order, through `20261001020000_journal_and_provider_health.sql`. The trust-boundary migration revokes unsafe grants; the restore migration configures PostgREST's pre-request gate and guards scheduled claims. Old functions can fail closed during this maintenance window. These migrations must not be rolled back to restore old permissions.
+Apply every missing repository migration in timestamp order, through `20261001030000_restore_safeupdate.sql`. The trust-boundary migration revokes unsafe grants; the restore migration configures PostgREST's pre-request gate and guards scheduled claims. Old functions can fail closed during this maintenance window. These migrations must not be rolled back to restore old permissions.
 
 5. Deploy **all seven** matching functions, preserving `supabase/config.toml` authentication settings:
 

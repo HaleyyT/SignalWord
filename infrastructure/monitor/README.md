@@ -4,7 +4,7 @@ The free Healthchecks mode uses two distinct secrets: `OPERATIONS_PING_URL` and 
 
 # Development operational monitor
 
-The development Worker has been provisioned with scheduling disabled pending hosted acceptance. Legacy webhook mode requires an operator-owned Cloudflare account, a Healthchecks check and an HTTPS incident receiver. Confirm account/cost settings before activation. Do not enable GitHub scheduled monitoring and Cloudflare incident notifications simultaneously unless duplicate notifications are intended.
+The development Worker is provisioned and scheduled every minute; complete hosted acceptance is still pending. See the current release-readiness report for the verified deployment and drill evidence. Legacy webhook mode requires an operator-owned Cloudflare account, a Healthchecks check and an HTTPS incident receiver. Confirm account/cost settings before activation. Do not enable GitHub scheduled monitoring and Cloudflare incident notifications simultaneously unless duplicate notifications are intended.
 
 1. Deploy the `operational-health` Edge Function to the development project with its dedicated `MONITOR_SECRET` (random, at least 32 characters). Never give an external monitor a Supabase service-role key.
 2. Configure Worker secrets `MONITOR_SECRET`, `OPERATOR_WEBHOOK`, and `HEARTBEAT_URL`. Configure `BACKEND_ORIGIN` to the development Supabase origin. These values must not enter Git or command output.

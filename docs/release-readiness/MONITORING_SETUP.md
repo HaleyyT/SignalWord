@@ -38,8 +38,14 @@ Local tests cover the request behavior, but do not prove hosted notifications or
 
 References: [Healthchecks pricing](https://healthchecks.io/pricing/), [Ping API](https://healthchecks.io/docs/http_api/), [notifications](https://healthchecks.io/docs/configuring_notifications/).
 
-## Latest development evidence
+## Latest development evidence — 29 September
 
-The cron is enabled every minute on Worker version `02ccd2f1-39f1-4f98-b278-4a797b7e3830`. Real Cloudflare execution initially rejected `redirect: error`, preventing both pings. Repair `2b4178c` uses manual redirects and rejects non-success responses; it does not follow redirects with secrets. Real local workerd now tests this path (four cases), including redirect refusal. Hosted ticks report both `PING_ACCEPTED` and backend failure/recovery states.
+The committed Worker is restored at version `e1e7fa93-acf1-4c1a-a903-3259c52d23f3`, with one-minute cron. Authority is open after verified reconciliation and backend health reports no problems. No new variables are needed.
 
-The missed-heartbeat drill paused cron around 17:09 UTC on 28 September and restored it after 17:15 UTC. Authority remained quarantined during the pause. Reopening initially exposed quarantine-era timer/dispatch health results; we requarantined, reconciled again, verified no accounts, then invoked the existing timer sweep/dispatch wakeup. Final aggregate health returned no problems. Operator receipt of automatic DOWN/UP notifications and suppression across repeated failures remain unverified. Manual TEST emails are not this evidence.
+The earlier 03:09–03:15 cron pause **did not stop pings** and does not pass missed-heartbeat acceptance. A later explicit cron removal also continued receiving pings despite Cloudflare reporting no schedules. Engineering kept development quarantined and temporarily stopped reporting, then restored the committed Worker.
+
+Healthchecks event history now proves a genuine missed heartbeat: last ping 03:52, DOWN 03:55, recovery UP 03:57 Sydney (minute precision). Confirm the corresponding non-TEST emails in each configured operator inbox, record their timestamps, and check there was one state-change notification per recipient rather than repeated notifications for unchanged failure. Do not forward private Ping URLs or full email links.
+
+The user already supplied operations recovery email evidence at 03:18:45 +10 after eight minutes down. That is a separate event. Full O1 still needs correlated incident/suppression/recovery, reporting-failure and missed-heartbeat inbox receipt. Manual TEST messages and successful Worker execution alone do not close it.
+
+Current integrations showed two distinct email destinations, not unintended duplicate integrations; no integrations were removed. Better Stack is not required.
