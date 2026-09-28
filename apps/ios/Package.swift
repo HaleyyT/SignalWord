@@ -8,7 +8,10 @@ let package = Package(
         .library(name: "SignalWordCore", targets: ["SignalWordCore"]),
         .executable(name: "SignalWordCoreVerification", targets: ["SignalWordCoreVerification"]),
     ],
+    dependencies: [.package(path: "TelemetrySDK")],
     targets: [
+        .target(name: "CrashReportingIntegration", dependencies: [.product(name: "SignalWordSentry", package: "TelemetrySDK")], path: "SignalWord/App", exclude: ["SignalWordApp.swift"], sources: ["CrashReporting.swift"]),
+        .testTarget(name: "CrashReportingPrivacyTests", dependencies: ["CrashReportingIntegration", .product(name: "SignalWordSentry", package: "TelemetrySDK")], path: "CrashReportingPrivacyTests"),
         .testTarget(name: "SignalWordCoreTests", dependencies: ["SignalWordCore"], path: "Tests"),
         .target(
             name: "SignalWordCore",
