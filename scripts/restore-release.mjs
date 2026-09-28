@@ -16,7 +16,8 @@ export async function reconcileAndRelease(
     backend.username || backend.password
   ) throw Error("DEVELOPMENT_PROJECT_REQUIRED");
   if (
-    control.protocol !== "https:" || control.pathname !== "/" ||
+    // This operator command is deliberately limited to the approved development authority.
+    control.origin !== "https://authority-dev.signalword.app" || control.pathname !== "/" ||
     control.username || control.password || control.search || control.hash
   ) throw Error("CONTROL_ORIGIN_INVALID");
   if (typeof adminKey !== "string" || adminKey.length < 32 || !serviceKey) {

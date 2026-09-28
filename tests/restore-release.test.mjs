@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { reconcileAndRelease } from "../scripts/restore-release.mjs";
 import { journalDigest } from "../infrastructure/control/service.mjs";
 const config = {
-  controlOrigin: "https://authority.example.test",
+  controlOrigin: "https://authority-dev.signalword.app",
   backendOrigin: "https://voepalyamwgenceawdvl.supabase.co",
   adminKey: "a".repeat(32),
   serviceKey: "fixture-service",
@@ -89,4 +89,14 @@ test("wrong project and corrupted snapshot fail before replay", async () => {
       }),
     /RESTORE_SNAPSHOT_INVALID/,
   );
+});
+
+// An operator typo must never transmit the administration credential elsewhere.
+test("restore refuses another authority before sending credentials", async () => {
+  let requested = false;
+  await assert.rejects(() => reconcileAndRelease({
+    ...config, controlOrigin: "https://another-authority.example.test",
+    fetchImpl: async () => { requested = true; throw Error("unexpected request"); },
+  }), /CONTROL_ORIGIN_INVALID/);
+  assert.equal(requested, false);
 });
