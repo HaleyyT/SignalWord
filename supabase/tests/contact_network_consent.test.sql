@@ -23,7 +23,10 @@ select set_config('request.jwt.claim.role','authenticated',true);
 select lives_ok($$select public.contact_network('91000000-0000-4000-8000-000000000001',(select id from public.trusted_contacts where name='Second'),'everyone')$$,'confirmed recipient can become explicit primary');
 select is((select contact_name from public.get_my_contact('91000000-0000-4000-8000-000000000001')),'Second','old client sees newly selected primary');
 select throws_ok($$select public.contact_network('91000000-0000-4000-8000-000000000001',(select id from public.trusted_contacts where name='Third'),null)$$,'P0001','CONTACT_NOT_CONFIRMED','pending recipient cannot become primary');
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$select * from public.create_or_reuse_alert('91000000-0000-4000-8000-000000000001','93000000-0000-4000-8000-000000000001','test','manual',repeat('z',43),'fake',repeat('z',48),1,null)$$,'legacy TEST still accepts with multi-contact configuration');
+set local role authenticated;
 reset role;
 select is((select count(*) from public.alert_deliveries),1::bigint,'legacy client retains single-primary routing');
 select is((select count(*) from public.alert_events where kind='real'),0::bigint,'TEST does not create REAL work');

@@ -10,8 +10,14 @@ select set_config('request.jwt.claim.sub','81000000-0000-4000-8000-000000000001'
 set local role authenticated;
 select is(jsonb_array_length(public.contact_network('81000000-0000-4000-8000-000000000001')->'contacts'),3,'all own contacts recover');
 select is((select contact_id from public.get_my_contact('81000000-0000-4000-8000-000000000001')),'82000000-0000-4000-8000-000000000001'::uuid,'old client reads explicit primary');
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$select * from public.create_routed_alert('81000000-0000-4000-8000-000000000001','83000000-0000-4000-8000-000000000001','real','manual','fake',(select jsonb_agg(jsonb_build_object('token',repeat(i::text,43),'ciphertext',repeat(i::text,48),'keyVersion',1)) from generate_series(1,3)i),null,now())$$,'three-recipient incident accepted');
+set local role authenticated;
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$select * from public.create_routed_alert('81000000-0000-4000-8000-000000000001','83000000-0000-4000-8000-000000000001','real','manual','fake',(select jsonb_agg(jsonb_build_object('token',repeat((i+3)::text,43),'ciphertext',repeat(i::text,48),'keyVersion',1)) from generate_series(1,3)i),null,now())$$,'lost response retry reuses incident');
+set local role authenticated;
 reset role;
 select is((select count(*) from public.alert_events),1::bigint,'duplicate request creates one incident');
 select is((select count(*) from public.alert_deliveries),3::bigint,'one initial delivery per recipient');
