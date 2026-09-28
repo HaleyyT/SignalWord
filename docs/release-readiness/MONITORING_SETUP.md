@@ -1,6 +1,6 @@
 # Development monitoring: free Healthchecks setup
 
-> **Operator evidence received:** screenshots confirm a non-TEST `UP | signalword-dev-operations` recovery email at 2026-09-29 03:18:45 +10:00, after eight minutes down. Operations recovery delivery passes. Separate monitor missed-heartbeat DOWN/UP receipt and duplicate suppression remain pending. Both screenshots show the same recovery event.
+> **Operator evidence received:** screenshots confirm a non-TEST `UP | signalword-dev-operations` recovery email at 2026-09-29 03:18:45 +10:00, after eight minutes down. Operations recovery delivery passes. A later focused Gmail check also verified actual missed-heartbeat receipt and repeated-failure suppression in the connected operator inbox. Both screenshots show the same recovery event.
 
 Updated 29 September 2026. Better Stack incoming webhooks require an upgrade on this account. They are no longer required for this development monitor.
 
@@ -40,12 +40,20 @@ References: [Healthchecks pricing](https://healthchecks.io/pricing/), [Ping API]
 
 ## Latest development evidence — 29 September
 
-The committed Worker is restored at version `e1e7fa93-acf1-4c1a-a903-3259c52d23f3`, with one-minute cron. Authority is open after verified reconciliation and backend health reports no problems. No new variables are needed.
+The committed Worker is restored at version `ac57442a-4291-43bc-abcf-375975c0ab7f`, with one-minute cron. Authority is open after verified reconciliation and backend health reports no problems. No new variables are needed.
 
 The earlier 03:09–03:15 cron pause **did not stop pings** and does not pass missed-heartbeat acceptance. A later explicit cron removal also continued receiving pings despite Cloudflare reporting no schedules. Engineering kept development quarantined and temporarily stopped reporting, then restored the committed Worker.
 
 Healthchecks event history now proves a genuine missed heartbeat: last ping 03:52, DOWN 03:55, recovery UP 03:57 Sydney (minute precision). Confirm the corresponding non-TEST emails in each configured operator inbox, record their timestamps, and check there was one state-change notification per recipient rather than repeated notifications for unchanged failure. Do not forward private Ping URLs or full email links.
 
-The user already supplied operations recovery email evidence at 03:18:45 +10 after eight minutes down. That is a separate event. Full O1 still needs correlated incident/suppression/recovery, reporting-failure and missed-heartbeat inbox receipt. Manual TEST messages and successful Worker execution alone do not close it.
+The user already supplied operations recovery email evidence at 03:18:45 +10 after eight minutes down. That is a separate event. Full O1 now has correlated incident/suppression/recovery, reporting-failure and missed-heartbeat receipt in the connected operator inbox. The second inbox is not independently verified. Manual TEST messages and successful Worker execution alone do not close it.
 
 Current integrations showed two distinct email destinations, not unintended duplicate integrations; no integrations were removed. Better Stack is not required.
+
+### Verified notification timestamps (Sydney)
+
+- Sustained operations fault: one DOWN 03:35:45, one UP 03:58:47; no repeated incident email during the interval.
+- Missing heartbeat: DOWN 03:55:47, UP 03:57:47.
+- Controlled operations-reporting failure: heartbeat DOWN 04:06:46, UP 04:07:48.
+
+These are non-TEST emails inspected with work-specific Gmail queries. No private URLs are recorded. All temporary failure handlers are removed; the normal one-minute schedule and stored secrets remain intact.

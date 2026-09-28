@@ -28,16 +28,16 @@ PASS means the stated boundary has evidence. PARTIAL and BLOCKED do not count as
 | H07 | Journal replay, duplicate replay, receipt and gate | PASS | Hosted replay/receipt/release/requarantine evidence; latest state recorded below |
 | H08 | Managed backup restore and RPO/RTO | BLOCKED | Dashboard explicitly states Free plan has no managed backups. No destructive restore or upgrade performed |
 | H09 | Controlled profile ownership and deletion | PASS | Two controlled accounts: own update, cross-user denial, forged owner rejected; durable deletion/receipt and cleanup |
-| H10 | Hosted contact consent and recipient capability isolation | PARTIAL | Complete local journey passes; current hosted candidate needs controlled recipient acceptance |
+| H10 | Hosted contact consent and recipient capability isolation | PARTIAL | 23 deployed SQL/RLS consent/capability/withdrawal checks pass with rollback; complete hosted HTTP/recipient acceptance remains pending |
 | H11 | Signed provider lifecycle, duplicate/out-of-order/ambiguity | PARTIAL | User replayed delivered callback: 202; full real local signed/fault suite passes. Full hosted lifecycle not re-established |
 | H12 | Five schedules and empty-state processing | PASS | All five active and successful; empty-state result does not prove live concurrency |
-| H13 | Operations incident, suppression and recovery receipt | PARTIAL | User supplied real operations UP receipt at 03:18:45 +10 after eight minutes down. Full failure/suppression receipt correlation remains pending |
-| H14 | Interrupted reporting notification | PARTIAL | Runtime failures and recovery diagnosed; actual operator receipt needs correlation |
-| H15 | Missing-heartbeat DOWN/UP receipt | PARTIAL | Earlier short pause kept sending pings; it is not a pass. Latest drill observations below |
+| H13 | Operations incident, suppression and recovery receipt | PASS | Connected operator inbox: one DOWN at 03:35:45 and one UP at 03:58:47; complete scoped query shows no repeated incident mail during sustained failure |
+| H14 | Interrupted reporting notification | PASS | Controlled reporting misconfiguration: actual failure DOWN at 04:06:46 and recovery UP at 04:07:48 in the connected operator inbox |
+| H15 | Missing-heartbeat DOWN/UP receipt | PASS | Actual missing-ping DOWN at 03:55:47 and UP at 03:57:47 verified in connected operator inbox |
 | H16 | Twice-pilot hosted recipient/alert load | PARTIAL | Local 20 reads/10 duplicate sends pass. Profile-read burst, if recorded below, is only a narrower hosted measurement |
 | H17 | Complete inventory acceptance and frozen manifest | BLOCKED | Must wait for all required hosted gates; no invented verification booleans or dirty manifest |
 
-**Hosted checkpoints: 8/17 passed (47%).** This figure only reports the checklist above; every required gate must pass before installation.
+**Hosted checkpoints: 11/17 passed (65%).** This figure only reports the checklist above; every required gate must pass before installation.
 
 ## Monitoring evidence and correction
 
@@ -63,12 +63,31 @@ No iPhone installation is authorized until all required gates pass and one clean
 - Checked-in reopening verified duplicate replay and database receipt at version 3. The later two controlled account deletions legitimately advanced the journal to version 5. Their issued sessions remain denied (503, `allowed: false`); current global gate remains allowed.
 - Scoped operational health: **no problems**. No controlled accounts, contacts, active timers, queued messages or unknown delivery outcomes remain. No safety emails were sent this session.
 - Authority Worker: `183202c5-f1fb-40cb-9388-e419dc422559`.
-- Restored committed monitor Worker: `e1e7fa93-acf1-4c1a-a903-3259c52d23f3`; cron `* * * * *`. The temporary outage handler is removed.
-- Genuine heartbeat history: last ping **03:52**, DOWN **03:55**, UP **03:57** (dashboard minute precision). Actual DOWN/UP inbox receipt and repeated-notification suppression still require correlation; this is not a completed O1.
+- Restored committed monitor Worker after the final reporting-failure drill: `ac57442a-4291-43bc-abcf-375975c0ab7f`; cron `* * * * *`. The temporary outage handler is removed.
+- Genuine heartbeat history: last ping **03:52**, DOWN **03:55**, UP **03:57** (dashboard minute precision). Inbox receipt and repeated-failure suppression were subsequently verified through the narrowly scoped Gmail connector checks described below.
 - Two controlled identities passed own-profile access, cross-user denial, forged-owner rejection, durable deletion and receipt recovery. Twenty concurrent authenticated profile reads all returned 200; **p95 1,142 ms**. This is not the full recipient-read/alert-submission load gate.
 - All six public-alias route/header checks passed again after reopening.
-- Configuration inventory has all required secret names, Vault names, schedules, functions and migrations. It correctly reports `UNVERIFIED_MONITOR`, `UNVERIFIED_HEARTBEAT`, `UNVERIFIED_CAPTCHA`. No booleans were changed to force acceptance.
+- Configuration inventory has all required secret names, Vault names, schedules, functions and migrations. After notification receipt verification, it correctly reports only `UNVERIFIED_CAPTCHA`. No booleans were changed to force acceptance.
 
 The final deleted-subject harness initially expected 403. The documented contract returns 503 for denied subjects; the corrected assertion also supplies the actual JWT issue time to distinguish deletion from a stale-session denial. Both checks pass without changing service behavior.
 
 Durable redacted metadata: [HOSTED_EVIDENCE_2026-09-29.json](HOSTED_EVIDENCE_2026-09-29.json).
+
+## Retry evidence — 04:08 Sydney
+
+Monitoring acceptance now passes for the connected operator inbox. Work-only Gmail queries found real operations DOWN/UP at **03:35:45 / 03:58:47**, with one incident and one recovery across repeated failure. A complete query including spam/trash found no extra incident messages in that interval. Missing-heartbeat DOWN/UP arrived at **03:55:47 / 03:57:47**. No personal or unrelated messages were inspected; addresses, private links and message IDs are excluded from retained evidence.
+
+A separate controlled reporting-failure drill used an invalid operations destination in a temporary Worker while development was quarantined and empty. Stored secrets were preserved. The heartbeat received an explicit failure; real operator DOWN/UP emails arrived at **04:06:46 / 04:07:48**. The original committed Worker and one-minute cron were restored, followed by duplicate replay, matching receipt and checked-in release. At 04:08 the authority was open, health clear and the journal remained version 5. These timestamps are email timestamps; provider status-change time can differ by seconds.
+
+The second configured inbox has not been independently inspected; acceptance proves one complete operator notification path, not delivery to every destination or long-term availability.
+
+The new rollback-only SQL script passed **23 checks** against the deployed development database: pending consent, idempotent invitations, invalid capability denial, separate confirmations, service-only consent creation, three-recipient TEST routing, independent acknowledgement, withdrawal/retry/access revocation and cross-user isolation. No local-fixture exemption was enabled. Background workers cannot see the uncommitted outbox, and the final rollback left zero users, contacts and deliveries. This strengthens H10 without substituting for the real hosted recipient journey.
+
+Reproduce only on the empty approved development project with the authority healthy:
+
+```bash
+npx supabase db query --linked --project-ref voepalyamwgenceawdvl \
+  --file scripts/hosted-contact-proof.sql
+```
+
+Remaining full gates: H04 human CAPTCHA, H08 managed restore, H10 hosted recipient journey, H11 complete provider lifecycle, H16 hosted alert/recipient load and H17 final freeze. No source/API behavior or security protection was weakened to close the monitoring gates.

@@ -1,5 +1,5 @@
 {
-  "recorded_at": "2026-09-28T18:00:16.053812+00:00",
+  "recorded_at": "2026-09-28T18:08:10.165535+00:00",
   "gate_allowed": true,
   "quarantined": false,
   "journal_version": 5,
@@ -12,7 +12,7 @@
   "worker_versions": {
     "signalword-dev-monitor": [
       {
-        "version_id": "e1e7fa93-acf1-4c1a-a903-3259c52d23f3",
+        "version_id": "ac57442a-4291-43bc-abcf-375975c0ab7f",
         "percentage": 100
       }
     ],
@@ -162,8 +162,6 @@
     }
   ],
   "configuration_problems": [
-    "UNVERIFIED_MONITOR",
-    "UNVERIFIED_HEARTBEAT",
     "UNVERIFIED_CAPTCHA"
   ],
   "resend_replay": {
@@ -172,16 +170,30 @@
     "source": "prior user-reported provider dashboard replay"
   },
   "monitoring": {
-    "operations_recovery_receipt": "user screenshot: 2026-09-29T03:18:45+10:00; eight minutes down",
-    "missed_heartbeat": {
-      "last_ping_local": "2026-09-29T03:52:00+10:00",
-      "down_minute_local": "2026-09-29T03:55:00+10:00",
-      "up_minute_local": "2026-09-29T03:57:00+10:00",
-      "source": "native Healthchecks event history; minute precision",
-      "email_receipt_verified": false
+    "acceptance": "passed for the connected operator inbox",
+    "receipt_source": "Gmail connector, narrowly scoped SignalWord Healthchecks queries; complete pagination including spam/trash for suppression",
+    "operations": {
+      "down": "2026-09-28T17:35:45Z",
+      "up": "2026-09-28T17:58:47Z",
+      "incident_messages": 1,
+      "recovery_messages": 1,
+      "repeated_failure_suppressed": true
     },
-    "suppression_receipt_verified": false,
-    "temporary_outage_handler_removed": true
+    "missed_heartbeat": {
+      "down": "2026-09-28T17:55:47Z",
+      "up": "2026-09-28T17:57:47Z",
+      "reason": "success signal did not arrive on time, grace time passed",
+      "email_receipt_verified": true
+    },
+    "reporting_failure": {
+      "down": "2026-09-28T18:06:46Z",
+      "up": "2026-09-28T18:07:48Z",
+      "reason": "received a failure signal",
+      "fault": "temporary invalid operations reporting destination; stored secrets untouched",
+      "email_receipt_verified": true
+    },
+    "temporary_outage_handler_removed": true,
+    "second_operator_inbox_independently_verified": false
   },
   "managed_backup_restore": {
     "performed": false,
@@ -190,5 +202,20 @@
     "rto_measured": false
   },
   "manifest_frozen": false,
-  "ready_for_iphone": false
+  "ready_for_iphone": false,
+  "hosted_contact_database_proof": {
+    "command": "supabase db query --linked --project-ref voepalyamwgenceawdvl --file scripts/hosted-contact-proof.sql",
+    "checks": 23,
+    "persisted_contacts": 0,
+    "persisted_deliveries": 0,
+    "persisted_users": 0,
+    "result": "passed",
+    "scope": "deployed SQL/RLS in rollback-only transaction; not HTTP consent or provider delivery",
+    "fixture_bypass_used": false
+  },
+  "hosted_progress": {
+    "passed": 11,
+    "total": 17,
+    "percent": 65
+  }
 }

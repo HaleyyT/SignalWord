@@ -16,7 +16,7 @@ Branch: `feat/hosted-restore-compatibility`. Latest tested application/tooling c
 The percentages below count the explicit checkpoints in this handoff. A partial result counts as incomplete. Local tests do not substitute for hosted or device results. See the hosted report for its item-by-item register.
 
 - **Local verification: 21/21 (100%)** in [retained local evidence](LOCAL_EVIDENCE_2026-09-29.json). This is completion of this local verification set, not all release engineering.
-- **Hosted development: 8/17 (47%)**; use the current acceptance register in [hosted report](HOSTED_DEVELOPMENT_2026-09-29.md); unresolved hosted gates prevent candidate freeze.
+- **Hosted development: 11/17 (65%)**; use the current acceptance register in [hosted report](HOSTED_DEVELOPMENT_2026-09-29.md); unresolved hosted gates prevent candidate freeze.
 - **Physical acceptance: 0/12 (0%)**: signing/install; setup/consent; manual TEST; locked TEST; three-contact immediate routing; delayed escalation; acknowledgement semantics; offline/relaunch; timer controls/expiry; resolve/withdraw; interrupted deletion; accessibility/crash evidence.
 - **Pilot readiness: 1/6 (17%)**: local regression complete; hosted acceptance, physical acceptance, operator/restore acceptance, invited observation period and final release review are incomplete.
 
@@ -53,7 +53,7 @@ Remaining gates include:
 
 - A genuine human Turnstile success flow with controlled enrollment; missing and invalid proofs already fail. Do not enable public signup to manufacture this result.
 - Full hosted recipient consent/capability isolation and provider lifecycle/retry tests, plus the complete declared hosted alert/recipient load envelope. A valid profile-read burst alone is not alert throughput.
-- Complete automatic operations/reporting/missed-heartbeat notification evidence, including actual receipt and suppression.
+- Monitoring acceptance now passes for the connected operator inbox; verify the second destination separately if both are required by your operator policy.
 - A supported managed backup/restore environment. The current Free plan has no managed backups. A local dump/restore and hosted journal replay do not establish managed RPO ≤15 minutes/RTO ≤60 minutes.
 - Development Sentry provisioning, privacy/retention and symbols; signed-device crash/relaunch evidence.
 - Apple membership activation, verified paid Team ID and provisioning, physical acceptance and pilot observation.
@@ -70,8 +70,14 @@ Use only the matching development publishable client key in the app. Private ser
 
 The [physical-device guide](PHYSICAL_DEVICE_TEST_GUIDE.md) retains installation instructions, expected screen states, failure evidence, ordered TEST/contact/timer/recovery trials and cleanup. Timer expiry creates REAL-labelled incidents and requires a separately agreed awake session. SMS and professional monitoring remain unavailable.
 
-**Smallest next user actions:** finish Apple membership activation; arrange a short human Turnstile/notification acceptance session; decide whether to provision the managed backup tier and development Sentry project. No new secret values should be posted in chat. Engineering must finish hosted acceptance and freeze the compatible manifest before asking you to install.
+**Smallest next user actions:** finish Apple membership activation; arrange a short human Turnstile/recipient acceptance session; decide whether to provision the managed backup tier and development Sentry project. No new secret values should be posted in chat. Engineering must finish hosted acceptance and freeze the compatible manifest before asking you to install.
 
 ## Final development state
 
-At 04:00 Sydney, development was open after checked-in reconciliation, monitor scheduling restored, and aggregate health clear. Deleted controlled identities are denied; no accounts or work remain. The monitor genuinely transitioned DOWN at 03:55 and UP at 03:57. Confirm those two non-TEST notifications in the operator inboxes when awake; do not count earlier manual TEST messages. The complete monitoring receipt/suppression gate remains open. Exact deployed versions and current journal digest are in the hosted report.
+At 04:00 Sydney, development was open after checked-in reconciliation, monitor scheduling restored, and aggregate health clear. Deleted controlled identities are denied; no accounts or work remain. The monitor genuinely transitioned DOWN at 03:55 and UP at 03:57. Those non-TEST receipts are now verified in the connected operator inbox, together with operations suppression and reporting-failure recovery. Monitoring gates H13–H15 pass. Exact deployed versions and current journal digest are in the hosted report.
+
+## Additional blocker retry
+
+A focused retry closed **three hosted gates**, raising hosted checklist completion from 8/17 to 11/17. Gmail receipt evidence establishes operations incident/suppression/recovery, missing-heartbeat notification and an explicit reporting-failure notification. The original committed monitor was restored as `ac57442a-4291-43bc-abcf-375975c0ab7f`; development is open and healthy, signup disabled.
+
+Commit `1949846` adds `scripts/hosted-contact-proof.sql`. Its 23 deployed database checks passed without sending messages or retaining fixtures. It is deliberately not credited as the full HTTP/recipient acceptance gate. `npm run check` and whitespace checks pass; no application runtime changed, so the previously completed full local suite remains applicable. The final manifest remains unfrozen.
