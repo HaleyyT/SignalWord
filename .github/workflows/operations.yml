@@ -22,7 +22,7 @@ jobs:
       - name: Check aggregate health and notify the operator on failure
         env:
           SIGNALWORD_BACKEND_ORIGIN: ${{ vars.SIGNALWORD_BACKEND_ORIGIN }}
-          SIGNALWORD_SERVICE_ROLE_KEY: ${{ secrets.SIGNALWORD_MONITOR_SERVICE_ROLE_KEY }}
+          SIGNALWORD_MONITOR_KEY: ${{ secrets.SIGNALWORD_MONITOR_KEY }}
           SIGNALWORD_OPERATOR_WEBHOOK: ${{ secrets.SIGNALWORD_OPERATOR_WEBHOOK }}
           SIGNALWORD_MONITOR_HEARTBEAT_URL: ${{ secrets.SIGNALWORD_MONITOR_HEARTBEAT_URL }}
         run: node scripts/check-operations.mjs
