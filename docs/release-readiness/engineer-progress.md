@@ -2,9 +2,29 @@
 
 Updated 29 September 2026. **NOT READY TO INSTALL OR RELEASE. The hosted manifest is not frozen.**
 
-Branch: `feat/hosted-restore-compatibility`. Latest tested application/tooling code: **`421f3c5b4c54bf6d5a13da62e7383a15e9fb8fac`**, app **1.0 (2)**. Documentation commits after this code revision do not authorize installation. No merge, push, public enrollment or production deployment was performed.
+Branch: `feat/hosted-restore-compatibility`. Latest repair code: **`14e1c9c1efdcad0a7c1198b091713d589dd14eb9`** (native source unchanged from `421f3c5`), app **1.0 (2)**. Documentation commits after this code revision do not authorize installation. No merge, push, public enrollment or separate production deployment was performed. Development viewer and delivery-function repairs were deployed as recorded below.
 
-## What changed and why
+## Latest controlled hosted journey and repairs
+
+The [redacted journey evidence](HOSTED_TEST_JOURNEY_2026-09-29.json) records a real approved-inbox confirmation → TEST → acknowledgement → sender recovery → resolution → durable deletion journey through the development HTTP endpoints. Ten concurrent identical alert submissions created **one incident**, p95 **1,043 ms**. Initial and resolution emails each had **one attempt**, both became **delivered**, and four real signed sent/delivered receipts were matched. This used a synthetic sender and one actual consenting inbox; it does not prove the full three-recipient or physical-device journey.
+
+Resend dashboard replays of a delivered event and its earlier sent event each returned **202**, with attempt counts increasing from one to two. They concerned an already deleted consent fixture; no users, contacts or deliveries were resurrected. This does not prove active-incident terminal ordering or ambiguous-send recovery.
+
+Two defects were reproduced and repaired:
+
+- `bd1709c`: an uncertain withdrawal used the confirmation retry button and falsely asserted nothing was recorded. The page now remembers the action, explains uncertainty, and retries withdrawal. The browser regression failed before the repair and passes locally and against the deployed viewer with mocked responses.
+- `14e1c9c`: TEST resolution messages used an unlabelled resolution subject. Subject, plain text and HTML now retain **TEST — NO EMERGENCY**. The regression failed first and passes. The development dispatch function is now version **10**; receipt of the newly worded email remains an explicit live retest.
+- `9ba3692`: viewer deployment uploads exclude native build artifacts; local Vercel state is ignored by Git.
+
+The first withdrawal returned retryable **503**; a direct retry and repeated proxy retry returned **200**. Its initial backend latency/failure cause remains unproven. No timeout, journal, RLS or security rule was relaxed. Both synthetic accounts were deleted through the application, with completion receipts verified and zero users/contacts/deliveries remaining.
+
+The initial 20-reader hosted burst had p95 **5,008 ms**, slightly over its 5,000 ms budget. Three repeat bursts measured **2,311 / 2,506 / 1,848 ms**. All succeeded, but H16 remains partial: do not discard the slower sample or equate one capability with population-wide capacity.
+
+The repaired viewer is `dpl_B4mdNxwtHNhJ7e6TnPyiyGJX1rzT` on **www.signalword.app**, with both proxy origins explicitly pinned to the approved development backend. Six hosted routing/header checks and the deployed browser regression pass. The direct deployment URL is protected; unauthenticated preflight against it failed for that reason, before authenticated verification and alias checks succeeded. Other aliases were not promoted in this repair.
+
+Verification after repairs: **173 Node/API tests, 44 viewer tests**, security/contracts/build checks, local and hosted-asset browser regression, dispatch Deno typecheck, and an **unsigned iPhoneOS Release build** on Xcode 27.0 pass. The build is compilation evidence only: it has no signing or final runtime configuration and must not be installed.
+
+## Earlier engineering repairs
 
 1. **Restore administration now pins both development destinations.** Previously the operator command rejected a different Supabase project but accepted any HTTPS authority host. That could send the authority credential to an unintended host. Commit `292d168` rejects a different authority, path, credentials, query or fragment before transmitting credentials. The regression first reproduced the gap and now passes. RLS, grants, quarantine and mobile/API contracts are unchanged.
 2. **The real crash SDK now compiles and is tested.** Sentry 9.29.0 downloaded successfully. Its macOS test target exposed UIKit-only options; commit `421f3c5` guards those options with `canImport(UIKit)`, retaining their explicit privacy restrictions in the iOS app. The actual serialized-event privacy test, SDK-linked Release build and all eight UI journeys pass. A separate CI job now exercises this path instead of relying on the SDK-unavailable fallback. Reporting remains disabled; no DSN or crash telemetry was transmitted.
@@ -26,7 +46,7 @@ All commands and counts are retained in [LOCAL_EVIDENCE_2026-09-29.json](LOCAL_E
 
 | Verification | Result |
 |---|---|
-| Clean `npm ci`; `npm run verify` | 172 Node tests, 44 viewer tests, repository/security/contracts checks and production viewer build pass |
+| Clean `npm ci`; `npm run verify` | 173 Node tests, 44 viewer tests (latest repair rerun), repository/security/contracts checks and production viewer build pass |
 | `npm run test:db` | 312 pgTAP assertions in 15 suites, plus 17 safeupdate assertions pass |
 | `npm run test:restore` | Local database dump/restore, quarantine, archive outage/restart, duplicate replay and deleted-access denial pass |
 | `npm run test:integration` | Real local Auth/API/database/React journey with fake provider; three contacts, retries, ambiguous response, signed/duplicate/out-of-order callbacks, escalation, withdrawal, timers, resolution and deletion pass |
@@ -52,7 +72,7 @@ Only Supabase `voepalyamwgenceawdvl`, authority `https://authority-dev.signalwor
 Remaining gates include:
 
 - A genuine human Turnstile success flow with controlled enrollment; missing and invalid proofs already fail. Do not enable public signup to manufacture this result.
-- Full hosted recipient consent/capability isolation and provider lifecycle/retry tests, plus the complete declared hosted alert/recipient load envelope. A valid profile-read burst alone is not alert throughput.
+- Full hosted recipient consent/capability isolation and provider lifecycle/retry tests, plus the complete declared hosted alert/recipient load envelope. The live one-recipient journey and measured retry/read bursts above strengthen these gates but do not complete their full scope.
 - Monitoring acceptance now passes for the connected operator inbox; verify the second destination separately if both are required by your operator policy.
 - A supported managed backup/restore environment. The current Free plan has no managed backups. A local dump/restore and hosted journal replay do not establish managed RPO ≤15 minutes/RTO ≤60 minutes.
 - Development Sentry provisioning, privacy/retention and symbols; signed-device crash/relaunch evidence.
@@ -74,7 +94,7 @@ The [physical-device guide](PHYSICAL_DEVICE_TEST_GUIDE.md) retains installation 
 
 ## Final development state
 
-At 04:00 Sydney, development was open after checked-in reconciliation, monitor scheduling restored, and aggregate health clear. Deleted controlled identities are denied; no accounts or work remain. The monitor genuinely transitioned DOWN at 03:55 and UP at 03:57. Those non-TEST receipts are now verified in the connected operator inbox, together with operations suppression and reporting-failure recovery. Monitoring gates H13–H15 pass. Exact deployed versions and current journal digest are in the hosted report.
+At 04:58 Sydney, development was open, monitor scheduling restored, and aggregate health clear. Journal version 9 reflects the two controlled fixtures’ withdrawal/deletion records. Deleted controlled identities are denied; no accounts or work remain. The monitor genuinely transitioned DOWN at 03:55 and UP at 03:57. Those non-TEST receipts are now verified in the connected operator inbox, together with operations suppression and reporting-failure recovery. Monitoring gates H13–H15 pass. Exact deployed versions and current journal digest are in the hosted report.
 
 ## Additional blocker retry
 

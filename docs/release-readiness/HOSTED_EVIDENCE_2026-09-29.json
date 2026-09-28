@@ -1,9 +1,9 @@
 {
-  "recorded_at": "2026-09-28T18:08:10.165535+00:00",
+  "recorded_at": "2026-09-28T18:58:01.963839+00:00",
   "gate_allowed": true,
   "quarantined": false,
-  "journal_version": 5,
-  "digest": "065887e17711ac61db5d9c56c575234ba9b5b390a766263d28fc3f92a6218e84",
+  "journal_version": 9,
+  "digest": "eead4a70e8916e9cd59da48b58cc0f71c76501bef1510eb3e7235929382c2f97",
   "deleted_subject_denials": [
     503,
     503
@@ -68,7 +68,7 @@
     },
     {
       "slug": "dispatch-deliveries",
-      "version": 9,
+      "version": 10,
       "status": "ACTIVE"
     },
     {
@@ -217,5 +217,9 @@
     "passed": 11,
     "total": 17,
     "percent": 65
-  }
+  },
+  "latest_controlled_journey": "HOSTED_TEST_JOURNEY_2026-09-29.json",
+  "viewer_deployment": "dpl_B4mdNxwtHNhJ7e6TnPyiyGJX1rzT",
+  "latest_repair_commit": "14e1c9c1efdcad0a7c1198b091713d589dd14eb9",
+  "dispatch_deliveries_version": 10
 }

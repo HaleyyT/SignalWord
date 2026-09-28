@@ -6,7 +6,7 @@
 
 - Supabase: `voepalyamwgenceawdvl`; authority: `https://authority-dev.signalword.app`.
 - Vercel: `signalword-dev`; public development alias: `https://www.signalword.app`. Vercel's Production label refers to that development-only project.
-- Viewer deployment: `dpl_6yBdHva9Wak1oscXpxK4iwGb3uPN`. Its two proxy origins target the development functions. Viewer source is unchanged by the overnight repairs.
+- Viewer deployment: `dpl_B4mdNxwtHNhJ7e6TnPyiyGJX1rzT` on `www.signalword.app`, containing the withdrawal retry fix. Both proxy origins were explicitly pinned to development at deployment. Other aliases were not promoted in this repair.
 - Database: 32 migration versions, through `20261001030000_restore_safeupdate.sql`.
 - Edge Functions, all ACTIVE: `user-api` 10; `public-event` 9; `contact-confirm` 9; `deletion-status` 9; `dispatch-deliveries` 9; `resend-webhook` 10; `operational-health` 4.
 - Latest local application/tooling code: `421f3c5b4c54bf6d5a13da62e7383a15e9fb8fac`, app 1.0 (2). API/mobile contracts are unchanged. The only shared-function source change since the hosted restore repair is `monitor-client.mjs`, used by the monitor.
@@ -28,13 +28,13 @@ PASS means the stated boundary has evidence. PARTIAL and BLOCKED do not count as
 | H07 | Journal replay, duplicate replay, receipt and gate | PASS | Hosted replay/receipt/release/requarantine evidence; latest state recorded below |
 | H08 | Managed backup restore and RPO/RTO | BLOCKED | Dashboard explicitly states Free plan has no managed backups. No destructive restore or upgrade performed |
 | H09 | Controlled profile ownership and deletion | PASS | Two controlled accounts: own update, cross-user denial, forged owner rejected; durable deletion/receipt and cleanup |
-| H10 | Hosted contact consent and recipient capability isolation | PARTIAL | 23 deployed SQL/RLS consent/capability/withdrawal checks pass with rollback; complete hosted HTTP/recipient acceptance remains pending |
-| H11 | Signed provider lifecycle, duplicate/out-of-order/ambiguity | PARTIAL | User replayed delivered callback: 202; full real local signed/fault suite passes. Full hosted lifecycle not re-established |
+| H10 | Hosted contact consent and recipient capability isolation | PARTIAL | 23 deployed SQL/RLS checks plus real one-inbox HTTP consent/TEST/ack/recovery/resolution/deletion pass; withdrawal 503 recovers on retry and UI repair deployed; full three-recipient journey pending |
+| H11 | Signed provider lifecycle, duplicate/out-of-order/ambiguity | PARTIAL | Actual initial/resolution sends each delivered once, with signed sent/delivered receipts; full local fault suite passes. Hosted ambiguity and complete replay acceptance remain pending |
 | H12 | Five schedules and empty-state processing | PASS | All five active and successful; empty-state result does not prove live concurrency |
 | H13 | Operations incident, suppression and recovery receipt | PASS | Connected operator inbox: one DOWN at 03:35:45 and one UP at 03:58:47; complete scoped query shows no repeated incident mail during sustained failure |
 | H14 | Interrupted reporting notification | PASS | Controlled reporting misconfiguration: actual failure DOWN at 04:06:46 and recovery UP at 04:07:48 in the connected operator inbox |
 | H15 | Missing-heartbeat DOWN/UP receipt | PASS | Actual missing-ping DOWN at 03:55:47 and UP at 03:57:47 verified in connected operator inbox |
-| H16 | Twice-pilot hosted recipient/alert load | PARTIAL | Local 20 reads/10 duplicate sends pass. Profile-read burst, if recorded below, is only a narrower hosted measurement |
+| H16 | Twice-pilot hosted recipient/alert load | PARTIAL | 10 hosted duplicate TEST requests created one incident, p95 1043 ms. First 20-read p95 5008 ms; repeat p95 2311/2506/1848 ms. Full acceptance remains pending |
 | H17 | Complete inventory acceptance and frozen manifest | BLOCKED | Must wait for all required hosted gates; no invented verification booleans or dirty manifest |
 
 **Hosted checkpoints: 11/17 passed (65%).** This figure only reports the checklist above; every required gate must pass before installation.
@@ -91,3 +91,7 @@ npx supabase db query --linked --project-ref voepalyamwgenceawdvl \
 ```
 
 Remaining full gates: H04 human CAPTCHA, H08 managed restore, H10 hosted recipient journey, H11 complete provider lifecycle, H16 hosted alert/recipient load and H17 final freeze. No source/API behavior or security protection was weakened to close the monitoring gates.
+
+## Latest live journey and repaired deployment
+
+See [structured evidence](HOSTED_TEST_JOURNEY_2026-09-29.json) and the current engineering report. At 04:58 Sydney the authority was open at journal version 9, no health problems, minute monitor schedule active, and fixture cleanup verified. `dispatch-deliveries` is now version 10; other function versions are unchanged. The new viewer passes six alias checks and its mocked-response browser regression. No manifest was frozen and no iPhone was installed.

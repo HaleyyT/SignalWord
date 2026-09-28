@@ -2,7 +2,7 @@
 
 Updated 29 September 2026. **Installation is on hold. No hosted manifest is frozen.**
 
-The latest tested code is `421f3c5b4c54bf6d5a13da62e7383a15e9fb8fac`, app **1.0 (2)**, on `feat/hosted-restore-compatibility`. This identifies engineering work, not an approved installation artifact. See [current engineering progress](engineer-progress.md), [hosted evidence](HOSTED_DEVELOPMENT_2026-09-29.md), and [local evidence](LOCAL_EVIDENCE_2026-09-29.json).
+The latest repair code is `14e1c9c1efdcad0a7c1198b091713d589dd14eb9` (native source unchanged from `421f3c5`), app **1.0 (2)**, on `feat/hosted-restore-compatibility`. This identifies engineering work, not an approved installation artifact. See [current engineering progress](engineer-progress.md), [hosted evidence](HOSTED_DEVELOPMENT_2026-09-29.md), and [local evidence](LOCAL_EVIDENCE_2026-09-29.json).
 
 The restore compatibility migration `20261001030000` is deployed. All seven development functions and the development viewer are provisioned. Operations incident/suppression/recovery, reporting-failure and genuine missed-heartbeat DOWN/UP emails are now verified in the connected operator inbox. The second configured inbox has not been independently inspected. The committed monitor is restored, authority open and backend health clear. The later stopped-reporting drill supplies genuine missed-heartbeat evidence; the earlier short cron pause remains excluded.
 
@@ -11,6 +11,23 @@ The restore compatibility migration `20261001030000` is deployed. All seven deve
 **External restore blocker:** the development Supabase Free plan has no managed backups. A supported recoverable backup/PITR environment must be provisioned and its cost approved before the managed restore/RPO/RTO drill. No upgrade or destructive restore was performed.
 
 Do not start the installation or send steps below until engineering supplies one frozen compatible manifest and explicit installation readiness. SMS and professional monitoring remain unavailable.
+
+## Latest preparation for Xcode and iPhone verification
+
+An **unsigned iPhoneOS Release build passed** with Xcode 27.0 (27A266a). This proves device-target compilation, not signing, installation, runtime backend configuration, Vocal Shortcuts or locked execution. Do not install the temporary unsigned build.
+
+The existing project remains `apps/ios/SignalWord.xcodeproj`, scheme `SignalWord`, app **1.0 (2)**, Bundle ID **com.signalword.app**, App Group **group.com.signalword.shared**, minimum iOS **18.0**. `DEVELOPMENT_TEAM` is blank; engineering must verify the activated enrolled team and provisioning before setting it. No identifier or entitlement was changed.
+
+Before installation, engineering must close H04/H08/H10/H11/H16/H17 in the hosted report and freeze the manifest, as required by the current approval. The remaining session needs genuine CAPTCHA completion, complete three-recipient hosted isolation, provider callback/failure acceptance, capacity follow-up and approved managed restore infrastructure. Apple activation/signing and development Sentry setup remain separate prerequisites. The existing guide's ordered installation steps are still on hold.
+
+Add these recipient checks to your first approved session:
+
+1. Confirm the initial email and resolved email both clearly say **TEST — NO EMERGENCY**. The new resolution template is deployed; actual receipt of its revised copy still needs checking.
+2. With engineering coordinating a simulated interruption, withdraw consent. If a temporary error appears, expect **Withdrawal is not confirmed yet** and **Retry withdrawal**. Never use confirmation as a withdrawal retry.
+3. Retry withdrawal; expect **Consent withdrawn** only after the server confirms it. Verify the recipient link is unavailable and future unclaimed sends are cancelled.
+4. Finish by resolving every incident, cancelling timers and performing the guide's safe cleanup.
+
+A controlled one-inbox hosted HTTP journey succeeded; it does not mark any physical checklist item complete. The latest viewer repair is on **www.signalword.app**; do not use the fallback alias for acceptance until its deployment identity is checked.
 
 ## Prerequisites reported by you
 
