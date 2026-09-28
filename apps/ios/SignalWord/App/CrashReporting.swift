@@ -1,8 +1,11 @@
 import Foundation
+
+#if canImport(Sentry)
 import Sentry
 
 /// Opt-in per build configuration. Missing configuration never delays app startup.
 enum CrashReporting {
+    static let sdkAvailable = true
     static func start() {
         guard Bundle.main.object(forInfoDictionaryKey: "SignalWordCrashReportingEnabled") as? String == "YES",
               let dsn = Bundle.main.object(forInfoDictionaryKey: "SignalWordSentryDSN") as? String,
@@ -93,3 +96,11 @@ enum CrashReporting {
         return value
     }
 }
+
+#else
+/// A missing optional SDK cannot prevent authentication, alerts, or recovery.
+enum CrashReporting {
+    static let sdkAvailable = false
+    static func start() {}
+}
+#endif

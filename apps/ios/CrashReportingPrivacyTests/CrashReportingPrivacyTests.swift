@@ -1,4 +1,6 @@
 import XCTest
+
+#if canImport(Sentry)
 import Sentry
 @testable import CrashReportingIntegration
 
@@ -33,3 +35,13 @@ final class CrashReportingPrivacyTests: XCTestCase {
         XCTAssertNil(safe.request)
     }
 }
+
+#else
+@testable import CrashReportingIntegration
+final class CrashReportingUnavailableTests: XCTestCase {
+    func testUnavailableSDKLeavesSafetyWorkflowUsable() {
+        XCTAssertFalse(CrashReporting.sdkAvailable)
+        CrashReporting.start()
+    }
+}
+#endif
