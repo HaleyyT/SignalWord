@@ -45,6 +45,7 @@ jobs:
           supabase/functions/dispatch-deliveries/index.ts
           supabase/functions/resend-webhook/index.ts
           supabase/functions/deletion-status/index.ts
+          supabase/functions/operational-health/index.ts
 
   secrets:
     name: Scan committed history for secrets

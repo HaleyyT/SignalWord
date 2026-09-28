@@ -34,7 +34,7 @@ test('operational readiness fails closed for missing configuration, invalid metr
 });
 test('operator notification contains only safe problem codes and handles notification outage', async () => {
   const calls = [];
-  const result = await checkOperations({ backendOrigin: 'https://backend.example', serviceKey: 'secret', notificationURL: 'https://operator.example/hook',
+  const result = await checkOperations({ backendOrigin: 'https://backend.example', monitorKey: 'secret', notificationURL: 'https://operator.example/hook',
     fetchImpl: async (url, init) => {
       calls.push({ url, init });
       if (calls.length === 1) throw new Error('secret URL with private payload');
@@ -47,8 +47,8 @@ test('operator notification contains only safe problem codes and handles notific
 });
 test('a healthy check does not send an operator message', async () => {
   let requests = 0;
-  const result = await checkOperations({ backendOrigin: 'https://backend.example', serviceKey: 'secret', notificationURL: 'https://operator.example/hook',
-    fetchImpl: async () => { requests++; return Response.json(healthy()); },
+  const result = await checkOperations({ backendOrigin: 'https://backend.example', monitorKey: 'secret', notificationURL: 'https://operator.example/hook',
+    fetchImpl: async () => { requests++; return Response.json({problems:[]}); },
   });
   assert.equal(requests, 1);
   assert.deepEqual(result.problems, []);
