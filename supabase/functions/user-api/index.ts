@@ -1,3 +1,4 @@
+import { journalFromEnvironment } from "../_shared/safety-journal.ts";
 import { createCheckInGateway, parseCheckIn, type CheckInGateway } from "../_shared/check-in.ts";
 import { createContactNetworkGateway, type ContactNetworkGateway } from "../_shared/contact-network.ts";
 import { parseUserResponse, type ResponseContract } from "../_shared/response-contracts.ts";
@@ -6,7 +7,7 @@ import { createDeliveryPolicy, type DeliveryCreationPolicy, type RuntimeEnvironm
 import { createContactDataProtection, createDeliveryPayloadCipher } from "../_shared/encryption.ts";
 import { ApiError, asApiError, bearerToken, errorResponse, jsonResponse, readJson, requestId } from "../_shared/http.ts";
 import { createLifecycleGateway, type LifecycleGateway } from "../_shared/lifecycle.ts";
-import { structuredLogger, type SafeLogger } from "../_shared/logging.ts";
+import { structuredLogger, writeSafely, type SafeLogger } from "../_shared/logging.ts";
 import { createBackendGateway, type BackendGateway } from "../_shared/supabase.ts";
 import { generateViewerToken, sha256Hex } from "../_shared/tokens.ts";
 import { parseCreateAlert, parseIdempotencyKey } from "../_shared/validation.ts";
@@ -229,7 +230,10 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
           throw new ApiError(404, "NOT_FOUND", "Route not found.");
         }
       }
-      if (request.method === "POST") dependencies.wake?.();
+      if (request.method === "POST") {
+        // The committed outbox and scheduled sweep remain authoritative.
+        try { dependencies.wake?.(); } catch { /* Best-effort wakeup cannot undo acceptance. */ }
+      }
       return jsonResponse(parseUserResponse(contract, result), status, { ...RESPONSE_HEADERS, "X-Request-ID": id });
     } catch (caught) {
       const error = asApiError(caught);
@@ -237,7 +241,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       code = error.code;
       return errorResponse(error, id, { ...RESPONSE_HEADERS, "X-Request-ID": id });
     } finally {
-      dependencies.logger.write({
+      writeSafely(dependencies.logger, {
         requestId: id,
         route: "user-api",
         method: request.method,
@@ -276,8 +280,8 @@ if (import.meta.main) {
       runtime?.waitUntil(task);
     },
     backend: createBackendGateway({ url, anonKey, serviceRoleKey }),
-    lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey }),
-    network: createContactNetworkGateway({ url, anonKey, serviceRoleKey }),
+    lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey, journal: journalFromEnvironment() }),
+    network: createContactNetworkGateway({ url, anonKey, serviceRoleKey, journal: journalFromEnvironment() }),
     checkIn: createCheckInGateway({ url, anonKey, serviceRoleKey }),
     delivery: createDeliveryPolicy(environment, provider),
     encryptPayload: async (viewerToken) => ({

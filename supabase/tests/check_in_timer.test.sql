@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 select no_plan();
 insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values('a1000000-0000-4000-8000-000000000001','authenticated','authenticated','timer@example.test','{}','{}',now(),now());
@@ -98,7 +99,11 @@ set local role authenticated;
 reset role;
 select throws_ok($$select public.change_check_in('a1000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','start',null,15,'fake','[]')$$,'P0001','IDEMPOTENCY_EXPIRED','retired operation cannot accidentally arm a new timer');
 set local role authenticated;
-select public.delete_my_account('a1000000-0000-4000-8000-000000000001',extensions.digest('timer-delete','sha256'));
+reset role;
+select public.prepare_journaled_deletion('a1000000-0000-4000-8000-000000000001',extensions.digest('timer-delete','sha256'));
+-- SQL fixture: external durability itself is verified by authority integration tests.
+select public.journal_mark_durable(id) from public.safety_journal_outbox;
+select public.finish_journaled_deletion();
 reset role;
 select is((select count(*) from public.check_in_timers),0::bigint,'deletion cancels and removes timers');
 select is((select count(*) from public.check_in_operations),0::bigint,'deletion removes timer command ledger');

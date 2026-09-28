@@ -1,3 +1,4 @@
+import type { SafetyJournal } from "./safety-journal.ts";
 import { ApiError } from "./http.ts";
 
 export interface ContactProjection {
@@ -61,7 +62,7 @@ function contactProjection(row: Row): ContactProjection {
   };
 }
 
-export function createLifecycleGateway(configuration: { url: string; anonKey: string; serviceRoleKey?: string }): LifecycleGateway {
+export function createLifecycleGateway(configuration: { url: string; anonKey: string; serviceRoleKey?: string; journal?: SafetyJournal }): LifecycleGateway {
   const baseUrl = configuration.url.replace(/\/$/, "");
   const headers = (authorization: string, apiKey = configuration.anonKey) => ({
     apikey: apiKey,
@@ -119,6 +120,7 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
         p_payload_key_version: input.payloadKeyVersion,
         p_delivery_provider: input.provider,
       }, `Bearer ${serviceKey}`, "Contact setup", serviceKey) as Row[];
+      await configuration.journal?.flush(input.userId);
       return contactProjection(rows[0] ?? {});
     },
     async getContact(userId, jwt) {
@@ -126,7 +128,9 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
       return rows[0] ? contactProjection(rows[0]) : null;
     },
     async disableContact(userId, contactId, jwt) {
-      return await rpc("disable_contact", { p_user_id: userId, p_contact_id: contactId }, `Bearer ${jwt}`, "Contact update") === true;
+      const disabled = await rpc("disable_contact", { p_user_id: userId, p_contact_id: contactId }, `Bearer ${jwt}`, "Contact update") === true;
+      await configuration.journal?.flush(userId);
+      return disabled;
     },
     async appendLocation(userId, eventId, location, jwt) {
       const rows = await rpc("append_alert_location", {
@@ -166,7 +170,12 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
       return { eventId: row.event_id, state: "resolved", resolvedAt: row.event_resolved_at };
     },
     async deleteData(userId, jwt, receiptHashHex) {
-      const deletionId = await rpc("delete_my_account", { p_user_id: userId, p_receipt_hash: `\\x${receiptHashHex}` }, `Bearer ${jwt}`, "Data deletion");
+      const serviceKey = configuration.serviceRoleKey;
+      if (!serviceKey || !configuration.journal) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Deletion recovery is unavailable.", true);
+      const deletionId = await rpc("prepare_journaled_deletion", { p_user_id: userId, p_receipt_hash: `\\x${receiptHashHex}` }, `Bearer ${serviceKey}`, "Data deletion", serviceKey);
+      await configuration.journal.flush(userId);
+      const completed = await rpc("find_deletion_receipt", { p_receipt_hash: `\\x${receiptHashHex}` }, `Bearer ${serviceKey}`, "Deletion status", serviceKey);
+      if (completed !== deletionId) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Deletion is still pending.", true);
       if (typeof deletionId !== "string") throw new ApiError(503, "SERVICE_UNAVAILABLE", "Data deletion returned an invalid result.", true);
       return { deletionId };
     },
@@ -174,7 +183,13 @@ export function createLifecycleGateway(configuration: { url: string; anonKey: st
       return await rpc("confirm_contact", { p_token_hash: `\\x${tokenHashHex}` }, `Bearer ${configuration.anonKey}`, "Contact confirmation") === true;
     },
     async withdrawContact(tokenHashHex) {
-      return await rpc("withdraw_contact", { p_token_hash: `\\x${tokenHashHex}` }, `Bearer ${configuration.anonKey}`, "Contact withdrawal") === true;
+      const serviceKey = configuration.serviceRoleKey;
+      if (!serviceKey || !configuration.journal) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Withdrawal recovery is unavailable.", true);
+      const owner = await rpc("withdrawal_journal_owner", { p_token_hash: `\\x${tokenHashHex}` }, `Bearer ${serviceKey}`, "Contact withdrawal", serviceKey);
+      if (typeof owner !== "string") return false;
+      const withdrawn = await rpc("withdraw_contact", { p_token_hash: `\\x${tokenHashHex}` }, `Bearer ${configuration.anonKey}`, "Contact withdrawal") === true;
+      await configuration.journal.flush(owner);
+      return withdrawn;
     },
   };
 }

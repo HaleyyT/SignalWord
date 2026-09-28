@@ -1,3 +1,4 @@
+import type { SafetyJournal } from "./safety-journal.ts";
 import { ApiError } from "./http.ts";
 import type { CreateAlertInput } from "./validation.ts";
 
@@ -23,7 +24,7 @@ export interface ContactNetworkGateway {
 }
 
 export function createContactNetworkGateway(
-  config: { url: string; anonKey: string; serviceRoleKey: string },
+  config: { url: string; anonKey: string; serviceRoleKey: string; journal?: SafetyJournal },
 ): ContactNetworkGateway {
   async function rpc(
     name: string,
@@ -106,6 +107,7 @@ export function createContactNetworkGateway(
         config.serviceRoleKey,
         true,
       ) as Record<string, unknown>[];
+      await config.journal?.flush(String(input.p_user_id));
       const row = rows?.[0];
       return {
         contactId: row?.contact_id,

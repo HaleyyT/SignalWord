@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 select no_plan();
 insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values('81000000-0000-4000-8000-000000000001','authenticated','authenticated','network@example.test','{}','{}',now(),now());
@@ -62,7 +63,11 @@ select is(public.recipient_progress('81000000-0000-4000-8000-000000000001','8300
 reset role;
 select set_config('request.jwt.claim.sub','81000000-0000-4000-8000-000000000001',true);
 set local role authenticated;
-select public.delete_my_account('81000000-0000-4000-8000-000000000001',extensions.digest('network-deletion','sha256'));
+reset role;
+select public.prepare_journaled_deletion('81000000-0000-4000-8000-000000000001',extensions.digest('network-deletion','sha256'));
+-- SQL fixture: external durability itself is verified by authority integration tests.
+select public.journal_mark_durable(id) from public.safety_journal_outbox;
+select public.finish_journaled_deletion();
 reset role;
 select is((select count(*) from public.viewer_tokens),0::bigint,'deletion removes all recipient capabilities');
 select is((select count(*) from public.alert_deliveries),0::bigint,'deletion removes all pending and in-flight recipient work');

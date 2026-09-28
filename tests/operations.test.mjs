@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { operationalProblems, checkOperations, reportHeartbeat } from '../scripts/check-operations.mjs';
 const healthy = () => ({ dispatchConfigured: true,
+  journal: {pending:0,oldestPendingSeconds:0}, provider:{callbackOverdue:0,deliveryReportOverdue:0},
   dispatchHTTP: { lastCompletedAt: new Date().toISOString(), lastStatus: 200, timedOut: false, overdue: 0 },
   abuse: { signupsLastHour: 0, invitationsLastHour: 0 },
   delivery: { queued: 0, unknown: 0, oldestQueuedSeconds: 0, expiredLeases: 0 },
@@ -57,4 +58,9 @@ test('timer metrics detect overdue work, failed escalation and missing sweeps',(
   const health=healthy();
   health.checkIns={overdue:1,failed:1,schedules:[]};
   assert.deepEqual(operationalProblems(health),['CHECK_IN_OVERDUE','CHECK_IN_FAILED','SCHEDULE_UNHEALTHY:signalword-check-in-expiry','SCHEDULE_UNHEALTHY:signalword-check-in-retention']);
+});
+
+test('journal and provider delays remain visible without claiming delivery failed',()=>{
+ const health=healthy();health.journal.oldestPendingSeconds=61;health.provider.callbackOverdue=1;health.provider.deliveryReportOverdue=1;health.delivery.queued=101;
+ assert.deepEqual(operationalProblems(health),['ALERT_QUEUE_BACKLOG','JOURNAL_PERSISTENCE_OVERDUE','PROVIDER_CALLBACK_OVERDUE','PROVIDER_DELIVERY_REPORT_OVERDUE']);
 });

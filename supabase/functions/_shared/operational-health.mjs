@@ -15,6 +15,7 @@ export function operationalProblems(health, now = Date.now(), { maximumSignups =
       problems.push(`${label}_METRICS_INVALID`);
       continue;
     }
+    if (value.queued > 100) problems.push(`${label}_QUEUE_BACKLOG`);
     if (value.unknown > 0) problems.push(`${label}_OUTCOME_UNKNOWN`);
     if (value.oldestQueuedSeconds > 60) problems.push(`${label}_QUEUE_OVER_60_SECONDS`);
     if (value.expiredLeases > 0) problems.push(`${label}_LEASE_EXPIRED`);
@@ -51,6 +52,13 @@ export function operationalProblems(health, now = Date.now(), { maximumSignups =
   } else {
     if (health.abuse.signupsLastHour > maximumSignups) problems.push('SIGNUP_VOLUME_HIGH');
     if (health.abuse.invitationsLastHour > maximumInvitations) problems.push('INVITATION_VOLUME_HIGH');
+  }
+  if (!nonnegative(health?.journal?.pending) || !nonnegative(health?.journal?.oldestPendingSeconds)) problems.push('JOURNAL_METRICS_INVALID');
+  else if (health.journal.oldestPendingSeconds > 60) problems.push('JOURNAL_PERSISTENCE_OVERDUE');
+  if (!nonnegative(health?.provider?.callbackOverdue) || !nonnegative(health?.provider?.deliveryReportOverdue)) problems.push('PROVIDER_METRICS_INVALID');
+  else {
+    if (health.provider.callbackOverdue > 0) problems.push('PROVIDER_CALLBACK_OVERDUE');
+    if (health.provider.deliveryReportOverdue > 0) problems.push('PROVIDER_DELIVERY_REPORT_OVERDUE');
   }
   return problems;
 }

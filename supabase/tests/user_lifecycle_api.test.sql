@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 
 select no_plan();
 
@@ -155,8 +156,14 @@ select is(public.finish_alert_delivery(
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
 set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);
-select isnt(public.delete_my_account('41000000-0000-4000-8000-000000000001', extensions.digest('saved-deletion-capability', 'sha256')), null,
-  'delete data returns a deletion receipt');
+reset role;
+select isnt(public.prepare_journaled_deletion('41000000-0000-4000-8000-000000000001', extensions.digest('saved-deletion-capability', 'sha256')), null,
+  'deletion preparation returns an operation ID');
+select is(public.find_deletion_receipt(extensions.digest('saved-deletion-capability', 'sha256')), null::uuid, 'preparation must not report deletion complete');
+select public.finish_journaled_deletion();
+select is((select count(*) from auth.users where id='41000000-0000-4000-8000-000000000001'),1::bigint,'un-journaled account is retained for resumption');
+select public.journal_mark_durable(id) from public.safety_journal_outbox;
+select public.finish_journaled_deletion();
 reset role;
 select is((select count(*) from auth.users where id = '41000000-0000-4000-8000-000000000001'),
   0::bigint, 'auth identity is deleted');
