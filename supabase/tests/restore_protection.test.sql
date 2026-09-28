@@ -13,7 +13,7 @@ insert into public.profiles(id,display_name) values('b1000000-0000-4000-8000-000
 insert into public.trusted_contacts(id,user_id,name,channel,destination_ciphertext,destination_fingerprint,destination_key_version,status,confirmed_at)
 values('b2000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001','Fixture','email',repeat('a',48),repeat('a',64),1,'confirmed',now());
 select public.prepare_journaled_deletion('b1000000-0000-4000-8000-000000000001',extensions.digest('restore-receipt','sha256'));
-select is((select count(*) from public.safety_journal_outbox),2::bigint,'deletion journals account and consent revocation');
+select is((select count(*) from public.safety_journal_outbox where user_id='b1000000-0000-4000-8000-000000000001'),2::bigint,'deletion journals account and consent revocation');
 select public.finish_journaled_deletion();
 select is((select count(*) from auth.users),1::bigint,'interrupted journaling preserves resumable account');
 select throws_ok($$update public.trusted_contacts set status='confirmed',confirmed_at=now()$$,'P0001','ACCOUNT_DELETION_PENDING','pending deletion cannot restore consent');

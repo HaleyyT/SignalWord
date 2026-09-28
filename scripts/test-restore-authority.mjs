@@ -1,8 +1,10 @@
 import {
+  acquireLocalFixtureLock,
   localContainer,
   localRestContainer,
   localWorkdir,
 } from "./local-fixture.mjs";
+acquireLocalFixtureLock();
 /** Local account-backup drill. It only removes its own generated fixture records. */
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";

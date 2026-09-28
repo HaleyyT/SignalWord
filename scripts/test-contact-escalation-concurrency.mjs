@@ -1,4 +1,5 @@
-import { localContainer, localRestContainer, localWorkdir } from "./local-fixture.mjs";
+import { acquireLocalFixtureLock, localContainer, localRestContainer, localWorkdir } from "./local-fixture.mjs";
+acquireLocalFixtureLock();
 // Local Docker-only fault tests. Never accepts a hosted database connection.
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -150,5 +151,10 @@ try {
   assert.equal(await sql(`select count(*) from public.alert_deliveries where alert_event_id='${nextEvent}' and trusted_contact_id='${contacts[2]}' and status='failed' and lease_owner is null;`),'1');
   console.log('PASS concurrent withdrawal prevents its recipient claim while preserving other recipients');
 } finally {
-  await sql(`delete from auth.users where id='${user}';`);
+  await sql(`delete from public.rate_limit_buckets where subject_hash in (
+    select extensions.digest(t.token_hash || convert_to(a.action,'UTF8'),'sha256')
+    from public.viewer_tokens t join public.alert_events e on e.id=t.alert_event_id
+    cross join (values ('read'),('ack')) a(action) where e.user_id='${user}');
+    delete from auth.users where id='${user}';
+    delete from public.safety_journal_outbox where user_id='${user}';`);
 }
