@@ -7,7 +7,7 @@ export function HomePage() {
       <a className="home-skip" href="#main">Skip to content</a>
       <header className="home-header home-wrap">
         <a className="wordmark" href="/" aria-label="SignalWord home">
-          <img src="/favicon.svg" width="30" height="30" alt="" />
+          <img src="/favicon.svg?v=2" width="30" height="30" alt="" />
           <span>SignalWord</span>
         </a>
         <nav aria-label="Main navigation">
@@ -138,7 +138,7 @@ export function HomePage() {
         </section>
       </main>
       <footer className="home-footer home-wrap">
-        <a className="wordmark" href="/" aria-label="SignalWord home"><img src="/favicon.svg" width="26" height="26" alt="" /><span>SignalWord</span></a>
+        <a className="wordmark" href="/" aria-label="SignalWord home"><img src="/favicon.svg?v=2" width="26" height="26" alt="" /><span>SignalWord</span></a>
         <p>A little preparation. A person you trust.</p>
         <nav aria-label="Footer navigation"><a href="/privacy">Privacy</a><a href="/support">Support</a></nav>
       </footer>
