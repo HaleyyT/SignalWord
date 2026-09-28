@@ -1,10 +1,81 @@
 # SignalWord: physical-device testing guide
 
-Updated 28 September 2026 for `feat/pilot-hardening`, based on timer commit `2c5b42d`. Engineering candidate: **`547142c`** (unverified native build; **not ready to install for acceptance**). See [hardening status](../pilot-hardening/STATUS.md). SMS is outside this candidate and must not send messages.
+> **Hosted update — 29 September 2026: NOT READY TO INSTALL.** The development authority, retention, 31 migrations and seven functions are deployed, but candidate `6e7c774` failed hosted restore replay under Supabase safe-update protection. Proposed repair `4d293b1` passed local regression and awaits candidate-change approval. Monitoring destination setup/O1, positive provider callbacks, viewer promotion and hosted acceptance remain pending. Enrollment and delivery schedules remain closed. See [the hosted rollout report](../HOSTED_DEVELOPMENT_2026-09-29.md).
 
-**Engineering hardening is still in progress. This guide is a test procedure, not a release approval.** Hosted setup, restore protection, and physical-device acceptance must each have evidence before their gates can pass.
+
+Updated 28 September 2026 for `feat/pilot-hardening`. **Local code candidate: 6e7c77421cbe89ba4b60f5b8aaec5f3498797100**, app **1.0 (2)**. API, viewer and migrations must come from this same candidate; latest migration is `20261001020000_journal_and_provider_health.sql`. See [engineering progress](../engineer-progress.md) and the [development release runbook](../pilot-hardening/RELEASE_RUNBOOK.md). No deployment or signed installation has been performed for this candidate. SMS remains unavailable.
+
+**Local evidence is not installation or public-launch approval.** Complete the hosted setup and signing gates before the actions below. The optional crash SDK remains disabled and requires its own verified candidate before crash acceptance.
 
 **Start with Section 1. Do not assume your currently installed app or public website contains these changes.** The previous verification used local databases, simulators and provider fixtures. This file does not authorize or perform deployment or live sending.
+
+## Prerequisites reported by you
+
+- Apple Developer membership: **still pending**; this blocks the required signing/App Group registration and distribution, not independent engineering.
+- Xcode is signed into your enrollment Apple Account; the iPhone is paired and shown as Available in Device Hub; Developer Mode is enabled/available (all user-reported).
+- Vocal Shortcuts is available on your physical iPhone. **SignalWord TEST intent visibility and locked TEST activation are still pending**, not passed.
+- Sender: **iPhone 13 Pro, iOS 26.7**, user-reported; confirm the displayed version when recording the session.
+- Recipient device: **MacBook, macOS Tahoe 26.7**, user-reported.
+- Supabase Auth Turnstile: **enabled**, user-reported; hosted enforcement and the app token handoff still require verification.
+- Recipients A/B/C: all three inboxes are owned and controlled by you. You explicitly consent to confirmation, TEST, resolution and agreed timer-expiry development messages. Record the addresses privately when configuring the session; they have not all been supplied in this guide.
+
+Independent engineering continues while membership is pending. These statements record prerequisites and permission; they do not mark a device or hosted test as passed.
+
+## 0. Blockers and reminders — check this before booking a session
+
+This register includes engineering blockers as well as actions you perform. **Unchecked means pending, not passed.** Ask engineering to record a dated evidence reference when closing an item. Do not enable a service simply because its configuration field exists.
+
+| ID | Owner | Required check and next action | Evidence needed to pass | Tests that must wait |
+|---|---|---|---|---|
+| B01 — Candidate and compatibility | Engineer | Finish the local suite, commit the candidate, and record matching app, API, viewer and migration versions. Verify the actual development environment before installation. | Full commit/build IDs, final command results and a compatibility/preflight report. | All hosted and device acceptance. |
+| B02 — Apple signing | You + engineer | Check Apple Developer membership is active; select your owned team, bundle ID and App Group in Xcode. Install a signed development build and launch from the Home Screen. | Recorded team/configuration match and successful launch without debugger or UI-test fixtures. Do not share signing credentials. | Sender-device tests; local engineering can continue. |
+| B03 — Device and voice support | You + engineer | Record the actual iPhone model/iOS from Settings → General → About. Confirm the candidate supports that OS and that the separate TEST action appears in the supported voice setup. Use distinct TEST and REAL phrases. | Locked/background/reboot trials with actual outcomes; limitations recorded, including before first unlock. | Claims about locked voice activation. |
+| B04 — Optional Sentry SDK | Engineer first, then you | Complete the SDK-enabled build and serialized-event privacy tests before enabling reporting. The SDK-disabled build is a supported fallback, but does not verify crash collection. Follow O2 below for the signed-device check. | Exact SDK version/checksum, enabled build/test result, redacted event inspection and a successful TEST while reporting is unreachable. | O2 and crash-observability acceptance; other verified local work can continue. |
+| B05 — Monitoring services | You + engineer | Review accounts/costs for Cloudflare, Healthchecks and Sentry; select an operator and private incident destination. Engineer configures scoped credentials and runs O1. | Received failure, deduplicated repeat, recovery and missed-heartbeat notifications with timestamps. | Pilot enrollment and operational acceptance. |
+| B06 — Independent restore authority | Engineer | Finish API/database integration, deletion resumption, consent replay and fail-closed gate tests. Provision an independent journal only after the local drill passes. Verify retention/coverage for at least 90 days. | Executable local restore report followed by isolated hosted O3 evidence. A journal unit test alone is insufficient. | Restore/deletion-resilience acceptance and pilot enrollment. |
+| B07 — Development deployment | Engineer | Check migration ordering, secret names, schedules, anonymous-auth isolation, CAPTCHA integration, routing and headers. Deploy only the agreed development candidate after a deployment decision. | Hosted preflight plus direct GET/POST routing and authentication/isolation results, tied to versions. | C1 onward against hosted services. |
+| B08 — CAPTCHA and account identity | You + engineer | Complete real onboarding without a bypass; engineer tests expired/replayed CAPTCHA and cross-account denial. Reopen the app and confirm the same intended account is recovered. | Normal signup succeeds; rejected tokens and other-account access fail; app shows actionable retry states. | Signup/security acceptance. A site key alone does not pass this gate. |
+| B09 — Email and scheduling | Engineer + consenting recipients | Verify sender domain, signed callbacks, scheduled workers and Vault configuration. Use only agreed recipients, then perform C1/C2 before escalation or timers. | Inbox receipt, provider/callback states and acknowledgement recorded separately; no unexpected recipients or duplicate traffic. | Escalation and timer live drills. |
+| B10 — Recipient consent | You | Obtain explicit consent from A/B/C for the session, including REAL-labelled timer-expiry messages where applicable. Confirm all three individually. | Session consent record and confirmed contacts; no personal addresses in shared reports. | Any live sends to those recipients. |
+| B11 — Accessibility and recovery | You + engineer | Run the guide's interruption, relaunch, location-denied, large-text and VoiceOver checks on the actual signed candidate; test recipient pages on a narrow phone screen. | Case-by-case expected/actual results and retests for every failure. | Device usability/recovery acceptance. |
+| B12 — SMS | Engineer + you for provider setup | Keep SMS unavailable. Complete approved provider setup, phone verification, channel consent/withdrawal, callback verification and ambiguous-send handling before a separate live test decision. | New SMS candidate and passing integration, carrier and cost-control evidence. | All real SMS tests and SMS claims; email pilot scope remains separate. |
+| B13 — Pilot/public launch | You + engineer | Review all critical defects, security findings, restore/rollback evidence, load results, support ownership and pilot results. Preserve the planned observation period and device-trial targets. | Signed-off release evidence with no unresolved critical gates. | Public launch; passing one TEST is not launch approval. |
+
+| B14 — Complete contract coverage | Engineer | Finish the endpoint inventory and verify request, response, error, authorization and old-client compatibility for every supported endpoint. | Inventory linked to executable positive/negative fixtures and passing results. | Engineering acceptance of complete API coverage. |
+| B15 — Integrated failure and restore drill | Engineer | Exercise the real local API/database/worker/viewer with a fake provider; include response loss, worker interruption, duplicate callbacks and a real isolated backup/restore. | Reproducible commands and redacted results. Current unit/SQL replay tests do not replace this drill. | Full end-to-end engineering and restore acceptance. |
+| B16 — Release automation and capacity | Engineer | Finish the candidate manifest, deployment preflight, rollback/rollforward, CI concurrency checks and load verification at twice the declared pilot peak. | Versioned manifest, failed-configuration rejection, rollout/rollback results and capacity report. | Deployment readiness and pilot capacity claims. |
+| B17 — Final native/UI regression | Engineer | Rerun Swift behavior, simulator UI journeys and browser suites on the final candidate after all repairs; then repeat the device cases below. | Exact commands, test totals and final commit. A Release build alone is not a UI test. | Final local UI acceptance and signed-device acceptance. |
+
+### Candidate checkpoint against the register
+
+- **B01/B14/B15/B16/B17 — local portions completed:** use the exact candidate and results in `engineer-progress.md`. The inventory covers 19 authenticated routes and 13 system operations; real local API/database/recipient UI, provider-fault, restore, race and release-configuration checks are recorded. Hosted versions, hosted rollout/rollback and signed installation remain pending. The local restore drill dumps account tables; consent/provider replay also has SQL regressions. It does not prove managed PITR or RPO/RTO.
+- **B06 — local protocol implemented/tested, hosted provisioning pending:** independent authority, durable outbox, quarantine, replay and provider-outcome gate are implemented. You do not need to write this code. An engineer must provision retention-protected storage and perform O3.
+- **B02/B03 — preparation recorded, physical results pending:** account signed in, device paired and Vocal Shortcuts available. No Team ID or locked activation is claimed verified.
+- **B04/B05/B07/B08/B09/B11/B13 — external acceptance still pending.** SDK-enabled privacy/crash checks, operator receipt, hosted CAPTCHA/provider/security and physical behavior must pass separately.
+- **B10 — consent stated by you for all three owned inboxes.** Record the actual addresses privately and reconfirm the particular REAL-labelled timer-expiry drill at the session start.
+- **B12 — unavailable by design in this email candidate.** Do not test or advertise SMS.
+
+### How to close a blocker
+
+1. Find the ID above and identify the owner. You do not need to solve engineer-owned items yourself.
+2. Complete the stated prerequisite before starting its dependent test. If unavailable, record **BLOCKED** and continue only independent checks.
+3. Record date, build/configuration, expected result, actual result and a redacted evidence reference.
+4. Have engineering review failures and name the repair/retest. Keep the failed result; do not overwrite it with a later success.
+5. Update the register and the engineering progress report together. Configuration, local tests, hosted checks and physical observations are separate evidence.
+
+Use this record for SDK/setup checks as well as device trials:
+
+```text
+Blocker ID:
+Owner:
+Current status: PENDING / FAIL / PASS
+Prerequisite and action taken:
+App/API/viewer/migration versions:
+Date/time/timezone:
+Evidence reference (redacted):
+Remaining action and dependent tests:
+Engineer reviewed:
+```
 
 ## 1. Before you touch the test buttons
 
@@ -31,7 +102,7 @@ You do not need to edit database tables, paste credentials or run deployment com
 |---|---|
 | Test environment | App, API, database, worker, webhook and viewer all point to the intended development environment. Known project reference: `voepalyamwgenceawdvl`; verify it is still the intended project. |
 | Build identity | Use the exact `feat/pilot-hardening` candidate recorded in the hardening status, not the older timer or SMS branch. Record the full commit and app build before installation. |
-| Compatible deployment | API and database include `20260930010000_delivery_trust_boundary` and `20260930011000_public_link_budget`; the API uses service-only gateway routines. Deploy them together in a controlled development maintenance window. Old backend functions fail closed after grants are tightened. Viewer and timer-aware templates must match the recorded candidate. |
+| Compatible deployment | The `20261001010000_independent_restore_protection` migration requires the independent authority and matching backend first: **do not apply it alone**. Missing authority configuration intentionally denies application access and delivery claims. Finish B06/B15/B16 before deployment. The baseline API and database include `20260930010000_delivery_trust_boundary` and `20260930011000_public_link_budget`; the API uses service-only gateway routines. Deploy them together in a controlled development maintenance window. Old backend functions fail closed after grants are tightened. Viewer and timer-aware templates must match the recorded candidate. |
 | Delivery | Resend sender/webhook and scheduled dispatch are configured; provider records can be inspected by engineering. No fake provider or simulator fixture is used. |
 | Scheduling | Escalation dispatch and timer expiry/retention jobs are present and healthy. |
 | Isolation | Only agreed test accounts/recipients can receive this session's messages. Production remains untouched. |
@@ -41,6 +112,59 @@ You do not need to edit database tables, paste credentials or run deployment com
 The currently known viewer address is `https://www.signalword.app`, but the domain alone does not identify which backend/build it uses. Engineering must verify the deployed version and routing. Do not replace a public deployment merely to run these tests without a separate deployment decision.
 
 **Ready to begin only when engineering confirms the table above.** If a feature/control is missing, record **BLOCKED — build/deployment mismatch**; do not substitute an older app and count it as passing.
+
+### Exact development installation configuration
+
+**Preparation reference, not installation approval.** The final tested commit and manifest must be recorded in the engineering handoff before using these settings. Do not install a build from an arbitrary branch or assume the currently deployed website matches it.
+
+| Setting | Candidate configuration |
+|---|---|
+| Xcode project | `/Users/haleytran/.codex/worktrees/release-readiness/SignalWord/apps/ios/SignalWord.xcodeproj`; open this project, not the original `feat/ui` checkout and not the Swift package. Scheme/target: **SignalWord**. |
+| App version/build | `1.0 (2)`; verify the final manifest and installed build agree. |
+| Bundle ID | `com.signalword.app`, as currently configured in the repository. Your Apple team must own/register this identifier. |
+| App Group | `group.com.signalword.shared`; both the entitlement and `SignalWordAppGroupIdentifier` Info.plist value must match. |
+| Signing | `DEVELOPMENT_TEAM` is blank in both repository build configurations. Your active Apple Developer team with permission for this Bundle ID, App Group and registered development device. The Team ID is not supplied yet; engineering must not invent it. Automatic signing is enabled. |
+| Minimum iOS | `18.0`; your reported iOS 26.7 is above this minimum, subject to actual device verification. |
+| `SIGNALWORD_SUPABASE_URL` | `https://voepalyamwgenceawdvl.supabase.co` |
+| `SIGNALWORD_USER_API_URL` | `https://voepalyamwgenceawdvl.supabase.co/functions/v1/user-api` |
+| `SIGNALWORD_SUPABASE_PUBLISHABLE_KEY` | Copy the **publishable client key** from this development Supabase project's API settings. Never use the secret/service-role key. Verify project identity before copying. |
+| `SIGNALWORD_VERIFICATION_URL` | `https://www.signalword.app/onboarding/verify.html` |
+| `SIGNALWORD_TURNSTILE_SITE_KEY` | `0x4AAAAAAFFb3ETKlwBxFCNF` (public site key supplied by you). |
+| Turnstile allowed hostname | Verify the widget permits `www.signalword.app`; the secret belongs in Supabase Auth's CAPTCHA configuration. An Edge Function secret alone does not configure Supabase Auth. |
+| `SIGNALWORD_CRASH_REPORTING_ENABLED` | `NO` for the SDK-disabled build. O2 remains blocked until a separately verified SDK-enabled build is available. |
+| Viewer origin | `https://www.signalword.app`, after engineering verifies the matching development backend. |
+| Delivery scope | Consenting test recipients only; email. SMS and professional monitoring unavailable. |
+
+### Capabilities and signing: verified repository requirements
+
+The checked-in entitlement file contains **only** `com.apple.security.application-groups = [group.com.signalword.shared]`. The Xcode project sets the same App Group in generated Info.plist and `com.signalword.app` for both Debug/Release. No rename is requested. Your activated paid team must own/register both; ownership is not yet verified. If unavailable, stop and have engineering reconcile identifiers together. Do not remove the group to get a build installed: durable commands depend on its shared container.
+
+App Groups provisioning requires the appropriate program membership. Apple documents [capabilities by membership](https://developer.apple.com/help/account/reference/supported-capabilities-ios) and [App Group registration](https://developer.apple.com/documentation/xcode/configuring-app-groups). This candidate therefore retains membership activation as a signing gate. The expected team is **your enrolled paid team for this app**; the exact ten-character Team ID remains unknown because the repository intentionally leaves it blank. Account login and a Personal Team do not prove the required provisioning is available.
+
+Location While Using and Face ID usage descriptions are generated by the project; they are runtime permissions, not additional paid capabilities. Local timer reminders require notification permission and are supplementary. This candidate does not request push/critical-alert, continuous background-location, microphone, speech-recognition or legacy Siri entitlements. App Intents supplies `Send TEST Alert` and `Trigger Alert`; iOS manages Vocal Shortcuts. Do not add unrelated capabilities to address a signing error. Continuous tracking, SMS and monitoring are not part of this candidate.
+
+Installation steps after the candidate and signing gates pass:
+
+1. Obtain the exact candidate commit and manifest from engineering; check out that commit in the dedicated candidate worktree. Do not discard another branch's uncommitted work.
+2. Open the exact `.xcodeproj` path in the table above in Xcode. Select the **SignalWord** target and **Signing & Capabilities**.
+3. Select your active developer team. Confirm the Bundle ID and App Groups capability above. If registration/signing fails, save the error and mark B02 blocked; engineering must reconcile identifiers consistently before rebuilding.
+4. Under **Build Settings**, enter the user-defined `SIGNALWORD_*` values above for the configuration being installed. Leave service-role, Resend, webhook, encryption, control-service and CAPTCHA secret keys out of the app.
+5. Connect and unlock the iPhone; trust the Mac if prompted. Select this iPhone as the run destination. Enable Developer Mode if Xcode/iOS requests it, restart when prompted, then reconnect.
+6. Build and run. Record version/build, commit, team and configuration. Before an alert, engineering runs `SIGNALWORD_EXPECTED_TEAM=<verified-owned-Team-ID> node scripts/verify-ios-installation.mjs /exact/path/to/SignalWord.app` against the signed device build. This checks the built Info.plist, entitlements, development profile and API origin without printing credentials. A simulator product cannot pass this check. Team ID is obtained from your activated membership/profile, never guessed from the account email.
+7. Stop the Xcode debug session. Launch the installed app from the iPhone Home Screen; do not use UI-test launch arguments or simulator fixture controls.
+8. Complete real Turnstile onboarding. Record failures; do not bypass CAPTCHA to count the test as successful.
+9. Start the first tests below. If membership/signing is still pending, stop only installation/device testing; local engineering and service preparation continue.
+
+### First physical tests — run in this order
+
+1. **C1:** invite and explicitly confirm A; check the sender sees confirmed consent.
+2. **C2:** one manual TEST, real inbox receipt, explicit acknowledgement, sender relaunch, resolution and recipient update. Check server/provider/acknowledgement separately.
+3. Complete the **locked TEST phrase** case below, using the separate TEST action. Record foreground/background/locked behavior without inferring that every locked condition works.
+4. Add and confirm B/C. Run the contact routing cases: everyone immediately, then primary followed by remaining contacts after two minutes while unresolved. Verify acknowledgement alone does not stop escalation.
+5. Run offline/relaunch recovery and withdrawal cases. Confirm no lost pending work, duplicate acceptance or access after withdrawal.
+6. Run timer start/check-in/cancel/extend before expiry tests. Only then run an agreed expiry drill: it generates a **REAL-labelled** missed-check-in incident. Resolve that incident explicitly.
+7. Run interrupted deletion last for that sender account. Verify both server completion and local cleanup; start a new account only after documenting the result.
+8. Perform the end-of-session cleanup checklist. No active timer, unresolved drill incident or unexplained delivery should remain.
 
 ### Set up the session record
 
@@ -110,6 +234,27 @@ Allow roughly 30–45 minutes after engineering setup. Stop and fix a failure be
 **Expected:** one TEST incident, one initial message to A, acknowledgement appears, relaunch preserves the incident, resolution updates the recipient page. Initial and resolution emails are different message purposes, not duplicates.
 
 **Engineering checks:** actual event ID, one initial outbox record, provider acceptance, valid signed delivery callback, acknowledgement timestamp and resolution transition. Inbox arrival alone does not prove callback handling.
+
+## 3A. Authentication, locked execution and accessibility matrix
+
+Run after C1–C2, before timer expiry or deletion. Each row is a separate trial using the evidence template in Section 9: record build/configuration, expected/actual state, redacted event reference, timestamp and PASS/FAIL/BLOCKED. **Pass only when every expected condition holds.** A blocked test is never a pass. Use TEST only and resolve each incident before starting the next.
+
+| ID / purpose | Prerequisite and numbered actions | Expected result / pass rule |
+|---|---|---|
+| A1 — Fresh account CAPTCHA | Fresh test account after documented cleanup. 1. Launch normally. 2. Complete the real widget. 3. Return to app. 4. Relaunch. | Account becomes ready only after server acceptance; same intended identity returns; no widget token in screenshots/logs. |
+| A2 — Missing/expired/replayed CAPTCHA | Engineer-assisted dev session. 1. Cancel widget; attempt setup. 2. Let a token expire before submission. 3. Engineer replays a consumed token using synthetic account tooling. 4. Complete a fresh widget. | First three attempts cannot create a usable new session; clear recovery offered; fresh verification succeeds. Do not disable Auth CAPTCHA for this test. |
+| A3 — Expired session/isolation | Engineer can expire only the test session and create a second synthetic account. 1. Relaunch the first app. 2. Attempt recovery. 3. Engineer checks cross-account reads/writes. | Refresh succeeds or actionable verification appears; no silent account swap; other-account data is denied. No real account credentials in evidence. |
+| A4 — Deletion/recreation | Perform D1/D2 at session end. 1. Confirm server/local deletion complete. 2. Reopen and complete new CAPTCHA. 3. Inspect readiness and contacts. | Fresh setup with no old contacts/rehearsals/timers; old capabilities remain unavailable. |
+| L1 — Intent discovery | Signed candidate installed. 1. Open Vocal Shortcuts setup. 2. Select **Send TEST Alert**. 3. Set a distinct rehearsal phrase. 4. Check REAL remains a separately named action. | Exact TEST action is visible and selectable. Its meaning never changes with an app mode. Record visibility; do not count it as locked activation. |
+| L2 — Execution conditions | C2 and L1 pass. 1. Trigger TEST with app foregrounded. 2. Resolve. 3. Repeat backgrounded, locked, then after terminating app. | Record acceptance/delivery/acknowledgement for each condition separately. No duplicate event from the same pending command. A failed condition blocks claims for that condition. |
+| L3 — Restart/first unlock | Test recipient warned. 1. Restart phone. 2. Attempt TEST before first unlock. 3. Unlock once. 4. Attempt TEST while locked again. | Record actual pre-unlock limitation, not guaranteed delivery. After permitted execution, pending state is honest and recovery works. Do not promise pre-first-unlock reliability without evidence. |
+| L4 — Location denied/allowed | TEST session, no active timer. 1. Deny app location; send TEST. 2. Resolve. 3. Grant While Using; send another TEST. | Manual sending remains available without location. Recipient displays unavailable or dated location honestly; no continuous-live claim. Never copy exact coordinates into the report. |
+| L5 — Offline under ten minutes | Confirmed contact. 1. Disable connectivity. 2. Trigger TEST. 3. Relaunch. 4. Reconnect before ten minutes. | Saved command survives; original command reconciles/retries once; accepted event is not silently replaced. Recipient receives no duplicate initial alert. |
+| L6 — Delayed offline submission | As L5, but stay offline over ten minutes. 1. Reconnect and foreground. 2. Inspect pending command. 3. Explicitly confirm or cancel the delayed send. | No blind delayed submission; original trigger time remains distinguishable. Uncertain server outcomes reconcile before another send. |
+| L7 — Duplicate and TEST/REAL isolation | Engineer-assisted agreed drill; REAL requires explicit session agreement. 1. Create pending REAL work offline. 2. Invoke TEST. 3. Reconnect. | TEST cannot overwrite, reuse or suppress REAL; no unintended duplicate acceptance. Stop and resolve every accepted drill incident. |
+| U1 — VoiceOver/largest text/reduced motion | Enable each setting separately. 1. Navigate setup, People, timer and active alert. 2. Use the accessible review/confirm alternative to holding. 3. Cancel once; then perform TEST normally. | Labels and reading order are understandable; controls reachable; text uncut; cancel sends nothing. Motion is reduced appropriately. No simulator result substitutes for your actual VoiceOver experience. |
+| U2 — Recipient keyboard/narrow/stale view | MacBook plus narrow browser window. 1. Use keyboard only to open/acknowledge. 2. Restrict width to 320px. 3. Interrupt networking after a location loads. 4. Restore network. | Focus visible; no horizontal overflow; explicit acknowledgement only; retry clear; cached location ages rather than claiming a fresh update. |
+| R1 — Expired/revoked recipient links | Engineer expires/revokes only fixture links. 1. Open without acknowledging. 2. Reopen. 3. Resolve/withdraw as appropriate. 4. Open revoked/expired links. | GET never acknowledges; valid repeated opens safe; revoked/expired capabilities show unavailable, not private incident data. |
 
 ## 4. Contact escalation: complete these after C1–C2 pass
 
@@ -329,7 +474,7 @@ These steps require separate authorization for the **development** environment. 
 
 ### O2 — Privacy-filtered crash reporting
 
-1. Engineering first confirms that the Sentry integration's build and serialized-payload privacy regression passed for this candidate. If not, record **BLOCKED**.
+1. Engineering first verifies the official SDK artifact and builds/tests with `SIGNALWORD_WITH_SENTRY=1`. Record the pinned version and verified checksum from `apps/ios/TelemetrySDK/Package.swift`; never use a partial archive. The default SDK-disabled test only proves that the app can operate without reporting. It does **not** pass this step. Require the serialized-payload privacy test to actually run, rather than be excluded by conditional compilation. If any check is missing, record **BLOCKED — B04**.
 2. Confirm a dedicated development Sentry project, an approved retention/privacy configuration and an explicitly enabled signed build. Reporting is disabled when configuration is absent.
 3. Resolve all incidents and cancel timers. Engineering supplies an isolated diagnostic build or test-only crash procedure; do not add a public crash button.
 4. Launch from the Home Screen without the debugger, perform the agreed diagnostic crash, then relaunch to allow reporting.
@@ -341,7 +486,16 @@ These steps require separate authorization for the **development** environment. 
 
 **Do not run a restore drill until the independent journal and enforced restore gate are implemented and locally verified. They are currently an engineering blocker.**
 
-The eventual isolated drill must record: quarantine enabled before restoring; journal coverage for the backup; deletion/withdrawal replay; revoked links still denied; old sends not restarted; uncertain provider outcomes reconciled; explicit reopen approval; measured RPO/RTO. A successful database restore by itself is not a pass. Use no real recipient links or production data in the drill.
+This is engineer-assisted work; you should not restore a database yourself.
+
+1. Engineering completes B06 and B15 locally and supplies the exact approved drill procedure. Record the candidate, backup timestamp and isolated target. Use synthetic identities and no real recipient links or production data.
+2. Confirm the independent control service and journal are outside the restored database. Verify retention protection and coverage for the chosen backup; a backup older than verified coverage must be rejected.
+3. Enable external quarantine **before** restoring. Demonstrate that API requests, recipient reads and scheduled delivery claims fail closed, including when the control service is unreachable.
+4. Restore the isolated backup and replay durable deletion and consent changes. Interrupt and restart the procedure; repeat replay to verify idempotency.
+5. Check deleted identities, pre-restore sessions, withdrawn recipients and revoked links remain denied. Check old queued messages and timers cannot silently resume. Reconcile uncertain provider outcomes rather than blindly resending.
+6. Obtain the current journal version/digest and database reconciliation receipt. Try an outdated proof and confirm reopening is rejected. Only an authorized engineer may reopen with current evidence.
+7. Perform one separately authorized TEST after reopening. Record measured data-loss interval and elapsed recovery time against RPO ≤15 minutes and RTO ≤60 minutes.
+8. Close the isolated environment and confirm the normal development environment is unaffected. Record **FAIL/BLOCKED** for any missing evidence; a successful database restore alone does not pass O3.
 
 ## 8. SMS: what you can and cannot test now
 
