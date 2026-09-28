@@ -1,0 +1,39 @@
+{
+  "receipt_verified": true,
+  "gate_allowed": true,
+  "journal_version": 3,
+  "digest": "2ae04c620114f050a03b65204a2ab72e757da4f1969f88e1a6a93010e04b0fe1",
+  "restore_id": "c58a1745-096b-4c01-926f-f9f2467ed0b3",
+  "quarantined": false,
+  "accounts": 0,
+  "recorded_at": "2026-09-28T17:20:15.705416+00:00",
+  "scope": "development only",
+  "supabase_project": "voepalyamwgenceawdvl",
+  "monitor_version": "02ccd2f1-39f1-4f98-b278-4a797b7e3830",
+  "monitor_cron": "* * * * *",
+  "health_problems": [],
+  "public_routing_checks_passed": 6,
+  "resend_replay": {
+    "event": "email.delivered",
+    "status": 202,
+    "evidence_source": "user reports fresh provider-dashboard attempt"
+  },
+  "verification": {
+    "node": 171,
+    "viewer": 44,
+    "workerd_request_cases": 4
+  },
+  "manifest_frozen": false,
+  "ready_for_iphone": false,
+  "operator_notification_receipt_verified": false,
+  "operator_notifications": {
+    "operations_recovery": {
+      "verified": true,
+      "source": "user email screenshots",
+      "time": "2026-09-29T03:18:45+10:00",
+      "reported_downtime_seconds": 480
+    },
+    "missed_heartbeat_receipt_verified": false,
+    "suppression_verified": false
+  }
+}

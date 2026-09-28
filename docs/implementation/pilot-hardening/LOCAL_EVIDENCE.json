@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "codeCommit": "6e7c77421cbe89ba4b60f5b8aaec5f3498797100",
+  "branch": "feat/pilot-hardening",
+  "completedAt": "2026-09-28T20:08:54.208269+10:00",
+  "app": {
+    "version": "1.0",
+    "build": "2",
+    "bundleId": "com.signalword.app",
+    "appGroup": "group.com.signalword.shared",
+    "signingTeam": null,
+    "signedDeviceVerified": false
+  },
+  "scope": "Local verification only; no deployment, live email/SMS, merge or push.",
+  "commands": [
+    {
+      "command": "npm ci",
+      "result": "pass",
+      "installedPackages": 59
+    },
+    {
+      "command": "npm run verify",
+      "result": "pass",
+      "nodeTests": 168,
+      "viewerTests": 44,
+      "viewerBuild": "pass",
+      "securityContracts": "pass"
+    },
+    {
+      "command": "node scripts/create-local-verification.mjs",
+      "result": "pass",
+      "migrations": 31,
+      "existingDatabasesPreserved": true
+    },
+    {
+      "command": "npm run test:db",
+      "result": "pass",
+      "assertions": 312,
+      "suites": 15
+    },
+    {
+      "command": "npm run test:restore",
+      "result": "pass",
+      "scope": "Real account-table pg_dump/restore; real SQL HTTP gate; local DO/R2 fixtures; not managed full PITR"
+    },
+    {
+      "command": "npm run test:integration",
+      "result": "pass",
+      "scope": "Real local Auth/API/PostgREST/Postgres/React browser; programmable fake delivery adapter and authority storage"
+    },
+    {
+      "command": "node scripts/test-contact-escalation-concurrency.mjs",
+      "result": "pass",
+      "scenarios": 5
+    },
+    {
+      "command": "node scripts/test-check-in-concurrency.mjs",
+      "result": "pass",
+      "scenarios": 3
+    },
+    {
+      "command": "swift test --package-path apps/ios",
+      "result": "pass",
+      "coreTests": 36,
+      "sdkUnavailableTests": 1,
+      "sdkEnabledPrivacyTestsExecuted": false
+    },
+    {
+      "command": "swift run --package-path apps/ios SignalWordCoreVerification",
+      "result": "pass"
+    },
+    {
+      "command": "xcodebuild -project apps/ios/SignalWord.xcodeproj -scheme SignalWord -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build",
+      "result": "pass"
+    },
+    {
+      "command": "npm run test:ios:ui",
+      "result": "pass",
+      "tests": 8,
+      "failed": 0,
+      "skipped": 0,
+      "device": "iPhone 18 Pro simulator",
+      "os": "27.0",
+      "nativeServices": "controlled fixtures"
+    },
+    {
+      "command": "viewer, signup, home Playwright scripts",
+      "result": "pass",
+      "suites": 3,
+      "standaloneNetwork": "fixtures"
+    },
+    {
+      "command": "deno check all deployable function entrypoints",
+      "result": "pass",
+      "entrypoints": 7
+    },
+    {
+      "command": "npm audit --omit=dev --audit-level=high",
+      "result": "pass",
+      "vulnerabilities": 0
+    },
+    {
+      "command": "npm run release:preflight",
+      "result": "pass",
+      "checks": 6
+    }
+  ],
+  "localBurst": {
+    "forecastViewerConcurrency": 10,
+    "testedViewerRequests": 20,
+    "viewerP95Ms": 99,
+    "forecastRetryConcurrency": 5,
+    "testedDuplicateRequests": 10,
+    "duplicateP95Ms": 98,
+    "budgetMs": 5000,
+    "hostedEvidence": false
+  },
+  "pending": [
+    "SDK-enabled build and true crash privacy test",
+    "Cloudflare authority retention provisioning",
+    "monitor/heartbeat/operator activation and receipt",
+    "matching hosted development deployment and CAPTCHA/provider checks",
+    "managed restore and rollback drills",
+    "owned paid Apple Team and signed artifact verification",
+    "physical-device acceptance",
+    "pilot observation and public release review",
+    "remote CI and committed-history secret scan"
+  ],
+  "failuresAndRetests": "See engineer-progress.md; original failures are retained, not overwritten by this passing summary."
+}
