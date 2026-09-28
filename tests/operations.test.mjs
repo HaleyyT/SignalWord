@@ -19,7 +19,7 @@ test('cron SQL success cannot hide an HTTP failure or signup abuse', () => {
 test('external heartbeat reports failure without including private diagnostics', async () => {
   let path;
   const ok = await reportHeartbeat('https://hc-ping.com/00000000-0000-4000-8000-000000000001', false, async (url, init) => {
-    path = url.pathname; assert.equal(init.body, undefined); assert.equal(init.redirect, 'error');
+    path = url.pathname; assert.equal(init.body, undefined); assert.equal(init.redirect, 'manual');
     return new Response('OK');
   });
   assert.equal(ok, true); assert.ok(path.endsWith('/fail'));
@@ -63,4 +63,13 @@ test('timer metrics detect overdue work, failed escalation and missing sweeps',(
 test('journal and provider delays remain visible without claiming delivery failed',()=>{
  const health=healthy();health.journal.oldestPendingSeconds=61;health.provider.callbackOverdue=1;health.provider.deliveryReportOverdue=1;health.delivery.queued=101;
  assert.deepEqual(operationalProblems(health),['ALERT_QUEUE_BACKLOG','JOURNAL_PERSISTENCE_OVERDUE','PROVIDER_CALLBACK_OVERDUE','PROVIDER_DELIVERY_REPORT_OVERDUE']);
+});
+
+test('heartbeat rejects redirects without following a capability to another origin',async()=>{
+ let calls=0;
+ const accepted=await reportHeartbeat('https://hc-ping.com/00000000-0000-4000-8000-000000000001',true,async(_url,init)=>{
+  calls++;assert.equal(init.redirect,'manual');
+  return new Response(null,{status:302,headers:{Location:'https://untrusted.example/'}});
+ });
+ assert.equal(accepted,false);assert.equal(calls,1);
 });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHealthHandler} from '../supabase/functions/operational-health/index.ts';
-import {Monitor} from '../infrastructure/monitor/worker.mjs';
+import worker, {Monitor} from '../infrastructure/monitor/worker.mjs';
 const key='fixture-monitor-key-which-is-at-least-32-characters';
 test('scoped health rejects invalid credentials before database access and supports rotation',async()=>{
  let reads=0; const handler=createHealthHandler({key,previousKey:key+'old',read:async()=>{reads++;return {private:'sensitive@example.test'};}});
@@ -34,7 +34,7 @@ test('Healthchecks separates backend failures from monitor liveness and retries 
  let problems=['ALERT_OUTCOME_UNKNOWN'],reply='OK';const calls=[];
  globalThis.fetch=async(url,init)=>{
   if(String(url).includes('operational-health')) return Response.json({problems});
-  calls.push(String(url));assert.equal(init.body,undefined);assert.equal(init.redirect,'error');
+  calls.push(String(url));assert.equal(init.body,undefined);assert.equal(init.redirect,'manual');
   return new Response(String(url).startsWith(operations)?reply:'OK');
  };
  const monitor=new Monitor({blockConcurrencyWhile:fn=>fn(),storage:{get:async()=>undefined}},
@@ -52,4 +52,10 @@ test('Healthchecks separates backend failures from monitor liveness and retries 
   monitor.env.OPERATIONS_PING_URL=heartbeat;calls.length=0;
   assert.equal((await monitor.fetch()).status,503);assert.deepEqual(calls,[heartbeat+'/fail']);
  }finally{globalThis.fetch=original;}
+});
+
+test('scheduled reporting exposes failed HTTP outcomes without private response data',async()=>{
+ const env={MONITOR:{idFromName:()=> 'fixture',get:()=>({fetch:async()=>new Response('private diagnostic',{status:503})})}};
+ let task;await worker.scheduled({},env,{waitUntil:p=>{task=p;}});
+ await assert.rejects(task,{message:'MONITOR_REPORT_FAILED'});
 });
