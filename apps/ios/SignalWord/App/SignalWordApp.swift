@@ -16,6 +16,20 @@ struct SignalWordApp: App {
             SignalWordRootView(model: model)
                 .tint(SignalWordColor.action)
                 .preferredColorScheme(.dark)
+                #if DEBUG && targetEnvironment(simulator)
+                .modifier(UITestAccessibilityConfiguration())
+                #endif
         }
     }
 }
+
+#if DEBUG && targetEnvironment(simulator)
+/// Exercise the same SwiftUI accessibility sizing without changing device settings.
+private struct UITestAccessibilityConfiguration: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-largest-text") {
+            content.environment(\.dynamicTypeSize, .accessibility5)
+        } else { content }
+    }
+}
+#endif

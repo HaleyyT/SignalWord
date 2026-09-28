@@ -33,6 +33,8 @@ struct SignalWordSetupFlow: View {
                 .padding(.bottom, 32)
                 .frame(maxWidth: .infinity)
             }
+            // Each setup step starts at its heading, including at accessibility text sizes.
+            .id(model.stage)
             .background(SignalWordColor.canvas.ignoresSafeArea())
             .navigationTitle(model.stage.title)
             .navigationBarTitleDisplayMode(.inline)

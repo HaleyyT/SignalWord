@@ -40,11 +40,11 @@ final class SignalWordJourneyTests: XCTestCase {
         tap("Set up SignalWord")
         let name = app.textFields["Name they’ll recognise"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
-        name.tap(); name.typeText("Alex")
+        reveal(name); name.tap(); name.typeText("Alex")
         let contact = app.textFields["Trusted person"]
-        contact.tap(); contact.typeText("Sam")
+        reveal(contact); contact.tap(); contact.typeText("Sam")
         let email = app.textFields["name@example.com"]
-        email.tap(); email.typeText("sam@example.test\n")
+        reveal(email); email.tap(); email.typeText("sam@example.test\n")
         if waitForRecovery {
             // The app reconciles every ten seconds. A slow typist must not lose a draft.
             Thread.sleep(forTimeInterval: 11)
@@ -186,4 +186,19 @@ final class SignalWordJourneyTests: XCTestCase {
         app.buttons["Send REAL alert"].tap()
         XCTAssertTrue(app.buttons["alert.resolve"].waitForExistence(timeout: 5))
     }
+    func testLargestTextKeepsSetupAndAccessibleAlertConfirmationUsable() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-testing-largest-text"]
+        app.launch()
+        completeContactSetup()
+        let review = app.buttons["alert.trigger.review"]
+        reveal(review, useMargin: true)
+        XCTAssertFalse(review.label.isEmpty, "The alternative trigger needs an accessible name")
+        review.tap()
+        XCTAssertTrue(app.buttons["Send REAL alert"].waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+        XCTAssertFalse(app.buttons["alert.resolve"].exists, "Review/cancel must not send")
+    }
+
 }
