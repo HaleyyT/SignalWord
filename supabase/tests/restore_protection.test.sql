@@ -16,7 +16,7 @@ select public.prepare_journaled_deletion('b1000000-0000-4000-8000-000000000001',
 select is((select count(*) from public.safety_journal_outbox where user_id='b1000000-0000-4000-8000-000000000001'),2::bigint,'deletion journals account and consent revocation');
 select public.finish_journaled_deletion();
 select is((select count(*) from auth.users),1::bigint,'interrupted journaling preserves resumable account');
-select throws_ok($$update public.trusted_contacts set status='confirmed',confirmed_at=now()$$,'P0001','ACCOUNT_DELETION_PENDING','pending deletion cannot restore consent');
+select throws_ok($$update public.trusted_contacts set status='confirmed',confirmed_at=now() where id='b2000000-0000-4000-8000-000000000001'$$,'P0001','ACCOUNT_DELETION_PENDING','pending deletion cannot restore consent');
 select public.journal_mark_durable(id) from public.safety_journal_outbox;
 select public.finish_journaled_deletion();
 select public.finish_journaled_deletion();
