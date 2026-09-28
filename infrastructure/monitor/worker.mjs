@@ -1,4 +1,4 @@
-import { checkOperations, reportHeartbeat } from '../../scripts/check-operations.mjs';
+import { checkOperations, reportHeartbeat } from '../../supabase/functions/_shared/monitor-client.mjs';
 
 /** One Durable Object serializes scheduled probes and retains notification state. */
 export class Monitor {

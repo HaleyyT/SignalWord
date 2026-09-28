@@ -2,7 +2,6 @@
   "name": "signalword-dev-monitor",
   "main": "worker.mjs",
   "compatibility_date": "2026-09-28",
-  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "triggers": {"crons": ["* * * * *"]},
   "durable_objects": {"bindings": [{"name": "MONITOR", "class_name": "Monitor"}]},
