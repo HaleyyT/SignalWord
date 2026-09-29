@@ -27,11 +27,12 @@ export function evaluateProviderReplay(input) {
   }
   const capturedBeforeAt = timestamp(input, 'capturedBeforeAt');
   const replayRequestedAt = timestamp(input, 'replayRequestedAt');
-  const replayObservedAt = timestamp(input, 'replayObservedAt');
+  const providerAttemptAt = timestamp(input, 'providerAttemptAt');
   const capturedAfterAt = timestamp(input, 'capturedAfterAt');
-  if (!(capturedBeforeAt <= replayRequestedAt && replayRequestedAt <= replayObservedAt && replayObservedAt <= capturedAfterAt)) {
+  if (!(capturedBeforeAt <= replayRequestedAt && replayRequestedAt <= providerAttemptAt && providerAttemptAt <= capturedAfterAt)) {
     throw new Error('REPLAY_TIMELINE_INVALID');
   }
+  if (!SHA256.test(input.providerAttemptDigest ?? '')) throw new Error('PROVIDER_ATTEMPT_REQUIRED');
   const before = {
     deliveryCount: count(input.before, 'deliveryCount', 1),
     attemptCount: count(input.before, 'attemptCount', 1),
@@ -46,7 +47,7 @@ export function evaluateProviderReplay(input) {
   };
   if (!STATUS.has(before.status) || !STATUS.has(after.status)) throw new Error('DELIVERY_STATUS_REQUIRED');
   const assertions = {
-    freshProviderAttemptObserved: replayObservedAt > capturedBeforeAt && input.replayStatus === 'succeeded',
+    freshProviderAttemptObserved: providerAttemptAt > capturedBeforeAt && input.replayStatus === 'succeeded',
     signedEndpointAccepted: input.webhookStatus === 202,
     receiptDeduplicated: after.receiptCount === before.receiptCount,
     deliveryCountUnchanged: after.deliveryCount === before.deliveryCount,
@@ -60,7 +61,8 @@ export function evaluateProviderReplay(input) {
     providerEventDigest: input.providerEventDigest,
     capturedBeforeAt: input.capturedBeforeAt,
     replayRequestedAt: input.replayRequestedAt,
-    replayObservedAt: input.replayObservedAt,
+    providerAttemptAt: input.providerAttemptAt,
+    providerAttemptDigest: input.providerAttemptDigest,
     capturedAfterAt: input.capturedAfterAt,
     replayStatus: input.replayStatus,
     webhookStatus: input.webhookStatus,
