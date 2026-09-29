@@ -1,7 +1,22 @@
+import { useEffect } from 'react'
 import './home.css'
 
 /** Public information only: visiting home never reads or mutates an alert. */
 export function HomePage() {
+  useEffect(() => {
+    // Hash targets mount after the browser initially parses the HTML shell.
+    // Restore deep links and move keyboard/screen-reader focus with navigation.
+    const navigateToSection = () => {
+      const id = window.location.hash.slice(1)
+      if (!['main', 'how-it-works', 'why-signalword', 'for-trusted-contacts'].includes(id)) return
+      const target = document.getElementById(id)
+      target?.focus({ preventScroll: true })
+      target?.scrollIntoView({ block: 'start', behavior: 'instant' })
+    }
+    navigateToSection()
+    window.addEventListener('hashchange', navigateToSection)
+    return () => window.removeEventListener('hashchange', navigateToSection)
+  }, [])
   return (
     <div className="home-page">
       <a className="home-skip" href="#main">Skip to content</a>
@@ -16,7 +31,7 @@ export function HomePage() {
           <a href="/support">Support</a>
         </nav>
       </header>
-      <main id="main">
+      <main id="main" tabIndex={-1}>
         <section className="home-hero home-wrap" aria-labelledby="home-title">
           <div className="home-hero-copy">
             <p className="eyebrow home-eyebrow"><span className="home-eyebrow-mark" aria-hidden="true" />Voice-triggered iPhone safety</p>
@@ -64,7 +79,7 @@ export function HomePage() {
           <div><strong>Currently in development</strong><p>We’re testing an invitation-only email experience. Public enrollment is not open. Do not rely on this version in an emergency.</p></div>
         </aside>
 
-        <section className="home-section home-wrap" id="how-it-works" aria-labelledby="how-title">
+        <section className="home-section home-wrap" id="how-it-works" tabIndex={-1} aria-labelledby="how-title">
           <div className="home-section-intro">
             <p className="eyebrow">A clear path to your person</p>
             <h2 id="how-title">A small phrase.<br /><span>A considered response.</span></h2>
@@ -94,7 +109,7 @@ export function HomePage() {
           </ol>
         </section>
 
-        <section className="home-difference home-wrap" id="why-signalword" aria-labelledby="difference-title">
+        <section className="home-difference home-wrap" id="why-signalword" tabIndex={-1} aria-labelledby="difference-title">
           <div className="home-difference-intro">
             <p className="eyebrow">Why SignalWord</p>
             <h2 id="difference-title">Designed for the moment you can’t use your phone as usual.</h2>
@@ -120,7 +135,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="home-recipient home-wrap" id="for-trusted-contacts" aria-labelledby="recipient-title">
+        <section className="home-recipient home-wrap" id="for-trusted-contacts" tabIndex={-1} aria-labelledby="recipient-title">
           <div><p className="eyebrow">For trusted contacts</p><h2 id="recipient-title">Received a SignalWord email?</h2></div>
           <div><p>Open the private link in that email to confirm an invitation or view an alert. You don’t need a SignalWord account.</p>
             <p>Keep the link private. If you receive an unexpected message, contact the sender directly before taking action.</p>

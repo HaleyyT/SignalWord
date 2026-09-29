@@ -22,7 +22,9 @@ export function SupportPage() {
         </section>
         <section className="information-section">
           <h2>Report a product problem</h2>
-          <p>For non-urgent product support, open a GitHub issue without including phrases, contact destinations, viewer links, tokens, precise coordinates, or account credentials.</p>
+          <p>For non-urgent product support, email support@signalword.app. Do not include private phrases, contact destinations, viewer links, tokens, precise coordinates, or account credentials.</p>
+          <a className="action-link" href="mailto:support@signalword.app">Email SignalWord support</a>
+          <p>You can also report a non-sensitive product issue on GitHub.</p>
           <a className="action-link" href="https://github.com/HaleyyT/SignalWord/issues/new" rel="noreferrer" target="_blank" aria-label="Open the SignalWord issue tracker in a new tab">Open the SignalWord issue tracker</a>
         </section>
         <section className="information-section">

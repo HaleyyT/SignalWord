@@ -27,6 +27,26 @@ try {
       await page.keyboard.press('Tab');
       await page.getByRole('link', { name: 'Skip to content' }).press('Enter');
       assert.equal(new URL(page.url()).hash, '#main');
+      const navigation = page.getByRole('navigation', { name: 'Main navigation' });
+      for (const [name, id] of [['How it works', 'how-it-works'], ['Why SignalWord', 'why-signalword']]) {
+        await navigation.getByRole('link', { name, exact: true }).click();
+        await page.waitForFunction(id => document.activeElement?.id === id, id);
+        assert.equal(new URL(page.url()).pathname, '/');
+        assert.equal(new URL(page.url()).hash, '#' + id);
+        assert.equal(await page.locator('#' + id).evaluate(el => {
+          const rect = el.getBoundingClientRect();
+          return rect.top >= -1 && rect.top < innerHeight;
+        }), true, name + ' target is in viewport');
+      }
+      await navigation.getByRole('link', { name: 'Support', exact: true }).click();
+      await page.getByRole('heading', { level: 1, name: 'Use a safe route to get help.' }).waitFor();
+      assert.equal(new URL(page.url()).pathname, '/support');
+      assert.equal(await page.getByRole('link', { name: 'Email SignalWord support' }).getAttribute('href'), 'mailto:support@signalword.app');
+      await page.getByRole('link', { name: 'SignalWord', exact: true }).click();
+      await page.goto(origin + '/#why-signalword');
+      await page.waitForFunction(() => document.activeElement?.id === 'why-signalword');
+      await page.reload();
+      await page.waitForFunction(() => document.activeElement?.id === 'why-signalword');
       await page.getByText('Does SignalWord contact emergency services?', { exact: true }).click();
       assert.equal(await page.locator('details[open]').count(), 1);
       await page.getByText('Can I download the app now?', { exact: true }).click();
