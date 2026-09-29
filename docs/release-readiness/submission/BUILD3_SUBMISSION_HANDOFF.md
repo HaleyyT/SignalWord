@@ -35,3 +35,11 @@ Development signed artifact: `/private/tmp/signalword-integrated-signed/Build/Pr
 ## Acceptance decision
 
 Whole-app 95/100 release acceptance is not awarded while these checks remain open. The verified simulator and signing results justify controlled physical evaluation, not a claim that every feature or App Store review is guaranteed. H08/H11/H16/H17 are not closed by this work.
+
+## TestFlight upload completed — 30 September 2026, 04:36 Sydney
+
+At the owner's subsequent request, build 1.0 (3) was archived, exported with App Store distribution signing and uploaded successfully as **TestFlight Internal Only**. Apple completed processing and shows **Missing Compliance**. No tester group is assigned, no public release or external testing was enabled.
+
+Archive: `/private/tmp/SignalWord-1.0-3-TestFlight.xcarchive`. Distribution profile verified: correct team/bundle/App Group, get-task-allow false, no device list, beta-reports-active true. Archive app and dSYM UUID match. Upload and screenshot evidence are retained alongside `2026-09-30-testflight-build3.json`.
+
+Next account action: build detail → Provide Export Compliance Information. Final export declaration remains owner-reviewed; no legal answer was submitted automatically. Browser inspection reached the exact build page, but attempts to open its questionnaire timed out. Once compliance is complete, add the owner to an internal test group and assign this build. TestFlight installation is not yet represented as available. RevenueCat connection and physical acceptance remain pending.
