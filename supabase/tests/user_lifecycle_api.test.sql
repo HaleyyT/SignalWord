@@ -42,8 +42,16 @@ reset role;
 select is((select status from public.trusted_contacts where user_id = '41000000-0000-4000-8000-000000000001'),
   'confirmed', 'contact becomes confirmed');
 set local role anon;
+select is(public.confirm_contact(extensions.digest('confirm-a', 'sha256')), true,
+  'lost confirmation response can be retried without granting consent twice');
+select is(public.confirm_contact(extensions.digest('unknown-confirmation', 'sha256')), false,
+  'unknown capability cannot report consent');
+reset role;
+update public.contact_confirmation_tokens set created_at=now()-interval '1 hour', expires_at=now()-interval '1 minute'
+where token_hash=extensions.digest('confirm-a', 'sha256');
+set local role anon;
 select is(public.confirm_contact(extensions.digest('confirm-a', 'sha256')), false,
-  'confirmation token is single use');
+  'expired confirmation cannot be reused even when contact is confirmed');
 reset role;
 
 set local role service_role;
@@ -139,6 +147,8 @@ select is(public.withdraw_contact(extensions.digest('confirm-a-resend', 'sha256'
   'recipient can withdraw with the previously consumed confirmation capability');
 select is(public.withdraw_contact(extensions.digest('confirm-a-resend', 'sha256')), true,
   'recipient withdrawal is idempotent after a lost response');
+select is(public.confirm_contact(extensions.digest('confirm-a-resend', 'sha256')), false,
+  'confirmation retry cannot restore withdrawn consent');
 reset role;
 select is((select status from public.trusted_contacts where user_id = '41000000-0000-4000-8000-000000000001'),
   'disabled', 'withdrawal disables future sends');

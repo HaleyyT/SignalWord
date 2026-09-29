@@ -150,6 +150,26 @@ try {
   assert.equal(duringWithdrawal + afterWithdrawal, 2);
   assert.equal(await sql(`select count(*) from public.alert_deliveries where alert_event_id='${nextEvent}' and trusted_contact_id='${contacts[2]}' and status='failed' and lease_owner is null;`),'1');
   console.log('PASS concurrent withdrawal prevents its recipient claim while preserving other recipients');
+  const consentToken = randomUUID();
+  await sql(`insert into public.contact_confirmation_tokens(trusted_contact_id,token_hash,expires_at,consumed_at)
+    values('${contacts[0]}',extensions.digest('${consentToken}','sha256'),now()+interval '30 minutes',now());`);
+  const withdrawFirst = sql(`begin;set local application_name='${label}';select public.withdraw_contact(extensions.digest('${consentToken}','sha256'));select pg_sleep(3);commit;`);
+  await waitForLock(label);
+  const confirmationAfterWithdrawal = sql(`select public.confirm_contact(extensions.digest('${consentToken}','sha256'));`);
+  await withdrawFirst;
+  assert.equal(await confirmationAfterWithdrawal, 'f');
+  assert.equal(await sql(`select status from public.trusted_contacts where id='${contacts[0]}';`), 'disabled');
+  console.log('PASS confirmation retry cannot restore consent when withdrawal owns the token lock');
+
+  // Local fixture reset only: exercise the opposite ordering on the same token.
+  await sql(`update public.trusted_contacts set status='confirmed',confirmed_at=now() where id='${contacts[0]}';`);
+  const confirmFirst = sql(`begin;set local application_name='${label}';select public.confirm_contact(extensions.digest('${consentToken}','sha256'));select pg_sleep(3);commit;`);
+  await waitForLock(label);
+  const withdrawalAfterConfirmation = sql(`select public.withdraw_contact(extensions.digest('${consentToken}','sha256'));`);
+  await confirmFirst;
+  assert.equal(await withdrawalAfterConfirmation, 't');
+  assert.equal(await sql(`select status from public.trusted_contacts where id='${contacts[0]}';`), 'disabled');
+  console.log('PASS withdrawal remains final when confirmation retry owns the token lock');
 } finally {
   await sql(`delete from public.rate_limit_buckets where subject_hash in (
     select extensions.digest(t.token_hash || convert_to(a.action,'UTF8'),'sha256')
