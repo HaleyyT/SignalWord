@@ -2,7 +2,24 @@
 
 Updated 29 September 2026. **NOT READY TO INSTALL OR RELEASE. The hosted manifest is not frozen.**
 
-Branch: `feat/hosted-restore-compatibility`. Latest repair code: **`14e1c9c1efdcad0a7c1198b091713d589dd14eb9`** (native source unchanged from `421f3c5`), app **1.0 (2)**. Documentation commits after this code revision do not authorize installation. No merge, push, public enrollment or separate production deployment was performed. Development viewer and delivery-function repairs were deployed as recorded below.
+Branch: `feat/hosted-restore-compatibility`. Latest repair code: **`148dbf48ea2f484f3f8fa6c702bb7ba48a2f20e0`** (native source unchanged from `421f3c5`), app **1.0 (2)**. Documentation commits after this code revision do not authorize installation. No merge, push, public enrollment or separate production deployment was performed. Development viewer and delivery-function repairs were deployed as recorded below.
+
+## Latest continuation — three-recipient development TEST
+
+[All retained samples and redacted results](HOSTED_ABC_EVIDENCE_2026-09-29.json). The controlled sender and all test data have now been deleted through the application; deletion receipt returned 200. Final readback: **zero users, contacts and deliveries**, authority allowed, journal version **13**, aggregate health clear. Earlier final-state paragraphs below are historical snapshots.
+
+- All three initial TEST and three resolution deliveries reached `delivered`, one attempt each, with 12 matching signed sent/delivered callbacks. The connected inbox received the repaired **TEST — NO EMERGENCY** resolution subject and wording.
+- B acknowledgement was idempotent and only one recipient was acknowledged in the recorded database snapshot. A/C public-view acknowledgement isolation and delayed-routing acceptance remain incomplete.
+- B withdrawal preserved A/C confirmed status. Its revoked GET first returned 503, then GET/POST returned 404 NOT_FOUND. Access was denied, but the helper expecting 410 failed. This response consistency and initial latency require investigation; no protection was relaxed.
+- Ten same-command retries all returned the same incident (p95 2,332 ms); 20 B reads passed (p95 2,643 ms). These are one-sender samples, not the full ten-distinct-sender envelope. The original submission burst included a 503 and the old helper failed before retaining every sample; that run is explicitly incomplete. The new recorder persists every completed request before judging success, including errors.
+- Migration `20261001040000_confirmation_retry.sql` makes an unexpired completed consent retry return success without granting consent twice. Withdrawal races remain safe. It was the sole migration in the development dry run and was applied. No grant/RLS/quarantine or mobile contract changed. The original hosted token expired before retest (410), so positive hosted retry still needs a fresh invitation.
+- Local integration initially failed because a minimal fixture config reported another local project's API port. The harness now checks the actual gateway mapping before creating identities. The corrected full journey passed, and the two exact disposable local identities were removed. No hosted identity was created by this fixture error.
+
+Latest checks: `npm run verify` **175 Node + 44 viewer**, security/contracts/build; `npm run test:db` **315 database + 17 safeupdate assertions**; contact concurrency **7 races**; `npm run test:integration` full journey **PASS** (20 reads p95 167 ms, ten duplicates p95 130 ms). Native code did not change; prior native results are not new physical evidence.
+
+**Progress remains local 21/21 (100%), hosted 11/17 (65%), physical 0/12 (0%), pilot 1/6 (17%).** Partial proof does not close an entire gate. Open gates: **H04 human Turnstile, H08 managed restore, H10 full recipient isolation/routing, H11 full provider recovery, H16 full load, H17 manifest freeze**.
+
+[Hosted acceptance setup](HOSTED_ACCEPTANCE_SETUP.md) specifies the backup quote and approval boundary, restore isolation, Sentry privacy/retention, human Turnstile session and staged load requirements. Estimated managed source baseline is **US$130/month**, approximately **US$145/month with a retained Small restore target**, before tax/overages and subject to dashboard quote. No upgrade was made. No iPhone installation is authorized.
 
 ## Latest controlled hosted journey and repairs
 
@@ -67,7 +84,7 @@ The SDK-enabled result bundle confirms eight passing tests, no skips and no runt
 
 ## Hosted scope and remaining work
 
-Only Supabase `voepalyamwgenceawdvl`, authority `https://authority-dev.signalword.app`, Vercel `signalword-dev` and viewer `https://www.signalword.app` are in scope. Public signup remains disabled. All 32 migrations through `20261001030000` and seven functions are installed. Detailed versions, latest authority state and monitoring evidence are in the [hosted report](HOSTED_DEVELOPMENT_2026-09-29.md).
+Only Supabase `voepalyamwgenceawdvl`, authority `https://authority-dev.signalword.app`, Vercel `signalword-dev` and viewer `https://www.signalword.app` are in scope. Public signup remains disabled. All 33 migrations through `20261001040000` and seven functions are installed. Detailed versions, latest authority state and monitoring evidence are in the [hosted report](HOSTED_DEVELOPMENT_2026-09-29.md).
 
 Remaining gates include:
 

@@ -95,3 +95,7 @@ Remaining full gates: H04 human CAPTCHA, H08 managed restore, H10 hosted recipie
 ## Latest live journey and repaired deployment
 
 See [structured evidence](HOSTED_TEST_JOURNEY_2026-09-29.json) and the current engineering report. At 04:58 Sydney the authority was open at journal version 9, no health problems, minute monitor schedule active, and fixture cleanup verified. `dispatch-deliveries` is now version 10; other function versions are unchanged. The new viewer passes six alias checks and its mocked-response browser regression. No manifest was frozen and no iPhone was installed.
+
+## Latest three-recipient continuation
+
+See [complete redacted evidence and retained samples](HOSTED_ABC_EVIDENCE_2026-09-29.json) and [current engineering progress](engineer-progress.md). Development migration count is now **33**, latest `20261001040000_confirmation_retry.sql`, code `148dbf4`. No Edge Function or viewer deployment changed in this continuation. Six deliveries succeeded once each with 12 signed lifecycle receipts. Disposable sender deletion and receipt both returned 200; final inventory zero users/contacts/deliveries, authority open, journal version 13, health clear. Hosted completion remains **11/17**, manifest unfrozen.

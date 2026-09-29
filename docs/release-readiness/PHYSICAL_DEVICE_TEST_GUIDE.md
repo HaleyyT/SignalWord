@@ -579,3 +579,14 @@ Send me the case IDs, build, result, what you saw and roughly when it happened. 
 One passing session is an initial acceptance result, not population-wide reliability. Broader device/OS trials, accessibility/usability, security review, restore/rollback, load/cost monitoring and the invited pilot are still needed before public release. Keep the original 300-trial evidence target and release gates; do not award 97/100 from this checklist alone.
 
 Related files: [consolidated handoff](../implementation/sequential-slices/HANDOFF.md), [contact implementation](../implementation/sequential-slices/CONTACT_ESCALATION.md), [timer implementation](../implementation/sequential-slices/CHECK_IN_TIMER.md). SMS remains unavailable in this candidate.
+
+
+## Hosted acceptance prerequisites (29 September follow-up)
+
+Do not install until all 17 hosted gates pass and the manifest is frozen. See [Hosted acceptance setup](HOSTED_ACCEPTANCE_SETUP.md) for the six remaining gates, managed PITR cost/approval, isolated restore requirements, Sentry privacy/retention, and the browser-only human Turnstile session. These preparation steps do not require the iPhone. A real signed crash/relaunch and native CAPTCHA bridge still require device evidence later.
+
+## 29 September continuation — do not install yet
+
+Candidate repair `148dbf4` adds migration `20261001040000_confirmation_retry.sql`; native source remains unchanged. Hosted acceptance is still **11/17**, and there is **no frozen manifest**. Three TEST and three resolution deliveries passed, but full A/B/C isolation/delayed routing, active provider failure/replay coverage, the full multi-sender load, human Turnstile and managed restore remain open. The test fixture was resolved and durably deleted; zero users/contacts/deliveries remain. Do not reuse old recipient links.
+
+Before physical tests, follow [the hosted prerequisites](HOSTED_ACCEPTANCE_SETUP.md). Keep Sentry disabled until the development project/privacy settings are verified. SDK-linked simulator success does not prove signed-device crash reporting. The guide's installation steps remain deferred until engineering issues a frozen 17/17 hosted manifest.
