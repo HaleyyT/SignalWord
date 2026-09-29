@@ -57,6 +57,9 @@ final class AppShellModel {
         let requestLocationAccess: @Sendable () async -> DeviceLocationAuthorization
         let deleteAccount: @Sendable () async throws -> Void
 
+        var requestInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
+        var verifyInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
+
         static let unconfigured = LifecycleActions(
             prepare: { _ in throw SessionError.configuration },
             profile: { _ in throw SessionError.configuration },
@@ -237,6 +240,50 @@ final class AppShellModel {
         beginContactEdit()
     }
 
+    var invitedEmail = ""
+    var invitedCode = ""
+    private(set) var invitedCodeRequested = false
+    private(set) var isSigningIn = false
+
+    func changeInvitedEmail() {
+        guard !isSigningIn else { return }
+        invitedCodeRequested = false
+        invitedCode = ""
+        accountMessage = nil
+    }
+
+    private var deletionBlocksSignIn: Bool {
+        preferences.bool(forKey: "serverDeletionConfirmed") || preferences.string(forKey: "deletionReceiptToken") != nil
+    }
+
+    func requestInvitedCode(captchaToken: String) async {
+        guard !isSigningIn, !deletionBlocksSignIn else { return }
+        isSigningIn = true
+        defer { isSigningIn = false }
+        do {
+            invitedEmail = try InvitedSignIn.normalizedEmail(invitedEmail)
+            try await lifecycle.requestInvitedCode(invitedEmail, captchaToken)
+            invitedCodeRequested = true
+            accountMessage = "If this address is invited, check its inbox for a sign-in code."
+        } catch {
+            accountMessage = "Could not request a code. Check the invited email and connection, then complete verification again."
+        }
+    }
+
+    func verifyInvitedCode() async {
+        guard !isSigningIn, !deletionBlocksSignIn else { return }
+        isSigningIn = true
+        defer { isSigningIn = false; invitedCode = "" }
+        do {
+            try await lifecycle.verifyInvitedCode(invitedEmail, invitedCode)
+            invitedEmail = ""
+            invitedCodeRequested = false
+            await prepare()
+        } catch {
+            accountMessage = "Code not accepted. It may be incorrect, expired or already used. Try again or request a new code."
+        }
+    }
+
     func prepare(captchaToken: String? = nil) async {
         apply(await lifecycle.locationAuthorization())
         if preferences.bool(forKey: "serverDeletionConfirmed") ||
@@ -259,11 +306,11 @@ final class AppShellModel {
             needsIdentityVerification = true
             accountMessage = hasEnteredDashboard
                 ? "Your saved account credentials are missing. Contact support before creating another account. Earlier alerts cannot be recovered through a new identity."
-                : "Complete verification to protect your new account from automated signups."
+                : "Sign in with your invited email. Public registration is closed."
         } catch is KeychainError {
             accountMessage = "Your saved identity is unavailable. Unlock the device and retry. Your account has not been replaced."
         } catch {
-            accountMessage = "SignalWord could not create a protected device identity. Check the connection and try again."
+            accountMessage = "SignalWord could not restore your protected session. Check the connection and try again."
         }
     }
 

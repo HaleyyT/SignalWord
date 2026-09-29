@@ -13,9 +13,28 @@ struct SignalWordSetupFlow: View {
                     if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
                     if model.needsIdentityVerification {
                         if SignalWordConfiguration.verificationURL != nil {
-                            Button("Verify new account") { showVerification = true }
+                            TextField("Invited email", text: $model.invitedEmail)
+                                .textContentType(.emailAddress)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .disabled(model.isSigningIn || model.invitedCodeRequested)
+                                .accessibilityIdentifier("onboarding.invitedEmail")
+                            if model.invitedCodeRequested {
+                                SecureField("Email sign-in code", text: $model.invitedCode)
+                                    .textContentType(.oneTimeCode)
+                                    .keyboardType(.numberPad)
+                                    .accessibilityIdentifier("onboarding.invitedCode")
+                                Button("Use another invited email") { model.changeInvitedEmail() }
+                                    .disabled(model.isSigningIn)
+                                Button("Sign in") { Task { await model.verifyInvitedCode() } }
+                                    .disabled(model.isSigningIn || model.invitedCode.isEmpty)
+                                    .accessibilityIdentifier("onboarding.signIn")
+                            }
+                            Button(model.invitedCodeRequested ? "Request another code" : "Verify and request code") { showVerification = true }
                                 .buttonStyle(.borderedProminent)
                                 .accessibilityIdentifier("onboarding.verifyIdentity")
+                                .disabled(model.isSigningIn || model.invitedEmail.isEmpty)
                         } else {
                             Text("Account verification is not configured in this build. Contact support before continuing.")
                                 .font(.footnote)
@@ -44,9 +63,9 @@ struct SignalWordSetupFlow: View {
                 if let url = SignalWordConfiguration.verificationURL {
                     SignupVerificationView(url: url) { token in
                         showVerification = false
-                        Task { await model.prepare(captchaToken: token) }
+                        Task { await model.requestInvitedCode(captchaToken: token) }
                     }
-                    .navigationTitle("Verify new account")
+                    .navigationTitle("Verify invited sign-in")
                     .toolbar { Button("Cancel") { showVerification = false } }
                 }
             }

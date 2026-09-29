@@ -30,15 +30,16 @@ final class SessionLifecycleTests: XCTestCase {
         XCTAssertEqual(token, "old-access")
     }
 
-    func testSignupSendsProofAndSavesSession() async throws {
+    func testInvitedVerificationSavesSession() async throws {
         let store = MemoryCredentials()
         let manager = makeManager(store) { request in
-            XCTAssertEqual(request.url?.path, "/auth/v1/signup")
+            XCTAssertEqual(request.url?.path, "/auth/v1/verify")
             let body = try JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any]
-            XCTAssertEqual((body?["gotrue_meta_security"] as? [String: String])?["captcha_token"], "signup-proof")
+            XCTAssertEqual(body?["type"] as? String, "email")
             return self.response(request)
         }
-        let token = try await manager.accessToken(createIfMissing: true, captchaToken: "signup-proof")
+        try await manager.verifyInvitedCode(email: "a@example.com", code: "123456")
+        let token = try await manager.accessToken(createIfMissing: false)
         XCTAssertEqual(token, "new-access")
         XCTAssertEqual(store.value?.refreshToken, "new-refresh")
         XCTAssertEqual(store.value?.expiresAt, now.addingTimeInterval(3600))
@@ -85,7 +86,10 @@ final class SessionLifecycleTests: XCTestCase {
             let store = MemoryCredentials(initial)
             let transport = SuspendedTransport()
             let manager = makeManager(store) { request in await transport.send(request) }
-            let request = Task { try await manager.accessToken(createIfMissing: true, captchaToken: "proof") }
+            let request = Task {
+                if initial == nil { try await manager.verifyInvitedCode(email: "a@example.com", code: "123456") }
+                else { _ = try await manager.accessToken(createIfMissing: false) }
+            }
             await transport.waitUntilStarted()
             try await manager.deleteLocalSession()
             XCTAssertNil(store.value)
@@ -108,14 +112,15 @@ final class SessionLifecycleTests: XCTestCase {
         let oldRequest = Task { try await manager.accessToken(createIfMissing: false) }
         await oldTransport.waitUntilStarted()
         try await manager.deleteLocalSession()
-        let newRequest = Task { try await manager.accessToken(createIfMissing: true, captchaToken: "new-proof") }
+        let newRequest = Task { try await manager.verifyInvitedCode(email: "a@example.com", code: "123456") }
         await newTransport.waitUntilStarted()
         await oldTransport.finish()
         do { _ = try await oldRequest.value; XCTFail("Old refresh must be invalidated") }
         catch is CancellationError { }
         XCTAssertNil(store.value)
         await newTransport.finish()
-        let token = try await newRequest.value
+        try await newRequest.value
+        let token = try await manager.accessToken(createIfMissing: false)
         XCTAssertEqual(store.value?.accessToken, token, "A deliberate new signup must remain usable")
     }
 

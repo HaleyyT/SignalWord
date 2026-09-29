@@ -32,7 +32,8 @@ test('iOS location is optional, freshness-bounded, and appended after alert acce
 });
 
 test('iOS lifecycle uses refreshable device identity and real authenticated APIs', () => {
-  assert.match(session, /SignupVerification.requestBody/);
+  assert.match(session, /InvitedSignIn.requestBody/);
+  assert.doesNotMatch(session, /auth\/v1\/signup/);
   assert.match(session, /grant_type.*refresh_token/);
   assert.match(credentials, /refreshToken/);
   assert.match(credentials, /kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly/);
