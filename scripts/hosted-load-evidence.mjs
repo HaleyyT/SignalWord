@@ -5,18 +5,29 @@ import { resolve } from 'node:path';
 const SHA256 = /^[a-f0-9]{64}$/;
 const LABEL = /^[a-z0-9][a-z0-9-]{2,63}$/;
 
-function samples(path, expectedCount) {
-  const rows = readFileSync(path, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
+function validateSamples(rows, expectedCount) {
+  if (!Array.isArray(rows)) throw new Error('COMPLETE_SAMPLE_SET_REQUIRED');
   if (rows.length !== expectedCount || new Set(rows.map(row => row.sequence)).size !== expectedCount) {
     throw new Error('COMPLETE_SAMPLE_SET_REQUIRED');
   }
   for (const row of rows) {
-    if (!Number.isSafeInteger(row.sequence) || !Number.isSafeInteger(row.status) || !Number.isSafeInteger(row.durationMs) ||
+    if (!Number.isSafeInteger(row.sequence) || row.sequence < 0 || row.sequence >= expectedCount ||
+      !Number.isSafeInteger(row.status) || row.status < 100 || row.status > 599 || !Number.isSafeInteger(row.durationMs) ||
       row.durationMs < 0 || typeof row.valid !== 'boolean' || typeof row.transportError !== 'boolean') {
       throw new Error('VALID_SAMPLE_REQUIRED');
     }
   }
   return rows;
+}
+
+function samples(path, expectedCount) {
+  return validateSamples(readFileSync(path, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)), expectedCount);
+}
+
+function providerCount(provider, key) {
+  const value = provider?.[key];
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error(`PROVIDER_COUNT_REQUIRED:${key}`);
+  return value;
 }
 
 function p95(values) {
@@ -29,7 +40,10 @@ export function evaluateHostedLoadEvidence({ metadata, first, duplicate, reads, 
   if (metadata.environment !== 'development' || !/^[a-f0-9]{40}$/.test(metadata.sourceCommit ?? '') || metadata.declaredBeforeRun !== true) {
     throw new Error('DECLARED_DEVELOPMENT_RUN_REQUIRED');
   }
-  const deliveries = provider.deliveries;
+  first = validateSamples(first, 10);
+  duplicate = validateSamples(duplicate, 10);
+  reads = validateSamples(reads, 20);
+  const deliveries = provider?.deliveries;
   if (!Array.isArray(deliveries) || deliveries.length < 10 || provider.capturedBeforeCleanup !== true) {
     throw new Error('PRE_CLEANUP_PROVIDER_EVIDENCE_REQUIRED');
   }
@@ -41,6 +55,14 @@ export function evaluateHostedLoadEvidence({ metadata, first, duplicate, reads, 
       throw new Error('VALID_PROVIDER_DELIVERY_REQUIRED');
     }
   }
+  const counts = {
+    incidentCount: providerCount(provider, 'incidentCount'),
+    uniqueIncidentCount: providerCount(provider, 'uniqueIncidentCount'),
+    deliveryCountBeforeDuplicates: providerCount(provider, 'deliveryCountBeforeDuplicates'),
+    deliveryCountAfterDuplicates: providerCount(provider, 'deliveryCountAfterDuplicates'),
+    queuedCount: providerCount(provider, 'queuedCount'),
+    unknownOutcomeCount: providerCount(provider, 'unknownOutcomeCount'),
+  };
   const senderCount = new Set(deliveries.map(delivery => delivery.senderLabel)).size;
   const uniqueProviderMessages = new Set(deliveries.map(delivery => delivery.providerMessageDigest)).size;
   const providerP95Ms = p95(deliveries.map(delivery => delivery.providerAcceptedMs));
@@ -54,14 +76,15 @@ export function evaluateHostedLoadEvidence({ metadata, first, duplicate, reads, 
     submissionP95WithinBudget: firstP95Ms <= 2000,
     duplicateP95WithinBudget: duplicateP95Ms <= 2000,
     readP95WithinBudget: readP95Ms <= 5000,
-    tenUniqueIncidents: provider.incidentCount === 10 && provider.uniqueIncidentCount === 10,
-    duplicatesCreatedNoDeliveries: provider.deliveryCountBeforeDuplicates === provider.deliveryCountAfterDuplicates,
+    tenUniqueIncidents: counts.incidentCount === 10 && counts.uniqueIncidentCount === 10,
+    providerDeliveryRowsComplete: counts.deliveryCountBeforeDuplicates > 0 && counts.deliveryCountBeforeDuplicates === deliveries.length,
+    duplicatesCreatedNoDeliveries: counts.deliveryCountBeforeDuplicates === counts.deliveryCountAfterDuplicates,
     tenDistinctProviderSenders: senderCount === 10,
     oneAttemptPerDelivery: deliveries.every(delivery => delivery.attemptCount === 1),
     uniqueProviderMessagePerDelivery: uniqueProviderMessages === deliveries.length,
     signedCallbacksPresent: deliveries.every(delivery => delivery.signedCallbackCount >= 1),
     providerAcceptanceWithinBudget: providerP95Ms <= 5000,
-    noQueuedOrUnknownWork: provider.queuedCount === 0 && provider.unknownOutcomeCount === 0,
+    noQueuedOrUnknownWork: counts.queuedCount === 0 && counts.unknownOutcomeCount === 0,
   };
   return {
     environment: 'development',

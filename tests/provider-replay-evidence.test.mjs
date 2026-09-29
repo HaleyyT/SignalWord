@@ -25,3 +25,11 @@ test('private extras are not copied into replay evidence', () => {
   const report = evaluateProviderReplay({ ...input, token: 'private', before: { ...input.before, email: 'private' } });
   assert.equal(JSON.stringify(report).includes('private'), false);
 });
+
+test('zero or missing correlated baseline counts are rejected', () => {
+  for (const key of ['deliveryCount', 'attemptCount', 'receiptCount']) {
+    assert.throws(() => evaluateProviderReplay({ ...input, before: { ...input.before, [key]: 0 } }), /COUNT_REQUIRED/);
+    const before = { ...input.before }; delete before[key];
+    assert.throws(() => evaluateProviderReplay({ ...input, before }), /COUNT_REQUIRED/);
+  }
+});
