@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({headless:true});
 try {
- const page=await browser.newPage(); let logins=0, logouts=0, expiry=false;
+ const page=await browser.newPage(); let logins=0, logouts=0, expiry=false, otpVerifications=0;
  await page.route('https://www.signalword.app/onboarding/**',async route=>{
   const name=new URL(route.request().url()).pathname.split('/').pop();
   if(!['acceptance.html','acceptance.js','invited-session.js','verify.css'].includes(name)) throw Error('UNEXPECTED_ASSET');
@@ -15,6 +15,11 @@ try {
   if(url.pathname==='/auth/v1/token') {
    logins++; assert.equal(req.postDataJSON().gotrue_meta_security.captcha_token,'fixture-captcha');
    await route.fulfill({status:logins===1?200:400,contentType:'application/json',body:JSON.stringify(logins===1?{access_token:'private-session',user:{id:'private-user'}}:expiry?{error_code:'captcha_failed'}:{error:'private-provider-error'})});
+  } else if(url.pathname==='/auth/v1/otp') {
+   assert.equal(req.postDataJSON().create_user,false);await route.fulfill({status:200,body:'{}',contentType:'application/json'});
+  } else if(url.pathname==='/auth/v1/verify') {
+   otpVerifications++;assert.equal(req.postDataJSON().type,'email');
+   await route.fulfill({status:otpVerifications===1?200:403,contentType:'application/json',body:JSON.stringify(otpVerifications===1?{access_token:'private-otp-session',user:{id:'private-user'}}:{error_code:'otp_expired'})});
   } else if(url.pathname==='/auth/v1/signup') { await route.fulfill({status:422,contentType:'application/json',body:JSON.stringify({error_code:'signup_disabled'})});
   } else if(url.pathname==='/auth/v1/logout') {logouts++;await route.fulfill({status:204,body:''});}
   else throw Error('UNEXPECTED_NETWORK');
@@ -36,6 +41,19 @@ try {
  await page.getByRole('button',{name:'Save redacted result'}).waitFor();
  assert.equal(JSON.parse(await page.locator('#evidence').innerText()).scope,'closed-enrollment');
  assert.equal(JSON.parse(await page.locator('#evidence').innerText()).passed,true);
+
+ await page.reload();
+ await page.locator('#mode').selectOption('otp');
+ await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',password:'private-password',publishableKey:'public-client-key'}))});
+ await page.getByRole('button',{name:'Simulated human challenge'}).click();
+ await page.locator('#otp-code').fill('123456');
+ await page.locator('#otp-verify').click();
+ await page.getByRole('button',{name:'Save redacted result'}).waitFor();
+ const otp=JSON.parse(await page.locator('#evidence').innerText());
+ assert.equal(otp.scope,'invited-email-code');assert.equal(otp.passed,true);assert.equal(otpVerifications,2);
+ assert.equal(await page.locator('#otp-code').inputValue(),'');
+ assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);
+ for(const forbidden of ['123456','private@example.invalid','private-otp-session'])assert.ok(!(await page.locator('#evidence').innerText()).includes(forbidden));
  await page.reload(); await page.clock.install(); expiry=true;
  await page.locator('#mode').selectOption('expired');
  await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',password:'private-password',publishableKey:'public-client-key'}))});
