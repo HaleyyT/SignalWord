@@ -8,3 +8,11 @@ test('source, wrong organization and invalid migration rejected before queries',
 test('active jobs, pending outbound requests and schema mismatch block replay',async()=>{for(const row of [{active_jobs:1,pending_network:0,migration:'20261001040000'},{active_jobs:0,pending_network:1,migration:'20261001040000'},{active_jobs:0,pending_network:0,migration:'0'}]){const f=await fixture();await assert.rejects(()=>reconcileClone({...f,query:async()=>[row]}),/CLONE_NOT_ISOLATED/);}});
 test('stale or uncovered journal fails closed',async()=>{const f=await fixture();await assert.rejects(()=>reconcileClone({...f,snapshot:{...f.snapshot,state:{...f.snapshot.state,coverageStart:'2099-01-01'}}}),/COVERED/);await assert.rejects(()=>reconcileClone({...f,readSnapshot:async()=>({...f.snapshot,state:{...f.snapshot.state,version:1}})}),/JOURNAL_CHANGED/);});
 test('missing receipt and unsafe historical work block success',async()=>{for(const unsafe of [false,true]){const f=await fixture();const old=f.query;await assert.rejects(()=>reconcileClone({...f,query:async(p,q)=>q.includes('restore_receipt_matches')&&!unsafe?[{matched:false}]:q===safetySQL&&unsafe?[{unsafe_alerts:1}]:old(p,q)}));}});
+
+test('null or boolean counts cannot masquerade as verified zero',async()=>{
+ for(const value of [null,false,'',undefined]) {
+  const f=await fixture();const old=f.query;
+  await assert.rejects(()=>reconcileClone({...f,query:async(p,q)=>q===isolationSQL?[{active_jobs:value,pending_network:0,migration:'20261001040000'}]:old(p,q)}),/CLONE_NOT_ISOLATED/);
+  await assert.rejects(()=>reconcileClone({...f,query:async(p,q)=>q===safetySQL?[{unsafe_alerts:value,unsafe_invitations:0,active_timers:0,open_viewers:0,confirmations:0,sessions:0,refresh_tokens:0}]:old(p,q)}),/CLONE_UNSAFE_AFTER_REPLAY/);
+ }
+});

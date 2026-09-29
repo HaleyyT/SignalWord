@@ -6,6 +6,8 @@ import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const SOURCE='voepalyamwgenceawdvl';
 const CONTROL='https://authority-dev.signalword.app';
+// PostgreSQL count values must be explicit; null/missing evidence is not zero.
+const verifiedZero=value=>value===0 || value==='0';
 export const isolationSQL=`select
  (select count(*) from cron.job where active) as active_jobs,
  (select count(*) from net.http_request_queue) as pending_network,
@@ -26,7 +28,7 @@ export async function reconcileClone({targetProject,projects,expectedMigration,s
  if(!/^\d{14}$/.test(expectedMigration??''))throw Error('MIGRATION_REQUIRED');
  const state=snapshot?.state,backup=Date.parse(state?.backupAt),coverage=Date.parse(state?.coverageStart);
  if(state?.quarantined!==true || !Number.isFinite(backup) || !Number.isFinite(coverage) || backup<coverage || backup>now || now-backup>90*86400000 || !/^[a-f0-9-]{36}$/.test(state.restoreId??'') || !Number.isSafeInteger(state.version) || state.version<0 || !Array.isArray(snapshot.entries) || snapshot.digest!==await journalDigest(snapshot.entries))throw Error('COVERED_QUARANTINE_REQUIRED');
- const inspect=async()=>{const [r]=await query(targetProject,isolationSQL);if(!r || Number(r.active_jobs)!==0 || Number(r.pending_network)!==0 || r.migration!==expectedMigration)throw Error('CLONE_NOT_ISOLATED');};
+ const inspect=async()=>{const [r]=await query(targetProject,isolationSQL);if(!r || !verifiedZero(r.active_jobs) || !verifiedZero(r.pending_network) || r.migration!==expectedMigration)throw Error('CLONE_NOT_ISOLATED');};
  await inspect();
  const entries=JSON.stringify(snapshot.entries).replace(/'/g,"''");
  const proof=`'${state.restoreId}'::uuid,${state.version},'${snapshot.digest}'`;
@@ -36,7 +38,7 @@ export async function reconcileClone({targetProject,projects,expectedMigration,s
   if(r?.matched!==true)throw Error('CLONE_RECEIPT_MISMATCH');
  }
  const [safety]=await query(targetProject,safetySQL);
- if(!safety || ['unsafe_alerts','unsafe_invitations','active_timers','open_viewers','confirmations','sessions','refresh_tokens'].some(k=>Number(safety[k])!==0))throw Error('CLONE_UNSAFE_AFTER_REPLAY');
+ if(!safety || ['unsafe_alerts','unsafe_invitations','active_timers','open_viewers','confirmations','sessions','refresh_tokens'].some(k=>!verifiedZero(safety[k])))throw Error('CLONE_UNSAFE_AFTER_REPLAY');
  await inspect();
  const latest=await readSnapshot();
  if(latest?.state?.quarantined!==true || latest.state.restoreId!==state.restoreId || latest.state.version!==state.version || latest.digest!==snapshot.digest || latest.digest!==await journalDigest(latest.entries))throw Error('JOURNAL_CHANGED_DURING_REPLAY');
