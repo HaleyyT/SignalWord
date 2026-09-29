@@ -9,15 +9,15 @@ This is an owned parallel-branch handoff. It does not change the shared hosted e
 
 ## Hosted coordination state
 
-At the safe boundary on 2026-09-29, Astra requested an exclusive H04 hosted window. Sol had no hosted operation in flight and immediately paused all sends, deletions, deployments, replay actions, Auth/schedule/authority changes and restore work. Local and read-only work may continue, but no Sol hosted mutation may resume until Astra explicitly hands the window back. A read-only Supabase billing inspection was stopped when browser control was unavailable during Astra's window; no quote, checkout or plan value was changed or submitted.
+At the safe boundary on 2026-09-29, Astra requested an exclusive H04 hosted window. Sol had no hosted operation in flight and immediately paused all hosted changes. Astra later explicitly handed back a bounded H11-only replay window for one current controlled TEST event. Sol performed exactly one dashboard replay request, made no new send, deployment, Auth/SMTP, schedule, authority, deletion, purchase or H16 traffic, and closed the window after the post-state readback. No further Sol hosted mutation is active. A read-only Supabase billing inspection was stopped when browser control was unavailable during Astra's earlier window; no quote, checkout or plan value was changed or submitted.
 
 ## Current gate results
 
 | Gate | Result | Exact remaining dependency |
 |---|---|---|
-| H11 | BLOCKED on coordinated hosted evidence | Deploy reviewed compatible code if needed, then capture a genuinely fresh Resend dashboard replay around one current controlled TEST event. The replay must show a new provider attempt, signed endpoint 202, receipt deduplication, and unchanged delivery/attempt counts. Finish with zero unknown or queued work. |
+| H11 | BLOCKED on provider freshness evidence | The bounded replay request was acknowledged by the dashboard and storage remained unchanged and safe, but the refreshed provider detail exposed only the original event timestamp, HTTP 202 and the pre-existing attempt count. No new provider attempt identity/timestamp was available, so this is not a PASS. Provider/reviewer confirmation of fresh-attempt evidence remains required. |
 | H16 | FAIL retained; local instrumentation prepared | The 2,020 ms duplicate p95 failure remains. Review and deploy development-only timing instrumentation, stage a genuinely consented tenth active sender if required, declare one retest, then capture 10 first submissions, 10 duplicates, 20 reads and every correlated provider acceptance before cleanup. |
-| H08 | PREPARING, not PREPARATION READY | Obtain authenticated current quote and organization/project impact, verify provider-supported pre-start clone isolation, rehearse the exact isolated commands, and complete the purchase packet. Actual restore requires separate explicit purchase approval. |
+| H08 | PREPARING, not PREPARATION READY | Authenticated plan/project and schedule inventory, official current rates, provider clone behavior, and the safe pause/restore procedure are documented. The final provider checkout/restore quote, target isolation/config probes, eligible paid recovery point and bounded approval packet remain. Actual restore requires separate explicit purchase approval. |
 
 ## H11 evidence-source matrix
 
@@ -36,7 +36,7 @@ Evidence types are deliberately not interchangeable.
 | Worker lease/interruption | PASS for accepted response with lost lease | n/a | Live lease exclusion and expiry recovery covered | Not induced | Rerun affected database suite before integration |
 | Withdrawal/resolution races | Local concurrency suites | n/a | Existing race coverage | Existing controlled deliveries | Recheck cleanup state after hosted window |
 
-`scripts/provider-replay-evidence.mjs` accepts a private, pseudonymous before/replay/after input and writes a new mode-0600 redacted report. It fails closed for malformed chronology, non-202 callback response, no new provider attempt, changed receipt/delivery/attempt counts, or changed terminal state. It never performs the replay.
+`scripts/provider-replay-evidence.mjs` accepts a private, pseudonymous before/replay/after input and writes a new mode-0600 redacted report. It requires both a fresh provider-attempt timestamp and a hashed provider-attempt identity; a replay-request toast or old event screen cannot satisfy freshness. It also fails closed for malformed chronology, non-202 callback response, changed receipt/delivery/attempt counts, or changed terminal state. It never performs the replay.
 
 ## H16 instrumentation and evidence
 
@@ -53,20 +53,17 @@ The load recorder allowlists only these numeric durations and derives client/edg
 
 `scripts/hosted-load-evidence.mjs` requires immutable 10/10/20 JSONL request sets plus private, pseudonymous provider evidence captured before cleanup. It preserves the unchanged p95 budgets, requires ten unique incidents and sender labels, unchanged delivery count across duplicates, one provider attempt and unique provider message per delivery, signed callbacks for every delivery, provider-acceptance p95 at most five seconds, and zero queued/unknown work. Failed runs remain failed and outputs use exclusive creation.
 
-## Proposed coordinated H11 hosted window
+## Completed coordinated H11 hosted window
 
-This proposal is inactive until Astra explicitly acknowledges it.
-
-- Owner: Sol executes; Astra holds the hosted lock and observes stop conditions.
-- Gate: H11 only. No H16 traffic and no H08 maintenance during this window.
-- Proposed start/end: 2026-09-29T12:00:00Z to 2026-09-29T12:30:00Z.
-- Source: reviewed commit from this branch, to be filled after local verification and Astra review.
-- Exact environment: Supabase development `voepalyamwgenceawdvl`, current Resend development integration, no production resources.
-- Fixture: one current controlled TEST delivery, pseudonymous label only. Do not use withdrawn B or deleted sender 02.
-- Actions: read pre-state; request one dashboard replay of the already-signed event; record the new provider attempt timestamp/status and endpoint result; read post-state; generate the redacted report.
-- Expected message: replay of the existing TEST message only; no new alert, invitation, resolution or REAL message.
-- Cleanup: no identity or incident deletion is needed for replay evidence; verify zero queued/unknown work and preserve the immutable report.
-- Stop immediately for an unexpected identity/delivery, routing outside development, stale or mismatched receipt, non-202 endpoint result, monitor/authority failure, new unknown outcome, or any concurrent hosted owner activity. Preserve evidence before repair and requarantine through the supported control if a stop condition requires it.
+- Owner/coordinator: Sol executed after Astra's explicit bounded handback; Astra retained shared hosted coordination.
+- Gate and interval: H11 only, 2026-09-29T11:18:59.627070Z through 2026-09-29T11:23:20.653484Z. No H16 traffic or H08 maintenance occurred.
+- Source: `cb3cf0829ac7c8873d3ef4f05209231f9f1c3020`.
+- Exact environment: Supabase development `voepalyamwgenceawdvl` and its current Resend development integration; no production resource.
+- Fixture: one current controlled TEST resolution event, retained only as a SHA-256 event digest in evidence. Withdrawn B and deleted sender 02 were not used.
+- Action: one dashboard replay request. The dashboard acknowledged the request, but after refresh still exposed only the original event timestamp, HTTP 202 and `ATTEMPTS 2`; no fresh attempt identity/timestamp was available.
+- Before and after: delivery/attempt/receipt counts stayed `1/1/2`; status stayed `delivered`; event state stayed `resolved`; queued deliveries, unknown outcomes, active incidents and active timers stayed zero. Authority remained allowed, journal version remained 16 and the health check reported no problems.
+- Result: BLOCKED, not PASS. A request acknowledgement cannot be relabelled as a provider-observed fresh callback. The redacted retained record is `evidence/2026-09-29-sol-h11-replay-blocked.json`.
+- Cleanup/window close: no identity or incident cleanup was needed, no additional replay is permitted under this window, and no hosted Sol operation remains in flight.
 
 ## H08 preparation boundary
 
@@ -74,12 +71,14 @@ No purchase or managed restore is authorized. The checked-in clone reconciler re
 
 Before PREPARATION READY, the handoff still needs:
 
-1. authenticated organization and source-project identity readback plus a current account-specific quote, including Pro scope, source/target compute, seven-day PITR, tax/overage and downgrade/removal billing;
-2. provider confirmation that copied cron and Vault credentials can be isolated before any restored target executes;
-3. exact source schedule inventory and disable/restore commands, target routing/Auth/function isolation, access-denial probes and independent lineage check;
+1. the provider's final checkout/restore quote, including source/target compute and disk, seven-day PITR, tax/overage and bounded-duration total;
+2. a paid eligible recovery point captured only after the five schedules are inactive and outbound work is empty; Supabase explicitly says a binary clone cannot pause or exclude copied external-operation jobs before they start;
+3. target routing/Auth/function isolation, access-denial probes and independent lineage check; the exact source schedule inventory and supported disable/restore calls are now prepared in `MANAGED_RESTORE_DRILL_PREPARATION.md`;
 4. a final source-safe precheck and controlled markers, with H11/H16 traffic excluded;
 5. twelve `restore-drill-evidence.mjs` assertions, RPO at most 900 seconds and RTO at most 3600 seconds, where RTO ends only after safe usable-service validation;
 6. one bounded approval packet. PREPARATION READY is not H08 PASS.
+
+Read-only authenticated inventory on 2026-09-29 found exactly one project in the selected organization: development project `voepalyamwgenceawdvl`, region `ap-southeast-2`, healthy on PostgreSQL 17.6. No production project was selected or changed. The organization is Free with spend cap enabled, no invoices and no payment method; the authenticated panel showed Pro from USD 25/month but could not produce a final paid checkout/restore total. Official current rates imply about USD 145/month before tax/overages while source Small, clone Small and seven-day PITR all coexist, with compute/PITR billed hourly. This is not a checkout quote. No purchase or billing mutation occurred.
 
 ## Local verification commands
 

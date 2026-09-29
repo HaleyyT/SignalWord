@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "gate": "H11",
+  "result": "BLOCKED",
+  "environment": "development",
+  "sourceCommit": "cb3cf0829ac7c8873d3ef4f05209231f9f1c3020",
+  "fixtureLabel": "h11-test-resolution-01",
+  "providerEventDigest": "09e4d98a0da443587a36d7957d2463294c2467c0332edcaabb8f77f2081047cb",
+  "window": {
+    "capturedBeforeAt": "2026-09-29T11:18:59.627070Z",
+    "capturedAfterAt": "2026-09-29T11:23:20.653484Z",
+    "replayRequests": 1,
+    "dashboardAcknowledgedRequest": true
+  },
+  "providerDisplayAfterRefresh": {
+    "eventTimestamp": "2026-09-29T09:30:02.308Z",
+    "httpStatus": 202,
+    "attemptsDisplayed": 2,
+    "freshAttemptDigest": null,
+    "freshAttemptTimestamp": null
+  },
+  "before": {
+    "deliveryCount": 1,
+    "attemptCount": 1,
+    "receiptCount": 2,
+    "status": "delivered",
+    "eventState": "resolved"
+  },
+  "after": {
+    "deliveryCount": 1,
+    "attemptCount": 1,
+    "receiptCount": 2,
+    "status": "delivered",
+    "eventState": "resolved"
+  },
+  "safetyAfter": {
+    "queuedAlertDeliveries": 0,
+    "unknownAlertOutcomes": 0,
+    "activeIncidents": 0,
+    "activeTimers": 0,
+    "activeSchedules": 5,
+    "controlledUsers": 9,
+    "authorityAllowed": true,
+    "journalVersion": 16,
+    "healthProblems": []
+  },
+  "acceptance": {
+    "signedEndpointAccepted": true,
+    "receiptDeduplicated": true,
+    "deliveryCountUnchanged": true,
+    "attemptCountUnchanged": true,
+    "terminalStateUnchanged": true,
+    "freshProviderAttemptObserved": false
+  },
+  "remainingDependency": "Obtain provider-visible or provider-confirmed identity and timestamp for a genuinely fresh replay attempt; do not infer freshness from the request acknowledgement or original 202 event screen."
+}
