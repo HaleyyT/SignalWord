@@ -1,4 +1,4 @@
-import { verifyInvitedLogin } from './invited-session.js';
+import { verifyInvitedLogin, verifyClosedEnrollment } from './invited-session.js';
 const status = document.getElementById('status');
 const input = document.getElementById('fixture');
 const download = document.getElementById('download');
@@ -7,12 +7,12 @@ function finish(value) {
   fixture = undefined;
   result = value;
   document.getElementById('evidence').textContent = JSON.stringify(value, null, 2);
-  status.textContent = value.passed ? 'Invited login and rejected token reuse verified.' : 'Not passed. Save the redacted result for the engineer.';
+  status.textContent = value.passed ? 'Selected development check passed. Save the redacted result.' : 'Not passed. Save the redacted result for the engineer.';
   download.hidden = false;
 }
 input.addEventListener('change', async () => {
   if (busy || input.files.length !== 1) return;
-  busy = true; input.disabled = true;
+  busy = true; input.disabled = true; document.getElementById('mode').disabled = true;
   try {
     const file = input.files[0];
     if (file.size > 16384) throw Error('INVALID_FIXTURE');
@@ -30,13 +30,28 @@ input.addEventListener('change', async () => {
           submitted = true;
           status.textContent = 'Checking development authentication…';
           try {
+            const mode=document.getElementById('mode').value;
+            if(mode==='expired') {
+              status.textContent='Leave this page open for 5 minutes 10 seconds. The unused proof will then be tested automatically.';
+              const started=performance.now();
+              await new Promise(resolve=>setTimeout(resolve,310000));
+              const elapsedMs=performance.now()-started;
+              const expired=await verifyInvitedLogin({...fixture,captchaToken:token});
+              finish({environment:'development',scope:'unused-token-expiry',recordedAt:new Date().toISOString(),elapsedMs,expired,passed:elapsedMs>=310000 && !expired.accepted && expired.rejection==='captcha_failed'});
+              return;
+            }
+            if(mode==='closed') {
+              const closed=await verifyClosedEnrollment({...fixture,captchaToken:token});
+              finish({environment:'development',scope:'closed-enrollment',recordedAt:new Date().toISOString(),closed,passed:closed.passed,anonymousEnrollmentProven:false});
+              return;
+            }
             const fresh = await verifyInvitedLogin({...fixture,captchaToken:token});
             const replay = await verifyInvitedLogin({...fixture,captchaToken:token});
             finish({environment:'development',scope:'existing-invited-password-login',recordedAt:new Date().toISOString(),fresh,replay,passed:fresh.accepted && fresh.logoutStatus === 204 && !replay.accepted && replay.status >= 400,anonymousEnrollmentProven:false,nativeBridgeProven:false});
           } catch { finish({environment:'development',passed:false,failure:'AUTH_TRANSPORT_FAILED',recordedAt:new Date().toISOString()}); }
         },
         'error-callback': code => { const safeCode = /^[0-9]{3,8}$/.test(String(code)) ? String(code) : 'unknown'; status.textContent = 'Cloudflare verification failed (code ' + safeCode + '). Reload in your normal browser; report this code to the engineer.'; },
-        'expired-callback': () => { status.textContent = 'Challenge expired. Reload and load the fixture again.'; },
+        'expired-callback': () => { if(submitted)return; status.textContent = 'Challenge expired. Reload and load the fixture again.'; },
       });
       status.textContent = 'Complete the human challenge below.';
     };
