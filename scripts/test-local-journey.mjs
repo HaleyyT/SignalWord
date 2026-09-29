@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   acquireLocalFixtureLock,
   localContainer,
+  localGatewayContainer,
   localRestContainer,
   localWorkdir,
 } from "./local-fixture.mjs";
@@ -156,6 +157,13 @@ async function journey() {
     /^http:\/\/127\.0\.0\.1:\d+$/.test(local.API_URL),
     "Local backend only",
   );
+  // A minimal CLI config can report another project's default port. Check the
+  // actual gateway mapping before creating an identity or changing any data.
+  const gatewayPorts = JSON.parse(execFileSync("docker", [
+    "inspect", localGatewayContainer, "--format", "{{json .NetworkSettings.Ports}}",
+  ], { encoding: "utf8" }))["8000/tcp"] ?? [];
+  assert.ok(gatewayPorts.some(({ HostPort }) => HostPort === new URL(local.API_URL).port),
+    "LOCAL_API_PROJECT_MISMATCH: CLI API port must match the fixture gateway");
   const config = {
     url: local.API_URL,
     anonKey: local.ANON_KEY,
@@ -376,7 +384,7 @@ async function journey() {
       const value = await response.json();
       assert.ok(
         response.ok,
-        `${method} local fixture request: ${response.status} ${value.error?.code}`,
+        `${method} local fixture request: ${response.status} ${value.error?.code} ${value.error?.message ?? ""}`,
       );
       return value;
     };
@@ -459,6 +467,8 @@ async function journey() {
     });
     await confirmWorker();
     assert.equal(sent.length, 1);
+    await request(`/v1/contacts/confirm/${sent[0].confirmationToken}`, "POST");
+    // Recover a lost confirmation response through the same public API.
     await request(`/v1/contacts/confirm/${sent[0].confirmationToken}`, "POST");
     const command = crypto.randomUUID();
     const input = {

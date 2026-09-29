@@ -16,6 +16,7 @@ const config = readFileSync(
 const project = /^project_id\s*=\s*"([A-Za-z0-9_-]+)"/m.exec(config)?.[1];
 if (!project) throw Error("LOCAL_PROJECT_ID_REQUIRED");
 export const localContainer = `supabase_db_${project}`;
+export const localGatewayContainer = `supabase_kong_${project}`;
 export const localRestContainer = `supabase_rest_${project}`;
 
 /** Reject overlapping DB suites instead of allowing one suite to consume another's fixtures. */
