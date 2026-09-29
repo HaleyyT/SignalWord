@@ -44,7 +44,7 @@ try {
 
  await page.reload();
  await page.locator('#mode').selectOption('otp');
- await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',password:'private-password',publishableKey:'public-client-key'}))});
+ await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',publishableKey:'public-client-key'}))});
  await page.getByRole('button',{name:'Simulated human challenge'}).click();
  await page.locator('#otp-code').fill('123456');
  await page.locator('#otp-verify').click();

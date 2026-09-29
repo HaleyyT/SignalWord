@@ -17,7 +17,7 @@ input.addEventListener('change', async () => {
     const file = input.files[0];
     if (file.size > 16384) throw Error('INVALID_FIXTURE');
     fixture = JSON.parse(await file.text()); input.value = '';
-    if (location.origin !== 'https://www.signalword.app' || fixture.environment !== 'development' || fixture.signupDisabled !== true || !fixture.email || !fixture.password || !fixture.publishableKey) throw Error('INVALID_FIXTURE');
+    if (location.origin !== 'https://www.signalword.app' || fixture.environment !== 'development' || fixture.signupDisabled !== true || !fixture.email || (document.getElementById('mode').value !== 'otp' && !fixture.password) || !fixture.publishableKey) throw Error('INVALID_FIXTURE');
     const script = document.createElement('script');
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     script.onerror = () => finish({passed:false,failure:'CHALLENGE_SCRIPT_FAILED'});
