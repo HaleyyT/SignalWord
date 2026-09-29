@@ -636,3 +636,7 @@ The new ordinary-browser page is live at https://www.signalword.app/onboarding/a
 Human unused-proof expiry passed (HTTP 400 after 310 seconds). Save the downloaded redacted JSON to `/Users/haleytran/Desktop/Projects/SignalWord/docs/release-readiness/evidence/2026-09-29-human-turnstile-expiry.json`; do not save or share the private input fixture there. Closed-enrollment human test is still pending. Fresh-device onboarding is an engineering blocker: the current native session manager uses anonymous signup while hosted signup is disabled. Do not install or attempt A1 until an invitation-only compatible path has been verified and the candidate frozen.
 
 Closed-enrollment human result is now verified from the saved JSON (422/signupDisabled). Do not repeat that challenge. The remaining H04 work is engineering compatibility for fresh-device invited onboarding. Hosted remains 12/17 and installation remains blocked.
+
+## Native invited email-code candidate (not installed)
+
+H04 now has a native invited-email/code implementation. Missing credentials no longer create an anonymous account. After the hosted candidate is verified and frozen, onboarding will request the invited email, human verification and emailed code. Existing sessions refresh from Keychain. Current hosted Auth SMTP/template acceptance is pending; do not install this code yet. Eight-digit codes with server-owned 3600-second expiry were read back; no public signup was enabled. Follow H04_INVITED_NATIVE_IMPLEMENTATION.md for current status.

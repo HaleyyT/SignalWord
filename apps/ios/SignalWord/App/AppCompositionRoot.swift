@@ -43,7 +43,9 @@ enum AppCompositionRoot {
                 for key in ["onboardingComplete", "shortcutConfigured", "verifiedRehearsals", "rehearsalContactID", "serverDeletionConfirmed", "deletionReceiptToken", CheckInModel.pendingKey] {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
-            }
+            },
+            requestInvitedCode: { email, token in try await api.requestInvitedCode(email: email, captchaToken: token) },
+            verifyInvitedCode: { email, code in try await api.verifyInvitedCode(email: email, code: code) }
         )
     }
 

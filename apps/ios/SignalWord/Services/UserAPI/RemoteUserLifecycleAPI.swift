@@ -64,6 +64,14 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
             response: [AlertStatusProjection].self, query: key.map { [URLQueryItem(name: "key", value: $0.uuidString)] } ?? [])
     }
 
+    func requestInvitedCode(email: String, captchaToken: String) async throws {
+        try await sessionManager.requestInvitedCode(email: email, captchaToken: captchaToken)
+    }
+
+    func verifyInvitedCode(email: String, code: String) async throws {
+        try await sessionManager.verifyInvitedCode(email: email, code: code)
+    }
+
     func prepareIdentity(captchaToken: String? = nil) async throws {
         _ = try await sessionManager.accessToken(createIfMissing: true, captchaToken: captchaToken)
     }

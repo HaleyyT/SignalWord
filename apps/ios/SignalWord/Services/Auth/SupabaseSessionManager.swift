@@ -51,12 +51,34 @@ actor SupabaseSessionManager {
             return try await task.value.accessToken
         }
         guard createIfMissing else { throw SessionError.unavailable }
-        guard let captchaToken, SignupVerification.validToken(captchaToken) else { throw SessionError.verificationRequired }
+        // Closed pilot: missing credentials require explicit invited email sign-in.
+        // Never create an anonymous account, including from an App Intent.
+        throw SessionError.verificationRequired
+    }
+
+    func requestInvitedCode(email: String, captchaToken: String) async throws {
+        guard tokenTask == nil, try load() == nil else { throw SessionError.configuration }
         let requestGeneration = generation
-        let task = Task { try await self.signInAnonymously(captchaToken: captchaToken, generation: requestGeneration) }
+        var request = request(path: "/auth/v1/otp")
+        request.httpMethod = "POST"
+        request.httpBody = try InvitedSignIn.requestBody(email: email, captchaToken: captchaToken)
+        let (_, response) = try await send(request)
+        guard generation == requestGeneration, !Task.isCancelled else { throw CancellationError() }
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw SessionError.unavailable
+        }
+    }
+
+    func verifyInvitedCode(email: String, code: String) async throws {
+        guard tokenTask == nil, try load() == nil else { throw SessionError.configuration }
+        var request = request(path: "/auth/v1/verify")
+        request.httpMethod = "POST"
+        request.httpBody = try InvitedSignIn.verificationBody(email: email, code: code)
+        let requestGeneration = generation
+        let task = Task { try await self.perform(request, fallbackRefreshToken: nil, generation: requestGeneration) }
         tokenTask = task
         defer { if generation == requestGeneration { tokenTask = nil } }
-        return try await task.value.accessToken
+        _ = try await task.value
     }
 
     func deleteLocalSession() throws {
@@ -66,13 +88,6 @@ actor SupabaseSessionManager {
         tokenTask?.cancel()
         tokenTask = nil
         try clear()
-    }
-
-    private func signInAnonymously(captchaToken: String, generation: Int) async throws -> DeviceCredentialStore.Session {
-        var request = request(path: "/auth/v1/signup")
-        request.httpMethod = "POST"
-        request.httpBody = try SignupVerification.requestBody(token: captchaToken)
-        return try await perform(request, fallbackRefreshToken: nil, generation: generation)
     }
 
     private func refresh(_ existing: DeviceCredentialStore.Session, generation: Int) async throws -> DeviceCredentialStore.Session {
