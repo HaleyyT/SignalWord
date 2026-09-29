@@ -17,7 +17,7 @@ let package = Package(
             name: "SignalWordCore",
             path: "SignalWord",
             exclude: [
-                "App", "DesignSystem", "SignalWord.entitlements",
+                "App", "DesignSystem", "SignalWord.entitlements", "Assets.xcassets", "PrivacyInfo.xcprivacy",
                 "Features/AppShell/AppShellModel.swift", "Features/AppShell/CheckInPanel.swift",
                 "Features/AppShell/ContactNetworkPanel.swift", "Features/AppShell/HomeScreen.swift",
                 "Features/AppShell/PeopleScreen.swift", "Features/AppShell/SettingsScreen.swift",
