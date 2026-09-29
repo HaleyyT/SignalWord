@@ -1,0 +1,12 @@
+{
+  "environment": "development",
+  "scope": "closed-enrollment",
+  "recordedAt": "2026-09-29T10:17:43.547Z",
+  "closed": {
+    "status": 422,
+    "signupDisabled": true,
+    "passed": true
+  },
+  "passed": true,
+  "anonymousEnrollmentProven": false
+}

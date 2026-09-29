@@ -634,3 +634,5 @@ The new ordinary-browser page is live at https://www.signalword.app/onboarding/a
 ## 29 September 20:04 prerequisite update
 
 Human unused-proof expiry passed (HTTP 400 after 310 seconds). Save the downloaded redacted JSON to `/Users/haleytran/Desktop/Projects/SignalWord/docs/release-readiness/evidence/2026-09-29-human-turnstile-expiry.json`; do not save or share the private input fixture there. Closed-enrollment human test is still pending. Fresh-device onboarding is an engineering blocker: the current native session manager uses anonymous signup while hosted signup is disabled. Do not install or attempt A1 until an invitation-only compatible path has been verified and the candidate frozen.
+
+Closed-enrollment human result is now verified from the saved JSON (422/signupDisabled). Do not repeat that challenge. The remaining H04 work is engineering compatibility for fresh-device invited onboarding. Hosted remains 12/17 and installation remains blocked.

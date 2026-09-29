@@ -31,3 +31,11 @@ User screenshot confirms unused-token expiry: 310002.4 ms elapsed, HTTP 400, acc
 Onboarding code inspection confirms `SupabaseSessionManager.signInAnonymously` posts to `/auth/v1/signup`; there is no invited-session bootstrap in that manager. With global signup disabled, password-login harness success cannot establish a working fresh-device onboarding journey. H04 must remain open until a reviewed invitation-only onboarding path is implemented and verified, without enabling public enrollment. This is an engineering blocker, not a reason to repeat the same human test.
 
 Fresh verification: 195 Node and 44 viewer tests, repository/security/contracts, real local clone rehearsal and mocked browser harness all passed. [Log digests](evidence/2026-09-29-2004-local-recheck.json). These do not close H11, H16 or managed H08. Hosted remains 12/17. No paid operation, new hosted send, installation or manifest freeze performed.
+
+## Saved human result accepted — 20:17 UTC+10
+
+Original downloaded closed-enrollment JSON verified and retained: HTTP 422, signupDisabled true, passed true, recorded 2026-09-29T10:17:43.547Z. The other submitted file is the prior login/reuse result, not the expiry download; expiry screenshot evidence remains retained. No additional human CAPTCHA repetition is required for these component checks. H04 remains open for native invitation-only onboarding compatibility.
+
+H08 verifier repair: null, false, empty or missing count values now fail closed rather than coercing to zero. Nine focused clone/measurement tests pass, including the new regression. Managed purchase is still unauthorized. The isolated clone verifier exists and was locally rehearsed; older pasted instructions saying it is absent are stale. Actual managed target/source-safe checkpoint and live provider drill remain pending.
+
+H10 remains passed; original B withdrawal and disposable sender deletion remain intentional. H11 signed provider fault/replay proof and H16 complete passing envelope still require engineering work. No new hosted gate is declared passed by this update.
