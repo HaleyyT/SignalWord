@@ -1,8 +1,8 @@
 # SignalWord: engineering progress and candidate handoff
 
-Latest evening continuation: [hosted preparation and retained failures](HOSTED_CONTINUATION_2026-09-29.md). Hosted remains 11/17; new A/B/C invitations pending, human CAPTCHA harness opened, H08/H16 tooling prepared but gates not passed.
+Latest evening continuation: [hosted preparation and retained failures](HOSTED_CONTINUATION_2026-09-29.md). Hosted remains 11/17; A/B/C invitations pending; ordinary-browser CAPTCHA replacement deployed; real human login/logout/reuse proof passes; Sentry sanitized ingestion retest passes after geography scrubbing; H08/H16 gates not passed.
 
-Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Human Turnstile availability confirmed, harness not ready.
+Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Normal-browser invited-login CAPTCHA passed; expiry and controlled anonymous enrollment remain pending.
 
 ## Current signing/configuration candidate — 29 September 2026
 
@@ -20,7 +20,7 @@ History scan flagged ten apparent credentials in a source manifest. Each was rec
 
 Remaining hosted gates: H04 human CAPTCHA/closed enrollment; H08 managed restore/RPO/RTO; H10 complete A/B/C routing/isolation; H11 provider recovery/failure lifecycle; H16 complete ten-sender load; H17 compatible manifest freeze. Current readbacks confirm signup disabled, authority allowed at journal version 13, deleted identities denied, no health problems, and seven active expected function versions. These readbacks do not close the six gates.
 
-Human prerequisites: backup purchase remains unapproved (quote only requested); no Sentry development project exists yet; a human challenge session is still needed. See [setup and short-drill cost distinction](HOSTED_ACCEPTANCE_SETUP.md). Disabling PITR after a successful drill removes ongoing 15-minute recovery-point protection. Keep crash reporting disabled until project privacy/retention and ingestion are verified.
+Human prerequisites: backup purchase remains unapproved (quote only requested); Sentry development project exists; sanitized synthetic ingestion and geography scrubbing verified, symbols/subscription readback/device crash remain pending; a human challenge session is still needed. See [setup and short-drill cost distinction](HOSTED_ACCEPTANCE_SETUP.md). Disabling PITR after a successful drill removes ongoing 15-minute recovery-point protection. Keep crash reporting disabled until project privacy/retention and ingestion are verified.
 
 Clean source export of `2c94126` independently produced a development-signed Release app; its verifier passed with no problems. Exact artifact: `/private/tmp/signalword-post-signing-regression/clean-signed-build/Build/Products/Release-iphoneos/SignalWord.app`. It remains **unfrozen and not authorized for installation**. See [post-signing evidence](POST_SIGNING_EVIDENCE_2026-09-29.json).
 

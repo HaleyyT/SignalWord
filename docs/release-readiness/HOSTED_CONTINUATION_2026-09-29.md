@@ -10,13 +10,17 @@ Status: **11/17 hosted gates complete. Not frozen. Do not install.** No paid upg
 - Hosted resend-webhook rejected unsigned and malformed-signature callbacks with 401 (251 ms / 117 ms). Active signed ordering, duplicates and uncertain provider outcomes remain open.
 - Browser extension access timed out; native browser interaction was interrupted by user activity. Requested confirmation of the three fresh invitations rather than interfering with unrelated browsing.
 
-## H04 prepared human harness
+## H04 normal-browser replacement — live and human-verified
 
-`node scripts/run-hosted-turnstile.mjs PRIVATE_INPUT NEW_REDACTED_OUTPUT`
+The Playwright-controlled real challenge failed. Do not retry that harness or count simulated CAPTCHA results as human acceptance. `scripts/run-hosted-turnstile.mjs` now exits with instructions instead of launching Chromium.
 
-Private input: environment=development, signupDisabled=true, existing disposable email/password and development publishableKey. Verify the live closed-signup setting before creating this input. Store it outside Git with mode 0600. The harness opens the actual hosted verification page and public site key in headed Chromium. The human completes the challenge. A browser-only bridge shim sends the token in memory to the pinned development password-login flow. A returned session is signed out immediately; the same CAPTCHA token is retried and must fail. Only scalar results are written; no tokens, recipient data or provider error bodies are retained.
+Prepared page: `https://www.signalword.app/onboarding/acceptance.html`. Published and verified in signalword-dev. Preview deployment: `https://signalword-h1274aerv-haleyyts-projects.vercel.app`; it is not a permitted real widget hostname and the page intentionally refuses it.
 
-This is **existing invited identity evidence only**, not anonymous signup or native WebKit proof. Missing/expired/wrong-context challenge cases and the closed-enrollment product journey still require their own results. Do not call H04 complete from one positive login.
+For another session, open the exact www URL manually in normal Chrome/Safari, without a debug-controlled session. Choose the private `h04-private-input.json` fixture supplied by the engineer using the file picker. The file is parsed locally, credentials go only to the pinned development Auth endpoint, and no credentials/token are placed in URLs, DOM evidence or browser storage. The existing identity logs in, immediately logs out, and retries the same token expecting rejection. Save only the redacted result. It proves existing invited-password authentication, not native WebKit or new anonymous enrollment.
+
+Verified directly in Cloudflare: public site key `0x4AAAAAAFFb3ETKlwBxFCNF`, Managed mode, sole allowed hostname `www.signalword.app`. Public root redirects to www; both verification requests end at www with HTTP 200. Existing native verification CSP permits challenges.cloudflare.com for scripts/frames/connections. The separate acceptance-page CSP additionally permits only the exact development Supabase origin. Numeric error-callback codes are shown without exposing tokens.
+
+Public alias promotion was blocked by automatic approval review pending fresh proof of development routing. A broad env export was rejected and not executed. Specific-variable API reads returned metadata but withheld both sensitive values, so they did not prove routing. The user explicitly approved pinning both existing routing values; Vercel acknowledged both updates (existing Production/Preview targets retained). Deployment dpl_BTesYAxVXcuWUGF9NB5468tYXLJJ is READY at www.signalword.app, source 6a78f7d. All six hosted routing/header checks pass; deployed acceptance assets match source, development-only CSP and no-store/no-referrer/nosniff/anti-framing pass. No environment export was performed. Initial header inspection incorrectly used a case-sensitive dictionary; direct case-insensitive header readback confirms the required headers.
 
 ## H10/H11 remaining
 
@@ -46,8 +50,34 @@ Record outage start, latest recovered acknowledged marker and safely usable serv
 
 ## Sentry and final freeze
 
-Await user confirmation of the free development Sentry project. Runtime reporting remains disabled. Verify actual free-plan retention, privacy controls and sanitized ingestion before enabling it. H17 remains dependent on all hosted evidence and the matching signed artifact. These new operator scripts do not change deployed API/mobile behavior.
+The user created SignalWord / signalword-ios-development, iOS, EU, Developer/Free. Authenticated UI confirmed the project and EU ingestion, scrubber/default scrubber/IP prevention, and disabled minidumps. Runtime reporting remains disabled.
+
+The real SDK serializer privacy test passed (1 test) and exported its sanitized synthetic event without initializing telemetry. First ingestion returned HTTP 200 but Sentry added city/country geography. This is retained as a failed privacy result: event `17ef4f51e09b4dfd93652b05f663008e`, issue 150105882. Added server sensitive fields city, subdivision, region, country_code, ip_address. After propagation, a second event `e59925ff128c46e0abc3e9e160212f05` returned 200 and the stored geography displayed `[Filtered], [Filtered] ([Filtered])`. The original failure is not overwritten. Fixtures use test release signalword@0.1.0+1, not candidate release 1.0 (2).
+
+Local signed binary and dSYM both report UUID DFBFD3A4-1433-34D1-8D93-A1BF38FEACAE (arm64), but the hosted Debug Files page has no uploaded symbols. Signed artifact still says crash reporting NO and an empty DSN. Symbol upload/symbolication and signed-device crash remain pending. Sentry's official documentation specifies 30-day event retention on Developer/Free; authenticated subscription readback shows Business Plan Trial (14 days left), $0.00, no billing details and no payment method; do not claim Developer retention is already active. No paid Sentry feature was activated.
+
+Sources: https://www.sentry.help/en/articles/13964201-can-i-disable-ip-geolocation-for-gdpr-compliance and https://www.sentry.help/en/articles/13964940-how-long-are-my-organization-s-audit-logs-stored . H17 remains dependent on all hosted evidence and the matching signed artifact. These new operator scripts do not change deployed API/mobile behavior.
 
 ## Local verification of this preparation
 
 `node --test tests/*.test.mjs`: **188/188 pass**. The eight added tests cover invited-login destination/redaction/logout, rejection without network, exact load population/sample retention/consent guards, and restore threshold/safety/timestamp validation. `node --check scripts/run-hosted-turnstile.mjs` and `git diff --check` pass. These are operator-tool checks; they do not substitute for hosted results.
+
+## Latest verification and operator limitations
+
+- Node 188/188; viewer 44/44; repository/security/contracts; viewer build: pass.
+- Mocked ordinary-browser harness: login/logout/token-reuse rejection, redaction, empty browser storage, erased file input, wrong-environment rejection: pass. This is not real CAPTCHA evidence.
+- Last contact-network read: 200, three pending contacts. H10/H11/H16 remain open. No TEST incident sent this round.
+- A direct service-role trusted_contacts inspection returned 403/42501 because the table is intentionally protected. No grants were widened; use the authenticated contact-network route.
+- Private evidence remains under /private/tmp/signalword-dev-deployment-private; never copy its credentials or fixture files into Git. Sentry failure/retest records are distinct.
+
+## Human H04 evidence — 18:39 Sydney
+
+User completed the normal-browser challenge and saved the redacted report. Verified fresh login 200/accepted, immediate local-session logout 204, reused challenge rejected 400. Separate real Auth requests rejected missing and invalid challenges with 400/captcha_failed and no session. Public signup readback remains disabled. Durable redacted evidence: evidence/2026-09-29-human-turnstile.json and evidence/2026-09-29-turnstile-deployment.json. This closes the human-positive and reuse components, not unused-token expiry or a controlled anonymous-enrollment path. H04 and the overall 11/17 count remain open; native bridge remains a physical test.
+
+## H16 population prepared and invitation expiry
+
+Nine additional disposable load senders were created with public signup still disabled. Each invited one controlled recipient (02–04 → A, 05–07 → B, 08–10 → C); all nine application submissions returned 202, no alert created. Together with the original sender this prepares the required ten distinct identities. At 18:53 Sydney, 04/07/10 were confirmed, six load invitations still pending. These are not ten confirmed senders and H16 has not run. Admin fixture provisioning does not count as CAPTCHA onboarding.
+
+Original A/B/C links expired after the configured 30-minute lifetime. The user requested fresh invitations. The load preparation consumed the current three-invitations-per-destination/hour allowance; a guarded local resend process waits until 19:00 Sydney, checks health and original contact identities, and skips already-confirmed contacts. Do not claim emails resent until its result is recorded. No rate bucket was cleared or permission widened.
+
+Managed restore preparation: MANAGED_RESTORE_DRILL_PREPARATION.md. No purchase requested or performed; isolated-clone verification remains unfinished.

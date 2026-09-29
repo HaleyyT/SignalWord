@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-09-29T08:38:30.107847+00:00",
+  "deploymentId": "dpl_BTesYAxVXcuWUGF9NB5468tYXLJJ",
+  "deploymentUrl": "https://signalword-bbals2uzj-haleyyts-projects.vercel.app",
+  "status": 200,
+  "csp": "default-src 'none'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; frame-src https://challenges.cloudflare.com; connect-src https://challenges.cloudflare.com https://voepalyamwgenceawdvl.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  "cacheControl": "no-store",
+  "referrerPolicy": "no-referrer",
+  "nosniff": "nosniff",
+  "robots": "noindex, nofollow",
+  "routingOriginsPinned": {
+    "SIGNALWORD_PUBLIC_EVENT_ORIGIN": "https://voepalyamwgenceawdvl.supabase.co/functions/v1/public-event",
+    "SIGNALWORD_CONTACT_CONFIRM_ORIGIN": "https://voepalyamwgenceawdvl.supabase.co/functions/v1/contact-confirm"
+  },
+  "verificationMethod": "explicit authorized Vercel updates acknowledged, deployment created afterward, published code hashes and six route/header checks",
+  "routingChecksPassed": 6,
+  "privateEnvironmentDownloaded": false,
+  "sourceCommit": "6a78f7d",
+  "signupDisabled": true
+}

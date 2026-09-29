@@ -1,8 +1,8 @@
 # SignalWord: physical-device testing guide
 
-**29 September evening:** installation remains blocked. Follow [hosted continuation](HOSTED_CONTINUATION_2026-09-29.md) for the real human CAPTCHA session, pending A/B/C invitations, managed restore prerequisites and full load evidence. Browser password-login proof is not native/anonymous onboarding proof. Sentry remains disabled pending verified sanitized ingestion.
+**29 September evening:** installation remains blocked. Follow [hosted continuation](HOSTED_CONTINUATION_2026-09-29.md) for the real human CAPTCHA session, pending A/B/C invitations, managed restore prerequisites and full load evidence. Browser password-login proof is not native/anonymous onboarding proof. Sentry remains disabled pending symbolication, subscription/retention readback and signed-device crash verification; sanitized synthetic ingestion now passes.
 
-Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Human Turnstile availability confirmed, harness not ready.
+Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Normal-browser invited-login CAPTCHA passed; expiry and controlled anonymous enrollment remain pending.
 
 ## Current signing/configuration candidate — 29 September 2026
 
@@ -20,7 +20,7 @@ History scan flagged ten apparent credentials in a source manifest. Each was rec
 
 Remaining hosted gates: H04 human CAPTCHA/closed enrollment; H08 managed restore/RPO/RTO; H10 complete A/B/C routing/isolation; H11 provider recovery/failure lifecycle; H16 complete ten-sender load; H17 compatible manifest freeze. Current readbacks confirm signup disabled, authority allowed at journal version 13, deleted identities denied, no health problems, and seven active expected function versions. These readbacks do not close the six gates.
 
-Human prerequisites: backup purchase remains unapproved (quote only requested); no Sentry development project exists yet; a human challenge session is still needed. See [setup and short-drill cost distinction](HOSTED_ACCEPTANCE_SETUP.md). Disabling PITR after a successful drill removes ongoing 15-minute recovery-point protection. Keep crash reporting disabled until project privacy/retention and ingestion are verified.
+Human prerequisites: backup purchase remains unapproved (quote only requested); Sentry development project exists and sanitized ingestion retest passed; symbols, subscription readback and signed-device crash remain pending. See [setup and short-drill cost distinction](HOSTED_ACCEPTANCE_SETUP.md). Disabling PITR after a successful drill removes ongoing 15-minute recovery-point protection. Keep crash reporting disabled until project privacy/retention and ingestion are verified.
 
 Clean source export of `2c94126` independently produced a development-signed Release app; its verifier passed with no problems. Exact artifact: `/private/tmp/signalword-post-signing-regression/clean-signed-build/Build/Products/Release-iphoneos/SignalWord.app`. It remains **unfrozen and not authorized for installation**. See [post-signing evidence](POST_SIGNING_EVIDENCE_2026-09-29.json).
 
@@ -620,3 +620,13 @@ Before physical tests, follow [the hosted prerequisites](HOSTED_ACCEPTANCE_SETUP
 ## First session — release acceleration order
 
 Use [A1 → C1 → C2 → L1 → L2](submission/FIRST_DEVICE_SESSION.md) as the first-session order, superseding earlier suggestions to begin at C1. Do not run later scenarios until these pass. The new evidence command records redacted status and immutable failure/retest references. Hosted 17/17 and a frozen manifest remain mandatory before installation.
+
+## 29 September evening: Sentry and human challenge update
+
+Do not install: hosted gates remain 11/17 and the manifest is not frozen. The real human challenge must run in normal Chrome/Safari after the engineer confirms the ordinary-browser acceptance page is live. Do not use the retired Playwright challenge window. Do not paste the private fixture, password or challenge token into chat. Share only the downloaded redacted result/error code. Three fresh A/B/C invitations remain pending; confirm those before recipient TEST journeys. H08 is not ready for a purchase request yet.
+
+Sentry development project exists in EU. A synthetic SDK event exposed Sentry-derived geography despite IP prevention; additional server scrubbing fixed the new-event retest. The original failed event is retained. Keep runtime crash reporting disabled: organization plan/retention readback, dSYM upload and symbolication, and the eventual signed-device crash/relaunch drill are still required. Local dSYM/binary UUIDs match, but that does not prove hosted symbolication. The synthetic fixture release is not the candidate release. See HOSTED_CONTINUATION_2026-09-29.md for precise evidence.
+
+### Human verification completed at 18:39 Sydney
+
+The new ordinary-browser page is live at https://www.signalword.app/onboarding/acceptance.html on development deployment dpl_BTesYAxVXcuWUGF9NB5468tYXLJJ. Saved human evidence verifies login 200, logout 204 and reused token 400. Missing/invalid tokens separately fail with captcha_failed. Do not repeat that successful case unless the engineer identifies a relevant change. Unused-token expiry and controlled anonymous enrollment remain unproven; signup stays disabled. This does not permit installation or substitute for the iPhone native bridge test.

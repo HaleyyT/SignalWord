@@ -1,0 +1,52 @@
+{
+  "recordedAt": "2026-09-29T08:44:20.584576+00:00",
+  "environment": "development",
+  "alertsCreated": 0,
+  "attempts": [
+    {
+      "senderLabel": "Load TEST 02",
+      "recipientLabel": "A",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 03",
+      "recipientLabel": "A",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 04",
+      "recipientLabel": "A",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 05",
+      "recipientLabel": "B",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 06",
+      "recipientLabel": "B",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 07",
+      "recipientLabel": "B",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 08",
+      "recipientLabel": "C",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 09",
+      "recipientLabel": "C",
+      "invitationStatus": 202
+    },
+    {
+      "senderLabel": "Load TEST 10",
+      "recipientLabel": "C",
+      "invitationStatus": 202
+    }
+  ]
+}
