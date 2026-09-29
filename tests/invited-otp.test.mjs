@@ -18,3 +18,10 @@ test('expired replay or deleted-user rejection never becomes acceptance',async()
  assert.deepEqual(result,{status,accepted:false,logoutStatus:null});
  }
 });
+
+test('request diagnostics allowlist codes without leaking provider text',async()=>{
+ for(const error_code of ['signup_disabled','otp_disabled','private-user@example.com']) {
+  const r=await requestInvitedCode({email:'a@example.com',publishableKey:'public',captchaToken:'proof',fetchImpl:async()=>Response.json({error_code,message:'private details'},{status:422})});
+  assert.equal(r.requestAccepted,false);assert.equal(r.rejection,error_code.includes('@')?undefined:error_code);assert.ok(!JSON.stringify(r).includes('private'));
+ }
+});

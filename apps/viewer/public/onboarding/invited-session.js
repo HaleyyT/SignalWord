@@ -42,7 +42,10 @@ export async function requestInvitedCode({email,publishableKey,captchaToken,fetc
     headers:{apikey:publishableKey,'Content-Type':'application/json'},
     body:JSON.stringify({email:email.trim().toLowerCase(),create_user:false,gotrue_meta_security:{captcha_token:captchaToken}}),
   });
-  return {status:response.status,requestAccepted:response.ok};
+  const body=await response.json().catch(()=>null);
+  const code=body?.error_code ?? body?.code;
+  const allowed=['signup_disabled','otp_disabled','email_provider_disabled','over_email_send_rate_limit','over_request_rate_limit','captcha_failed','unexpected_failure'];
+  return {status:response.status,requestAccepted:response.ok,...(allowed.includes(code)?{rejection:code}:{})};
 }
 export async function verifyInvitedCode({email,publishableKey,code,fetchImpl=fetch}) {
   if(!email || !publishableKey || !/^[0-9]{6,10}$/.test(code))throw Error('SESSION_INPUT_REQUIRED');
@@ -58,5 +61,5 @@ export async function verifyInvitedCode({email,publishableKey,code,fetchImpl=fet
     const logout=await fetchImpl(`${backend}/auth/v1/logout?scope=local`,{method:'POST',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{apikey:publishableKey,Authorization:`Bearer ${body.access_token}`}});
     logoutStatus=logout.status;
   }
-  return {status:response.status,accepted,logoutStatus};
+  return {status:response.status,accepted,logoutStatus,...(body?.error_code==='otp_expired'?{rejection:'otp_expired'}:{})};
 }

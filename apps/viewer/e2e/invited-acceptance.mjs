@@ -19,7 +19,7 @@ try {
    assert.equal(req.postDataJSON().create_user,false);await route.fulfill({status:200,body:'{}',contentType:'application/json'});
   } else if(url.pathname==='/auth/v1/verify') {
    otpVerifications++;assert.equal(req.postDataJSON().type,'email');
-   await route.fulfill({status:otpVerifications===1?200:403,contentType:'application/json',body:JSON.stringify(otpVerifications===1?{access_token:'private-otp-session',user:{id:'private-user'}}:{error_code:'otp_expired'})});
+   await route.fulfill({status:otpVerifications===2?200:403,contentType:'application/json',body:JSON.stringify(otpVerifications===2?{access_token:'private-otp-session',user:{id:'private-user'}}:{error_code:'otp_expired'})});
   } else if(url.pathname==='/auth/v1/signup') { await route.fulfill({status:422,contentType:'application/json',body:JSON.stringify({error_code:'signup_disabled'})});
   } else if(url.pathname==='/auth/v1/logout') {logouts++;await route.fulfill({status:204,body:''});}
   else throw Error('UNEXPECTED_NETWORK');
@@ -46,15 +46,31 @@ try {
  await page.locator('#mode').selectOption('otp');
  await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',publishableKey:'public-client-key'}))});
  await page.getByRole('button',{name:'Simulated human challenge'}).click();
- await page.locator('#otp-code').fill('123456');
+ await page.locator('#otp-code').fill('12345678');
  await page.locator('#otp-verify').click();
  await page.getByRole('button',{name:'Save redacted result'}).waitFor();
  const otp=JSON.parse(await page.locator('#evidence').innerText());
- assert.equal(otp.scope,'invited-email-code');assert.equal(otp.passed,true);assert.equal(otpVerifications,2);
+ assert.equal(otp.scope,'invited-email-code');assert.equal(otp.passed,true);assert.equal(otpVerifications,3);
  assert.equal(await page.locator('#otp-code').inputValue(),'');
  assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);
  for(const forbidden of ['123456','private@example.invalid','private-otp-session'])assert.ok(!(await page.locator('#evidence').innerText()).includes(forbidden));
- await page.reload(); await page.clock.install(); expiry=true;
+ await page.reload();otpVerifications=0;
+ await page.locator('#mode').selectOption('invite');
+ await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',publishableKey:'public-client-key'}))});
+ await page.locator('#otp-code').fill('12345678');await page.locator('#otp-verify').click();
+ await page.getByRole('button',{name:'Save redacted result'}).waitFor();
+ assert.equal(JSON.parse(await page.locator('#evidence').innerText()).scope,'operator-invitation-code');
+ assert.equal(JSON.parse(await page.locator('#evidence').innerText()).passed,true);
+ await page.reload(); await page.clock.install();otpVerifications=3;
+ await page.locator('#mode').selectOption('otp-expiry');
+ await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',publishableKey:'public-client-key'}))});
+ await page.getByRole('button',{name:'Simulated human challenge'}).click();
+ await page.locator('#otp-code').fill('12345678');await page.locator('#otp-verify').click();
+ assert.equal(otpVerifications,3);await page.clock.fastForward(3610001);
+ await page.getByRole('button',{name:'Save redacted result'}).waitFor();
+ assert.equal(JSON.parse(await page.locator('#evidence').innerText()).scope,'unused-email-code-expiry');
+ assert.equal(JSON.parse(await page.locator('#evidence').innerText()).passed,true);
+ await page.reload(); expiry=true;
  await page.locator('#mode').selectOption('expired');
  await page.locator('#fixture').setInputFiles({name:'fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({environment:'development',signupDisabled:true,email:'private@example.invalid',password:'private-password',publishableKey:'public-client-key'}))});
  await page.getByRole('button',{name:'Simulated human challenge'}).click();

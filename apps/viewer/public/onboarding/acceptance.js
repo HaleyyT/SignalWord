@@ -17,7 +17,12 @@ input.addEventListener('change', async () => {
     const file = input.files[0];
     if (file.size > 16384) throw Error('INVALID_FIXTURE');
     fixture = JSON.parse(await file.text()); input.value = '';
-    if (location.origin !== 'https://www.signalword.app' || fixture.environment !== 'development' || fixture.signupDisabled !== true || !fixture.email || (document.getElementById('mode').value !== 'otp' && !fixture.password) || !fixture.publishableKey) throw Error('INVALID_FIXTURE');
+    if (location.origin !== 'https://www.signalword.app' || fixture.environment !== 'development' || fixture.signupDisabled !== true || !fixture.email || (!['otp','invite','otp-expiry'].includes(document.getElementById('mode').value) && !fixture.password) || !fixture.publishableKey) throw Error('INVALID_FIXTURE');
+    if(document.getElementById('mode').value==='invite') {
+      status.textContent='Enter the operator invitation code from your controlled inbox. This proves invitation acceptance only; the CAPTCHA sign-in check is separate.';
+      document.getElementById('otp-form').hidden=false;
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     script.onerror = () => finish({passed:false,failure:'CHALLENGE_SCRIPT_FAILED'});
@@ -31,7 +36,7 @@ input.addEventListener('change', async () => {
           status.textContent = 'Checking development authentication…';
           try {
             const mode=document.getElementById('mode').value;
-            if(mode==='otp') {
+            if(mode==='otp' || mode==='otp-expiry') {
               const requested=await requestInvitedCode({...fixture,captchaToken:token});
               if(!requested.requestAccepted) { finish({environment:'development',scope:'invited-email-code',requested,passed:false}); return; }
               status.textContent='Check the controlled invited inbox and enter its sign-in code below.';
@@ -77,9 +82,23 @@ document.getElementById('otp-verify').addEventListener('click',async()=>{
   if(button.disabled || !fixture)return;
   const code=field.value;field.value='';button.disabled=true;
   try {
+    const mode=document.getElementById('mode').value;
+    if(!/^[0-9]{8}$/.test(code))throw Error('INVALID_CODE_FORMAT');
+    if(mode==='otp-expiry') {
+      status.textContent='Code held only in memory. Leave this tab open for 60 minutes 10 seconds; do not request another code for this identity. Expiry will be checked automatically.';
+      const started=performance.now();
+      await new Promise(resolve=>setTimeout(resolve,3610000));
+      const elapsedMs=performance.now()-started;
+      const expired=await verifyInvitedCode({...fixture,code});
+      finish({environment:'development',scope:'unused-email-code-expiry',recordedAt:new Date().toISOString(),elapsedMs,expired,passed:elapsedMs>=3610000 && expired.status===403 && expired.rejection==='otp_expired' && !expired.accepted});
+      document.getElementById('otp-form').hidden=true;return;
+    }
+    const wrongCode=String((Number(code[0])+1)%10)+code.slice(1);
+    const wrong=await verifyInvitedCode({...fixture,code:wrongCode});
+    if(wrong.accepted) {finish({environment:'development',scope:'invited-email-code',wrong,passed:false,failure:'WRONG_CODE_ACCEPTED'});document.getElementById('otp-form').hidden=true;return;}
     const fresh=await verifyInvitedCode({...fixture,code});
     const replay=await verifyInvitedCode({...fixture,code});
-    finish({environment:'development',scope:'invited-email-code',recordedAt:new Date().toISOString(),fresh,replay,passed:fresh.accepted && fresh.logoutStatus===204 && !replay.accepted && replay.status>=400,nativeBridgeProven:false});
+    finish({environment:'development',scope:mode==='invite'?'operator-invitation-code':'invited-email-code',recordedAt:new Date().toISOString(),wrong,fresh,replay,passed:wrong.status===403 && !wrong.accepted && fresh.accepted && fresh.logoutStatus===204 && !replay.accepted && replay.status>=400,nativeBridgeProven:false});
   } catch {finish({environment:'development',scope:'invited-email-code',passed:false,failure:'AUTH_TRANSPORT_OR_INPUT_FAILED'});}
   document.getElementById('otp-form').hidden=true;
 });
