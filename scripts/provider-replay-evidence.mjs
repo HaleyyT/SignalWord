@@ -11,9 +11,9 @@ function timestamp(input, key) {
   return value;
 }
 
-function count(snapshot, key) {
+function count(snapshot, key, minimum = 0) {
   const value = snapshot?.[key];
-  if (!Number.isSafeInteger(value) || value < 0) throw new Error(`COUNT_REQUIRED:${key}`);
+  if (!Number.isSafeInteger(value) || value < minimum) throw new Error(`COUNT_REQUIRED:${key}`);
   return value;
 }
 
@@ -33,9 +33,9 @@ export function evaluateProviderReplay(input) {
     throw new Error('REPLAY_TIMELINE_INVALID');
   }
   const before = {
-    deliveryCount: count(input.before, 'deliveryCount'),
-    attemptCount: count(input.before, 'attemptCount'),
-    receiptCount: count(input.before, 'receiptCount'),
+    deliveryCount: count(input.before, 'deliveryCount', 1),
+    attemptCount: count(input.before, 'attemptCount', 1),
+    receiptCount: count(input.before, 'receiptCount', 1),
     status: input.before?.status,
   };
   const after = {

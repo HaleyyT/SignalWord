@@ -34,3 +34,22 @@ test('output contains aggregates and assertions but no private extras', () => {
   const report = evaluateHostedLoadEvidence({ ...fixture, metadata: { ...fixture.metadata, token: 'private' }, provider: { ...fixture.provider, email: 'private' } });
   assert.equal(JSON.stringify(report).includes('private'), false);
 });
+
+test('missing provider counts and incomplete provider rows are rejected or failed', () => {
+  for (const key of ['incidentCount', 'uniqueIncidentCount', 'deliveryCountBeforeDuplicates', 'deliveryCountAfterDuplicates', 'queuedCount', 'unknownOutcomeCount']) {
+    const provider = { ...fixture.provider }; delete provider[key];
+    assert.throws(() => evaluateHostedLoadEvidence({ ...fixture, provider }), /PROVIDER_COUNT_REQUIRED/);
+  }
+  assert.equal(evaluateHostedLoadEvidence({ ...fixture, provider: { ...fixture.provider, deliveryCountBeforeDuplicates: 0, deliveryCountAfterDuplicates: 0 } }).passed, false);
+  assert.equal(evaluateHostedLoadEvidence({ ...fixture, provider: { ...fixture.provider, deliveryCountBeforeDuplicates: 11, deliveryCountAfterDuplicates: 11 } }).passed, false);
+});
+
+test('direct evaluator calls reject duplicate, missing, negative, and malformed samples', () => {
+  const cases = [
+    { ...fixture, first: fixture.first.slice(1) },
+    { ...fixture, first: fixture.first.map(row => ({ ...row, sequence: 0 })) },
+    { ...fixture, first: fixture.first.map((row, index) => index ? row : { ...row, durationMs: -1 }) },
+    { ...fixture, first: fixture.first.map((row, index) => index ? row : { ...row, status: 0 }) },
+  ];
+  for (const value of cases) assert.throws(() => evaluateHostedLoadEvidence(value));
+});
