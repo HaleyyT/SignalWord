@@ -4,6 +4,21 @@ Updated 29 September 2026. **NOT READY TO INSTALL OR RELEASE. The hosted manifes
 
 Branch: `feat/hosted-restore-compatibility`. Latest repair code: **`148dbf48ea2f484f3f8fa6c702bb7ba48a2f20e0`** (native source unchanged from `421f3c5`), app **1.0 (2)**. Documentation commits after this code revision do not authorize installation. No merge, push, public enrollment or separate production deployment was performed. Development viewer and delivery-function repairs were deployed as recorded below.
 
+## Release acceleration preparation
+
+Source preparation commit **`95477d3030bd09ec0d6177d28b9ed5b4f4326bdc`**, app **1.0 (2)**. This includes native packaging changes and therefore supersedes the earlier “native source unchanged” statement for the next candidate. **Not frozen; hosted remains 11/17.** No product features, UI redesign, SMS or emergency-response expansion.
+
+- Added the existing brand mark as an opaque 1024px AppIcon and a bundled privacy manifest covering actual app-private UserDefaults usage and app-functionality data. Source manifests now hash privacy and image assets too.
+- Added `scripts/acceptance-report.mjs`, a strict redacted five-case report writer with immutable outputs, safe evidence digests, failure/retest status and sequence checks.
+- Added read-only `scripts/physical-evidence.sql` for event/delivery/signed callback/recipient acknowledgement correlation. It does not read emails, payloads, capability hashes or coordinates. Deletion receipts remain private and are checked separately.
+- Added `scripts/freeze-candidate.mjs`: refuses incomplete hosted gates, mismatched candidate/environment/migration, missing deployment versions or modified proof. A source manifest alone is not a frozen acceptance manifest.
+- Signed-device verification now runs actual `codesign --verify --deep --strict` before inspecting profile/configuration.
+- Prepared [first-session instructions](submission/FIRST_DEVICE_SESSION.md), [store copy/privacy/archive checklist](submission/STORE_SUBMISSION.md), and [pilot operations](submission/PILOT_OPERATIONS.md). Exact first order is A1 → C1 → C2 → L1 → L2; later tests remain deferred.
+
+Verification: **178 Node + 44 viewer**, repository/security/contracts/build, **36 Swift core + 1 SDK-disabled fallback**, Release simulator build and six hosted routing checks pass. Icon is 1024×1024 with no alpha; built app includes PrivacyInfo.xcprivacy. Development aggregate health clear, authority allowed, journal version 13. Actual Sentry serialization/device tests were not rerun in this packaging-only change; reporting remains disabled. A source-archive verification failed due to missing Git metadata; it is retained. A fresh clean clone at `95477d3` then passed npm ci, all 178 Node/44 viewer checks and the unsigned Release simulator build, with Git status still clean. Exact log digests are in [preparation evidence](submission/RELEASE_PREPARATION_EVIDENCE.json).
+
+The blockers remain human CAPTCHA and controlled onboarding, paid managed restore approval/proof, full hosted recipient/provider/load evidence, final compatibility freeze, activated Apple team/provisioning, signed-device acceptance, Sentry setup and pilot/operator acceptance. The current disabled signup prevents ordinary new-user/reviewer onboarding; admin fixture sessions are not a substitute. No installation/upload instruction is active yet.
+
 ## Latest continuation — three-recipient development TEST
 
 [All retained samples and redacted results](HOSTED_ABC_EVIDENCE_2026-09-29.json). The controlled sender and all test data have now been deleted through the application; deletion receipt returned 200. Final readback: **zero users, contacts and deliveries**, authority allowed, journal version **13**, aggregate health clear. Earlier final-state paragraphs below are historical snapshots.

@@ -23,3 +23,7 @@ This refuses dirty/mismatched candidates, missing gates/component versions, miss
 ## Current independent work versus user dependencies
 
 Engineering can continue hosted recipient/routing/provider/load tests within the existing consent and rate limits, latency diagnosis, redacted evidence, build verification and narrow repairs. User dependencies: paid-backup quote approval; actual human CAPTCHA session and controlled enrollment decision; active paid Apple membership and owned Team ID; development Sentry account/privacy setup; physical actions and screenshot capture; owner metadata/operations/cost decisions; explicit upload/submission approval. None authorizes public enrollment.
+
+## Verified preparation source
+
+Commit `95477d3030bd09ec0d6177d28b9ed5b4f4326bdc` reproduced successfully in a fresh local clone: npm ci, 178 Node + 44 viewer checks and unsigned Release simulator build; Git status remained clean. [Source manifest](SOURCE_MANIFEST_95477d3.json) and [evidence](RELEASE_PREPARATION_EVIDENCE.json) are retained. This source manifest is explicitly **not frozen hosted acceptance**. Later documentation commits do not change this tested source identity.
