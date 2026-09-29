@@ -33,6 +33,13 @@ final class CrashReportingPrivacyTests: XCTestCase {
         XCTAssertNil(safe.breadcrumbs)
         XCTAssertNil(safe.user)
         XCTAssertNil(safe.request)
+        // Optional operator fixture: export only the actual sanitized SDK serialization.
+        // Never start Sentry or transmit anything from this test.
+        if let path = ProcessInfo.processInfo.environment["SIGNALWORD_SANITIZED_FIXTURE_OUTPUT"] {
+            let bytes = try JSONSerialization.data(withJSONObject: safe.serialize(), options: [.sortedKeys])
+            try bytes.write(to: URL(fileURLWithPath: path), options: [.withoutOverwriting])
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path)
+        }
     }
 }
 
