@@ -13,12 +13,12 @@ struct ContactNetworkPanel: View {
             SignalWordCard {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Your contact network").font(.headline)
-                    Text("Up to three people. Each person must accept their own invitation.")
+                    Text("Up to three people. Each person confirms their email.").font(.subheadline).foregroundStyle(SignalWordColor.secondaryText)
                     ForEach(snapshot.contacts) { contact in
                         VStack(alignment: .leading) {
                             Text(contact.name + (contact.primary ? " · Primary" : "")).font(.headline)
                             Text(contact.status.capitalized).font(.caption)
-                            HStack {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Button("Replace / invite again") {
                                     contactID = contact.id; name = contact.name; email = ""; editing = true
                                 }
@@ -48,6 +48,8 @@ struct ContactNetworkPanel: View {
                         .font(.caption)
                     if let message = network.message { Text(message).foregroundStyle(.orange) }
                 }
+                .font(.subheadline)
+                .buttonStyle(.bordered).controlSize(.large)
                 .disabled(network.busy)
             }
             .sheet(isPresented: $editing) {

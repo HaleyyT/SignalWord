@@ -22,6 +22,7 @@ private enum SignalTab: Hashable {
 }
 
 struct SignalWordRootView: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.scenePhase) private var scenePhase
     @State private var network: ContactNetworkModel = {
         #if DEBUG && targetEnvironment(simulator)
@@ -59,10 +60,10 @@ struct SignalWordRootView: View {
             if incident != nil { Task { await model.recover() } }
         }
         .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear(); timer.clear() } }
-        .tint(SignalWordColor.action)
+        .tint(SignalWordColor.link)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
-            ContactEditorSheet(model: model)
+            ContactEditorSheet(model: model).environment(\.dynamicTypeSize, textSize)
         }
         .task { await model.recover() }
         .task(id: scenePhase) {
@@ -92,37 +93,62 @@ struct SignalWordRootView: View {
     }
 
     private var mainTabs: some View {
-        TabView(selection: $selectedTab) {
+        VStack(spacing: 0) {
             NavigationStack {
-                HomeScreen(
-                    model: model,
-                    openPeople: { selectedTab = .people },
-                    openSettings: { selectedTab = .settings },
-                    openRehearsal: { selectedTab = .people }
-                )
+                switch selectedTab {
+                case .home:
+                    HomeScreen(
+                        model: model,
+                        openPeople: { selectedTab = .people },
+                        openSettings: { selectedTab = .settings },
+                        openRehearsal: { selectedTab = .people }
+                    )
+                case .people:
+                    PeopleScreen(model: model, editContact: showContactEditorFlow)
+                case .settings:
+                    SettingsScreen(
+                        model: model,
+                        openPeople: { selectedTab = .people },
+                        openDeleteConfirmation: { showDeleteConfirmation = true }
+                    )
+                }
             }
-            .tabItem { Label(SignalTab.home.title, systemImage: SignalTab.home.symbol) }
-            .tag(SignalTab.home)
-
-            NavigationStack {
-                PeopleScreen(model: model, editContact: showContactEditorFlow)
-            }
-            .tabItem { Label(SignalTab.people.title, systemImage: SignalTab.people.symbol) }
-            .tag(SignalTab.people)
-
-            NavigationStack {
-                SettingsScreen(
-                    model: model,
-                    openPeople: { selectedTab = .people },
-                    openDeleteConfirmation: { showDeleteConfirmation = true }
-                )
-            }
-            .tabItem { Label(SignalTab.settings.title, systemImage: SignalTab.settings.symbol) }
-            .tag(SignalTab.settings)
+            .background(SignalWordBackground())
+            .clipped()
+            bottomNavigation
         }
-        .background(SignalWordColor.canvas.ignoresSafeArea())
-        .toolbarBackground(SignalWordColor.canvas, for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
+        .background(SignalWordBackground())
+    }
+
+    /// A layout sibling, never an overlay. The ScrollViews get the remaining
+    /// viewport; the bar's background alone extends over the home indicator.
+    private var bottomNavigation: some View {
+        HStack(spacing: 8) {
+            ForEach([SignalTab.home, .people, .settings], id: \.self) { tab in
+                Button { selectedTab = tab } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.symbol).font(.system(size: 19, weight: .semibold))
+                        Text(tab.title).font(.caption.weight(.medium))
+                            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(selectedTab == tab ? SignalWordColor.link : SignalWordColor.secondaryText)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .padding(.vertical, 4)
+                    .background(selectedTab == tab ? SignalWordColor.action.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 14))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("navigation.\(tab.title)")
+                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, SignalWordSpacing.page)
+        .padding(.vertical, 8)
+        .background(SignalWordColor.surface.ignoresSafeArea(edges: .bottom))
+        .overlay(alignment: .top) { Rectangle().fill(SignalWordColor.separator).frame(height: 0.5) }
+        .accessibilityElement(children: .contain)
+
     }
 
     private func showContactEditorFlow() {

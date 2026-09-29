@@ -1,4 +1,5 @@
 import SwiftUI
+import AppIntents
 
 @main
 struct SignalWordApp: App {
@@ -9,7 +10,10 @@ struct SignalWordApp: App {
         return AppShellModel.live()
     }()
 
-    init() { CrashReporting.start() }
+    init() {
+        CrashReporting.start()
+        SignalWordAppShortcuts.updateAppShortcutParameters()
+    }
 
     var body: some Scene {
         WindowGroup {

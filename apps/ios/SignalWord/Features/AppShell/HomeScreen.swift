@@ -2,22 +2,34 @@ import SwiftUI
 import Observation
 
 struct HomeScreen: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     @Bindable var model: AppShellModel
     let openPeople: () -> Void
     let openSettings: () -> Void
     let openRehearsal: () -> Void
 
+    @State private var showHelp = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SignalWordSpacing.section) {
                 header
-                if model.currentAlertPresentation != nil {
+                if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
+                if hasCurrentAlert {
                     AlertProgressCard(model: model)
-                    RecipientProgressPanel(eventID: model.currentAlertEventID)
                 }
                 primaryAction
-                setupSummary
+                if !canStartManualAlert { helpButton }
+                if hasCurrentAlert { RecipientProgressPanel(eventID: model.currentAlertEventID) }
+                DisclosureGroup("Setup & readiness") { setupSummary.padding(.top, 12) }
+                    .accessibilityIdentifier("home.readiness")
                 CheckInPanel()
+                if !hasCurrentAlert, model.currentAlertPresentation != nil {
+                    DisclosureGroup("Last alert details") {
+                        AlertProgressCard(model: model).padding(.top, 12)
+                        RecipientProgressPanel(eventID: model.currentAlertEventID)
+                    }
+                }
                 recentActivity
                 safetyNote
             }
@@ -27,36 +39,62 @@ struct HomeScreen: View {
             .padding(.bottom, 32)
             .frame(maxWidth: .infinity)
         }
-        .background(SignalWordColor.canvas.ignoresSafeArea())
+        .background(SignalWordBackground())
         .toolbar(.hidden, for: .navigationBar)
         .refreshable { await model.recover() }
+        .sheet(isPresented: $showHelp) { SignalWordHelpSheet().environment(\.dynamicTypeSize, textSize) }
         .accessibilityIdentifier("home.screen")
     }
 
+    private var helpButton: some View {
+        Button { showHelp = true } label: {
+            Label("How SignalWord works", systemImage: "info.circle")
+                .font(.subheadline.weight(.medium))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityIdentifier("home.help")
+    }
+
     private var header: some View {
-        HStack(alignment: .center, spacing: 14) {
-            SignalOrb(state: hasCurrentAlert ? .attention : canStartManualAlert ? .ready : .attention, size: 52)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("SIGNALWORD")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.5)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label {
+                    Text("SignalWord")
+                } icon: {
+                    Image("SignalWordMark").resizable().scaledToFit()
+                        .frame(width: 28, height: 28)
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
+                        .accessibilityHidden(true)
+                }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(SignalWordColor.link)
+                Spacer()
+                Button(action: openSettings) {
+                    Image(systemName: "slider.horizontal.3")
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Settings")
+            }
+            Text(hasCurrentAlert ? "Your alert" : canStartManualAlert ? "Ready to send" : "Finish your setup")
+                .font(.title.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            if canStartManualAlert || hasCurrentAlert {
+                Label("Primary contact: \(model.contactName.ifEmpty("your trusted person"))", systemImage: "person.crop.circle.badge.checkmark")
+                    .font(.subheadline)
                     .foregroundStyle(SignalWordColor.secondaryText)
-                Text(hasCurrentAlert ? "Check your current alert status." : canStartManualAlert ? "Manual alert available." : "Let’s get the essentials in place.")
-                    .font(.title3.weight(.semibold))
-                    .tracking(-0.2)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Send a private alert to someone you trust. Confirm your person to get started.")
+                    .font(.subheadline).foregroundStyle(SignalWordColor.secondaryText)
+            }
+            if canStartManualAlert {
+                Text(model.shortcutConfigured ? "Voice setup reported. Rehearse before relying on it." : "Manual alerts are available. Connect your phrase for voice activation.")
+                    .font(.caption).foregroundStyle(SignalWordColor.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 4)
-            Button(action: openSettings) {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(SignalWordColor.primaryText)
-                    .frame(width: 44, height: 44)
-                    .background(SignalWordColor.surface, in: Circle())
-            }
-            .accessibilityLabel("Settings")
         }
-        .padding(.vertical, 8)
     }
 
     private var hasCurrentAlert: Bool {
@@ -74,6 +112,13 @@ struct HomeScreen: View {
                 await model.requestResolution()
             }
         } else if model.canStartNewRealAlert && model.canTriggerManually {
+            PrimaryButton(title: "Send TEST alert", symbol: "checkmark.message") {
+                Task { await model.runRehearsal() }
+            }
+            .accessibilityIdentifier("home.test")
+            Text("Practice only · sends a labelled TEST email")
+                .font(.caption).foregroundStyle(SignalWordColor.secondaryText)
+            helpButton
             HoldConfirmControl(action: .sendRealAlert, isEnabled: true, identifier: "alert.trigger") {
                 await model.triggerRealAlert()
             }
@@ -91,13 +136,6 @@ struct HomeScreen: View {
             PrimaryButton(title: "Confirm your trusted person", symbol: "person.badge.plus", action: openPeople)
         }
 
-        if model.canTriggerManually && !isActiveAlert {
-            Text("Hold for 1.5 seconds to send. Use Review and confirm for a tap alternative. This alerts your confirmed person only.")
-                .font(.caption)
-                .foregroundStyle(SignalWordColor.secondaryText)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .multilineTextAlignment(.center)
-        }
     }
 
     private var isActiveAlert: Bool {
@@ -106,9 +144,6 @@ struct HomeScreen: View {
 
     private var setupSummary: some View {
         VStack(alignment: .leading, spacing: 13) {
-            Text("Setup status")
-                .font(.title3.weight(.semibold))
-                .accessibilityAddTraits(.isHeader)
             SignalWordCard {
                 VStack(spacing: 0) {
                     CapabilityRow(
@@ -174,13 +209,14 @@ struct HomeScreen: View {
                 Spacer()
                 Button("Refresh") { Task { await model.recover() } }
                     .font(.subheadline.weight(.semibold))
+                    .frame(minHeight: 44)
                     .disabled(model.isRecovering)
             }
             if model.availableAlerts.isEmpty {
                 Button(action: openRehearsal) {
                     HStack(spacing: 12) {
                         Image(systemName: "checkmark.message")
-                            .font(.title3.weight(.medium))
+                            .font(.system(size: 20, weight: .medium))
                             .foregroundStyle(SignalWordColor.action)
                             .frame(width: 44, height: 44)
                             .background(SignalWordColor.action.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
@@ -266,11 +302,12 @@ struct HomeScreen: View {
     }
 
     private var safetyNote: some View {
-        Text("SignalWord alerts only your confirmed person. It does not call emergency services or guarantee delivery.")
+        Text("SignalWord alerts your confirmed contacts. It does not call emergency services or guarantee delivery.")
             .font(.caption)
             .foregroundStyle(SignalWordColor.mutedText)
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 12)
+            .accessibilityIdentifier("home.footer")
     }
 }

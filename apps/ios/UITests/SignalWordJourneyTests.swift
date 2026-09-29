@@ -12,13 +12,13 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     private func reveal(_ element: XCUIElement, scrollingUp: Bool = true, useMargin: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
-        for _ in 0..<8 {
+        for _ in 0..<18 {
             if element.exists && element.isHittable { return }
             // Drag the scroll margin: a centre-screen swipe can land on the
             // safety hold control, which intentionally consumes that gesture.
             if useMargin {
-                app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: scrollingUp ? 0.75 : 0.25))
-                    .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: scrollingUp ? 0.25 : 0.75)))
+                app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.8 : 0.2))
+                    .press(forDuration: 0.05, thenDragTo: app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.2 : 0.8)))
             } else if scrollingUp { app.swipeUp() } else { app.swipeDown() }
         }
         if !element.exists || !element.isHittable {
@@ -62,7 +62,7 @@ final class SignalWordJourneyTests: XCTestCase {
         app.launchArguments = ["--ui-testing", "--network-ui-testing", "--reset-ui-state"]
         app.launch()
         completeContactSetup()
-        app.tabBars.buttons["People"].tap()
+        app.buttons["navigation.People"].tap()
         tap("Invite another person")
         let name = app.textFields["Contact name"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
@@ -74,7 +74,7 @@ final class SignalWordJourneyTests: XCTestCase {
         app.terminate()
         app.launchArguments = ["--ui-testing", "--network-ui-testing"]
         app.launch()
-        app.tabBars.buttons["People"].tap()
+        app.buttons["navigation.People"].tap()
         let invited = app.staticTexts["Taylor"]
         reveal(invited)
         XCTAssertTrue(invited.exists, "Server contact snapshot should recover on relaunch")
@@ -109,6 +109,7 @@ final class SignalWordJourneyTests: XCTestCase {
         app.launchArguments = ["--ui-testing", "--timer-ui-testing", "--reset-ui-state"]
         app.launch()
         completeContactSetup()
+        tap("Safety check-in")
         tap("Start 15-minute check-in")
         XCTAssertTrue(app.staticTexts["timer.active"].waitForExistence(timeout: 5))
         tap("Extend by 30 minutes")
@@ -143,7 +144,7 @@ final class SignalWordJourneyTests: XCTestCase {
         resolve.press(forDuration: 1.8)
         XCTAssertTrue(app.buttons["alert.trigger"].waitForExistence(timeout: 5))
 
-        app.tabBars.buttons["Settings"].tap()
+        app.buttons["navigation.Settings"].tap()
         tap("account.delete")
         let confirmation = app.buttons["account.confirmDeletion"].firstMatch
         XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
@@ -165,11 +166,11 @@ final class SignalWordJourneyTests: XCTestCase {
         launchFresh()
         completeContactSetup()
         XCTAssertTrue(app.buttons["alert.trigger"].waitForExistence(timeout: 5))
-        app.tabBars.buttons["People"].tap()
+        app.buttons["navigation.People"].tap()
         tap("Withdraw this contact")
         tap("Withdraw consent")
         XCTAssertTrue(app.staticTexts["No trusted person yet"].waitForExistence(timeout: 5))
-        app.tabBars.buttons["Home"].tap()
+        app.buttons["navigation.Home"].tap()
         XCTAssertFalse(app.buttons["alert.trigger"].exists)
     }
 
@@ -178,10 +179,12 @@ final class SignalWordJourneyTests: XCTestCase {
         completeContactSetup()
         let trigger = app.buttons["alert.trigger"]
         XCTAssertTrue(trigger.waitForExistence(timeout: 5))
+        reveal(app.buttons["alert.trigger.review"], useMargin: true)
         app.buttons["alert.trigger.review"].tap()
         XCTAssertTrue(app.buttons["Send REAL alert"].waitForExistence(timeout: 5))
         app.buttons["Cancel"].tap()
         XCTAssertTrue(trigger.exists)
+        reveal(app.buttons["alert.trigger.review"], useMargin: true)
         app.buttons["alert.trigger.review"].tap()
         app.buttons["Send REAL alert"].tap()
         XCTAssertTrue(app.buttons["alert.resolve"].waitForExistence(timeout: 5))

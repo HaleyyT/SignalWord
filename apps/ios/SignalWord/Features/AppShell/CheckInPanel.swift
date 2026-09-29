@@ -3,10 +3,26 @@ import SwiftUI
 struct CheckInPanel: View {
     private var unresolvedIncident: Bool { timer.snapshot?.state == .escalated && !["resolved", "expired"].contains(timer.snapshot?.incidentState ?? "") && timer.snapshot?.incidentId != nil }
     @Environment(CheckInModel.self) private var timer
+    @State private var expanded = false
     var body: some View {
         SignalWordCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Safety check-in").font(.headline)
+                DisclosureGroup("Safety check-in", isExpanded: Binding(get: { expanded || timer.snapshot?.state == .active || unresolvedIncident || timer.pending != nil }, set: { expanded = $0 })) {
+                    controls
+                }
+                .font(.headline)
+                Text("A missed check-in can send a REAL alert.")
+                    .font(.caption).foregroundStyle(SignalWordColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .onChange(of: timer.snapshot?.state) { previous, current in
+            // Keep the completion receipt visible after the active section ends.
+            if previous == .active && current != .active { expanded = true }
+        }
+    }
+    private var controls: some View {
+        VStack(alignment: .leading, spacing: 12) {
                 Text("Choose when you will check in. If you miss it, the server alerts your consenting contacts after a one-minute grace period and the next scheduling run.").font(.subheadline)
                 if let current = timer.snapshot {
                     switch current.state {
@@ -42,7 +58,6 @@ struct CheckInPanel: View {
                 if let reminder = timer.reminderMessage { Text(reminder).font(.caption) }
                 Button("Refresh timer status") { Task { await timer.refresh() } }
                 Text("Keep a way to reconnect. Closing the app, losing reception or dismissing a reminder does not stop the timer.").font(.caption)
-            }.disabled(timer.busy)
-        }
+        }.font(.subheadline).buttonStyle(.bordered).controlSize(.large).disabled(timer.busy).padding(.top, 12)
     }
 }

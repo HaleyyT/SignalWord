@@ -1,12 +1,13 @@
 import SwiftUI
 
 enum SignalWordColor {
-    static let canvas = Color(red: 0.043, green: 0.051, blue: 0.063)       // #0B0D10
-    static let surface = Color(red: 0.071, green: 0.082, blue: 0.102)      // #12151A
-    static let secondarySurface = Color(red: 0.094, green: 0.110, blue: 0.133) // #181C22
+    static let canvas = Color(red: 0.043, green: 0.051, blue: 0.086)       // Midnight canvas
+    static let surface = Color(red: 0.078, green: 0.086, blue: 0.141)      // Indigo elevated surface
+    static let secondarySurface = Color(red: 0.106, green: 0.114, blue: 0.180) // Secondary indigo surface
     static let primaryText = Color(red: 0.961, green: 0.969, blue: 0.980) // #F5F7FA
     static let secondaryText = Color(red: 0.663, green: 0.690, blue: 0.737) // #A9B0BC
-    static let mutedText = Color(red: 0.439, green: 0.471, blue: 0.529)   // #707887
+    static let mutedText = Color(red: 0.600, green: 0.635, blue: 0.694)   // #99A2B1; readable supporting copy on dark surfaces
+    static let link = Color(red: 0.769, green: 0.737, blue: 1.0) // #C4BCFF
     static let action = Color(red: 0.478, green: 0.435, blue: 0.941)      // #7A6FF0
     static let ready = Color(red: 0.180, green: 0.812, blue: 0.569)       // #2ECF91
     static let attention = Color(red: 0.949, green: 0.725, blue: 0.373)   // #F2B95F
@@ -21,7 +22,7 @@ enum SignalWordSpacing {
     static let control: CGFloat = 12
     static let standard: CGFloat = 16
     static let card: CGFloat = 18
-    static let page: CGFloat = 22
+    static let page: CGFloat = 20
     static let section: CGFloat = 24
 }
 
@@ -76,5 +77,13 @@ enum ReadinessState: Equatable {
         case .actionNeeded: SignalWordColor.attention
         case .optional: SignalWordColor.secondaryText
         }
+    }
+}
+
+/// Only decorative colour extends under system chrome; content keeps its safe area.
+struct SignalWordBackground: View {
+    var body: some View {
+        LinearGradient(colors: [Color(red: 0.067, green: 0.075, blue: 0.204), SignalWordColor.canvas], startPoint: .topLeading, endPoint: .bottomTrailing)
+            .ignoresSafeArea()
     }
 }
