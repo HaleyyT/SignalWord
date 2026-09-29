@@ -1,5 +1,7 @@
 # SignalWord: engineering progress and candidate handoff
 
+Latest evening continuation: [hosted preparation and retained failures](HOSTED_CONTINUATION_2026-09-29.md). Hosted remains 11/17; new A/B/C invitations pending, human CAPTCHA harness opened, H08/H16 tooling prepared but gates not passed.
+
 Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Human Turnstile availability confirmed, harness not ready.
 
 ## Current signing/configuration candidate — 29 September 2026

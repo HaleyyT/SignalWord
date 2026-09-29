@@ -1,5 +1,7 @@
 # SignalWord: physical-device testing guide
 
+**29 September evening:** installation remains blocked. Follow [hosted continuation](HOSTED_CONTINUATION_2026-09-29.md) for the real human CAPTCHA session, pending A/B/C invitations, managed restore prerequisites and full load evidence. Browser password-login proof is not native/anonymous onboarding proof. Sentry remains disabled pending verified sanitized ingestion.
+
 Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Human Turnstile availability confirmed, harness not ready.
 
 ## Current signing/configuration candidate — 29 September 2026
