@@ -1,0 +1,115 @@
+Fetching https://github.com/RevenueCat/purchases-ios.git from cache
+Fetched https://github.com/RevenueCat/purchases-ios.git from cache (0.03s)
+Creating working copy for https://github.com/RevenueCat/purchases-ios.git
+Working copy of https://github.com/RevenueCat/purchases-ios.git resolved at 5.91.0
+Building for debugging...
+[Pre-planning 1 / 154]
+[Planning deferred tasks]
+[46 / 81] RevenueCat_RevenueCat
+[48 / 81]
+[49 / 82] RevenueCat
+[60 / 183]
+[64 / 183]
+[68 / 183]
+[72 / 183]
+[76 / 183]
+[77 / 183]
+[82 / 183]
+[84 / 183]
+[86 / 183]
+[90 / 183]
+[96 / 183]
+[98 / 183]
+[101 / 183]
+[102 / 183]
+[116 / 183]
+[118 / 183]
+[119 / 183]
+[122 / 183]
+[124 / 183]
+[126 / 183]
+[138 / 183] RevenueCat
+[139 / 183] RevenueCat
+[143 / 183] RevenueCat
+[144 / 183] RevenueCat
+[146 / 183] RevenueCat
+[152 / 183] RevenueCat
+[153 / 183] RevenueCat-product
+[154 / 183] RevenueCat-product
+[155 / 183] SupporterKit
+[156 / 183] SupporterKit
+[157 / 184] SupporterKit
+[160 / 264]
+[162 / 264]
+[164 / 264]
+[166 / 264]
+[168 / 264]
+[169 / 264] RevenueCat
+[172 / 264]
+[176 / 264]
+[180 / 264]
+[184 / 264]
+[185 / 264]
+[191 / 264]
+[192 / 264]
+[193 / 264]
+[197 / 264]
+[203 / 264]
+[204 / 264]
+[206 / 264]
+[209 / 264]
+[209 / 264] RevenueCat
+[209 / 264]
+[210 / 264] RevenueCat
+[210 / 264]
+[223 / 264]
+[226 / 264]
+[227 / 264]
+[230 / 264]
+[232 / 264] RevenueCat
+[234 / 264]
+[237 / 264] RevenueCat
+[245 / 264] RevenueCat
+[246 / 264] SupporterKit
+[248 / 264] RevenueCat
+[254 / 265] SupporterKit-product
+[254 / 265] SupporterKitTests-product
+[258 / 273]
+[259 / 273]
+[262 / 273] SupporterKitTests-product
+[267 / 273] SupporterKitTests-product
+[269 / 273] SupporterKitTests-product
+[271 / 273] SupporterKitTests-product
+[273 / 273] AllIncludingTests
+Build complete! (42.93 secs)
+Test Suite 'All tests' started at 2026-09-30 03:31:29.451.
+Test Suite 'SupporterKitTests.xctest' started at 2026-09-30 03:31:29.465.
+Test Suite 'SupporterModelTests' started at 2026-09-30 03:31:29.465.
+Test Case '-[SupporterKitTests.SupporterModelTests testCancellationDoesNotUnlock]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testCancellationDoesNotUnlock]' passed (0.057 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testOfflineOfferDoesNotPermitPurchase]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testOfflineOfferDoesNotPermitPurchase]' passed (0.009 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testPendingDoesNotUnlock]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testPendingDoesNotUnlock]' passed (0.010 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testPurchaseAndAppearance]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testPurchaseAndAppearance]' passed (0.022 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testPurchaseFailureNeverUnlocksOrLeavesBusy]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testPurchaseFailureNeverUnlocksOrLeavesBusy]' passed (0.005 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testRelaunchDoesNotTrustPreferencesAsEntitlement]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testRelaunchDoesNotTrustPreferencesAsEntitlement]' passed (0.072 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testReleaseRejectsTestAndSecretKeys]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testReleaseRejectsTestAndSecretKeys]' passed (0.001 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testRestoreAndRevocation]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testRestoreAndRevocation]' passed (0.002 seconds).
+Test Case '-[SupporterKitTests.SupporterModelTests testRestoreFailureDoesNotEraseConfirmedEntitlement]' started.
+Test Case '-[SupporterKitTests.SupporterModelTests testRestoreFailureDoesNotEraseConfirmedEntitlement]' passed (0.002 seconds).
+Test Suite 'SupporterModelTests' passed at 2026-09-30 03:31:29.646.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.178 (0.181) seconds
+Test Suite 'SupporterKitTests.xctest' passed at 2026-09-30 03:31:29.646.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.178 (0.181) seconds
+Test Suite 'All tests' passed at 2026-09-30 03:31:29.646.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.178 (0.195) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

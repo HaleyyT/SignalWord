@@ -1,0 +1,21 @@
+{
+  "sourceCommit": "aa019ab9681f6b944e129cd0bbee9e2e596ae305",
+  "version": "1.0",
+  "build": "3",
+  "artifact": "/private/tmp/signalword-integrated-signed/Build/Products/Release-iphoneos/SignalWord.app",
+  "executableSha256": "7104c48714dbda2e4272008a3cac3b6c49fc78a9f47246106dee2ccba340a0e7",
+  "signedArtifactVerifier": {
+    "passed": true,
+    "problems": []
+  },
+  "simulatorUITests": {
+    "passed": 16,
+    "failed": 0,
+    "runtimeWarnings": 0,
+    "os": "iOS 27.0"
+  },
+  "shortcutsDiscovery": "Both Send TEST Alert and Trigger Alert visible in Apple Shortcuts search on simulator",
+  "physicalLockedVoice": "NOT VERIFIED",
+  "hostedManifestFrozen": false,
+  "appStoreSubmissionReady": false
+}
