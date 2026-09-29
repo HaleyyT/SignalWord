@@ -126,7 +126,7 @@ export function releaseManifest(root, config, { allowDirty = false } = {}) {
         .test(p) &&
       !/(^|\/)(node_modules|dist|\.build|build|\.swiftpm|\.temp|xcuserdata)\//
         .test(p) &&
-      /\.(swift|pbxproj|xcscheme|entitlements|plist|ts|tsx|mjs|css|html|sql|json|jsonc|toml|sh|resolved)$/
+      /\.(swift|pbxproj|xcscheme|entitlements|plist|xcprivacy|png|svg|ts|tsx|mjs|css|html|sql|json|jsonc|toml|sh|resolved)$/
         .test(p)
     );
   const files = Object.fromEntries(

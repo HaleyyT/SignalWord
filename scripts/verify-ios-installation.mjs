@@ -79,6 +79,8 @@ if (
 ) {
   const app = resolve(process.argv[2] ?? "");
   if (!app.endsWith(".app")) throw Error("SIGNED_APP_PATH_REQUIRED");
+  // Inspecting entitlements alone does not verify the code signature.
+  execFileSync("codesign", ["--verify", "--deep", "--strict", app], { stdio: "ignore" });
   const plist = (input) =>
     JSON.parse(
       execFileSync("plutil", ["-convert", "json", "-o", "-", "-"], {

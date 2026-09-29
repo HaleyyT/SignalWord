@@ -19,5 +19,5 @@
     "professionalMonitoring": false
   },
   "apiContractVersions": [1, 2],
-  "crashReporting": "disabled-pending-sdk-verification"
+  "crashReporting": "disabled-pending-hosted-and-device-verification"
 }
