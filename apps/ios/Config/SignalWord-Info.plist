@@ -8,6 +8,8 @@
 	<string>group.com.signalword.shared</string>
 	<key>SignalWordCrashReportingEnabled</key>
 	<string>$(SIGNALWORD_CRASH_REPORTING_ENABLED)</string>
+	<key>SignalWordRevenueCatAPIKey</key>
+	<string>$(SIGNALWORD_REVENUECAT_PUBLIC_API_KEY)</string>
 	<key>SignalWordSentryDSN</key>
 	<string>$(SIGNALWORD_SENTRY_DSN)</string>
 	<key>SignalWordSupabasePublishableKey</key>

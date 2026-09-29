@@ -56,6 +56,27 @@ final class SignalWordJourneyTests: XCTestCase {
         tap("Continue to home")
     }
 
+    func testSupporterAppearanceDoesNotGateSafety() {
+        launchFresh()
+        completeContactSetup()
+        app.buttons["navigation.Settings"].tap()
+        tap("supporter.open")
+        XCTAssertTrue(app.buttons["supporter.buy"].waitForExistence(timeout: 5))
+        tap("supporter.buy")
+        XCTAssertTrue(app.staticTexts["SignalWord supporter"].waitForExistence(timeout: 5))
+        tap("supporter.appearance.ocean")
+        tap("supporter.restore")
+        XCTAssertTrue(app.staticTexts["Your supporter purchase is restored."].waitForExistence(timeout: 5))
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Shipaton supporter screen — simulator fixture"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["supporter.open"].waitForExistence(timeout: 5))
+        app.buttons["navigation.Home"].tap()
+        XCTAssertTrue(app.buttons["alert.trigger"].waitForExistence(timeout: 5))
+    }
+
     func testContactNetworkInvitationRoutingAndRelaunch() {
         continueAfterFailure = false
         app = XCUIApplication()

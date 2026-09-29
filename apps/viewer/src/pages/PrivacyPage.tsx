@@ -9,7 +9,7 @@ export function PrivacyPage() {
         <div className="information-intro">
           <p className="eyebrow">Privacy</p>
         <h1>Your private phrase stays with iOS.</h1>
-        <p className="lede">SignalWord is designed to notify one confirmed trusted contact. It is not an emergency-dispatch service.</p>
+        <p className="lede">SignalWord is designed to notify your confirmed trusted contacts. It is not an emergency-dispatch service.</p>
         </div>
 
         <section className="information-section">
@@ -19,6 +19,10 @@ export function PrivacyPage() {
         <section className="information-section">
           <h2>What an alert can include</h2>
           <p>After an alert, SignalWord may process your chosen display name, encrypted trusted-contact destination, alert status, and the latest available location with its timestamp and accuracy.</p>
+        </section>
+        <section className="information-section">
+          <h2>Optional purchases</h2>
+          <p>The Shipaton build offers a one-time supporter appearance purchase through RevenueCat and your app store. Billing uses a separate anonymous purchase identifier, transaction information, and SDK device information. We do not attach your safety account, contact addresses, phrases, alert links, or location to RevenueCat. Safety features remain free. Store transaction records are separate from safety-account deletion; deleting your account does not refund a purchase. Contact support for billing-data questions.</p>
         </section>
         <section className="information-section">
           <h2>Retention</h2>

@@ -23,6 +23,7 @@
     "verify": "npm run check && npm run test && npm run build",
     "release:hosted": "node scripts/hosted-preflight.mjs",
     "test:ios:ui": "bash scripts/test-ios-ui.sh",
+    "test:purchases": "swift test --package-path apps/ios/SupporterKit",
     "monitor:operations": "node scripts/check-operations.mjs",
     "test:signup:browser": "node apps/viewer/e2e/signup.mjs",
     "test:home:browser": "node apps/viewer/e2e/home.mjs",

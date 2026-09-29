@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import SupporterKit
 
 private enum SignalTab: Hashable {
     case home, people, settings
@@ -42,6 +43,7 @@ struct SignalWordRootView: View {
         return CheckInModel(api: AppCompositionRoot.lifecycleAPI)
     }()
     @Bindable var model: AppShellModel
+    @State private var supporter = SupporterComposition.makeModel()
     @State private var selectedTab: SignalTab = .home
     @State private var showDeleteConfirmation = false
     @State private var showContactEditor = false
@@ -60,12 +62,15 @@ struct SignalWordRootView: View {
             if incident != nil { Task { await model.recover() } }
         }
         .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear(); timer.clear() } }
-        .tint(SignalWordColor.link)
+        .tint(supporter.selectedAppearance == "ocean" ? .cyan : supporter.selectedAppearance == "lavender" ? Color(red: 0.76, green: 0.67, blue: 1) : SignalWordColor.link)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
             ContactEditorSheet(model: model).environment(\.dynamicTypeSize, textSize)
         }
         .task { await model.recover() }
+        .task(id: scenePhase) {
+            if scenePhase == .active && model.hasEnteredDashboard && supporter.hasStarted { await supporter.refresh() }
+        }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {
@@ -108,6 +113,7 @@ struct SignalWordRootView: View {
                 case .settings:
                     SettingsScreen(
                         model: model,
+                        supporter: supporter,
                         openPeople: { selectedTab = .people },
                         openDeleteConfirmation: { showDeleteConfirmation = true }
                     )
