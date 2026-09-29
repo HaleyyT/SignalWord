@@ -30,10 +30,19 @@ export interface UserApiDependencies {
     confirmationPayloadCiphertext: string;
     payloadKeyVersion: number;
   }>;
+  exposeServerTiming?: boolean;
 }
 
 const RESPONSE_HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function timingHeaders(enabled: boolean | undefined, timings: Record<string, number>): Record<string, string> {
+  if (!enabled) return {};
+  const values = Object.entries(timings)
+    .filter(([, duration]) => Number.isFinite(duration) && duration >= 0)
+    .map(([name, duration]) => `${name};dur=${Math.round(duration * 10) / 10}`);
+  return values.length > 0 ? { "Server-Timing": values.join(", ") } : {};
+}
 
 function contactInput(value: unknown): { name: string; email: string } {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -59,11 +68,16 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
     let status = 500;
     let code: string | undefined;
     let reused: boolean | undefined;
+    const timings: Record<string, number> = {};
+    let exposeTimingForRequest = false;
 
     try {
       const path = new URL(request.url).pathname.replace(/\/+$/, "");
+      exposeTimingForRequest = request.method === "POST" && path.endsWith("/v2/alerts");
       const jwt = bearerToken(request);
+      const authStartedAt = dependencies.now();
       const user = await dependencies.backend.authenticate(jwt);
+      timings.auth_session = Math.max(0, dependencies.now() - authStartedAt);
       let result: unknown;
       let contract: ResponseContract;
 
@@ -128,12 +142,16 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         const key=parseIdempotencyKey(request.headers.get("Idempotency-Key"));
         const input=parseCreateAlert(await readJson(request),dependencies.now());
         dependencies.delivery.assertAvailable(input.kind);
+        const preparationStartedAt = dependencies.now();
         const recipients=[];
         for (let i=0;i<3;i++) {
           const token=dependencies.generateToken();
           recipients.push({token,...await dependencies.encryptPayload(token)});
         }
+        timings.preparation = Math.max(0, dependencies.now() - preparationStartedAt);
+        const databaseStartedAt = dependencies.now();
         result=await dependencies.network!.create(input,user.id,key,dependencies.delivery.provider,recipients,jwt);
+        timings.database = Math.max(0, dependencies.now() - databaseStartedAt);
         contract="createAlert"; reused=(result as {reused:boolean}).reused; status=reused ? 200 : 201;
       } else if (["GET", "PUT"].includes(request.method) && path.endsWith("/v1/profile")) {
         let displayName: string | undefined;
@@ -234,12 +252,22 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         // The committed outbox and scheduled sweep remain authoritative.
         try { dependencies.wake?.(); } catch { /* Best-effort wakeup cannot undo acceptance. */ }
       }
-      return jsonResponse(parseUserResponse(contract, result), status, { ...RESPONSE_HEADERS, "X-Request-ID": id });
+      timings.app = Math.max(0, dependencies.now() - startedAt);
+      return jsonResponse(parseUserResponse(contract, result), status, {
+        ...RESPONSE_HEADERS,
+        ...timingHeaders(dependencies.exposeServerTiming && exposeTimingForRequest, timings),
+        "X-Request-ID": id,
+      });
     } catch (caught) {
       const error = asApiError(caught);
       status = error.status;
       code = error.code;
-      return errorResponse(error, id, { ...RESPONSE_HEADERS, "X-Request-ID": id });
+      timings.app = Math.max(0, dependencies.now() - startedAt);
+      return errorResponse(error, id, {
+        ...RESPONSE_HEADERS,
+        ...timingHeaders(dependencies.exposeServerTiming && exposeTimingForRequest, timings),
+        "X-Request-ID": id,
+      });
     } finally {
       writeSafely(dependencies.logger, {
         requestId: id,
@@ -298,5 +326,6 @@ if (import.meta.main) {
       confirmationPayloadCiphertext: await contactProtection.encryptConfirmationToken(confirmationToken),
       payloadKeyVersion: contactProtection.keyVersion,
     }),
+    exposeServerTiming: environment === "development",
   }));
 }

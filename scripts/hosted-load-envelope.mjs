@@ -1,5 +1,16 @@
 import { recordConcurrentSamples } from './acceptance-samples.mjs';
 const origin='https://voepalyamwgenceawdvl.supabase.co';
+const timingNames={auth_session:'authSessionMs',preparation:'preparationMs',database:'databaseMs',app:'appMs'};
+
+export function parseServerTiming(value) {
+ const phases={};
+ for(const entry of String(value??'').split(',')) {
+   const match=/^\s*([a-z_]+)\s*;\s*dur=([0-9]+(?:\.[0-9]+)?)\s*$/.exec(entry);
+   const name=match&&timingNames[match[1]],duration=match&&Number(match[2]);
+   if(name&&Number.isFinite(duration)&&duration>=0)phases[name]=duration;
+ }
+ return phases;
+}
 /** Credentials/capabilities remain in the private fixture. Only aggregate/sample scalars leave. */
 export async function runHostedEnvelope({fixture,outputPrefix,fetchImpl=fetch}) {
  if(fixture.environment!=='development'||fixture.origin!==origin||fixture.signupDisabled!==true)throw Error('CLOSED_DEVELOPMENT_REQUIRED');
@@ -15,7 +26,7 @@ export async function runHostedEnvelope({fixture,outputPrefix,fetchImpl=fetch}) 
    const body=await response.json();
    const previous=eventIds.get(i);
    if(response.ok&&typeof body.eventId==='string'&&!previous)eventIds.set(i,body.eventId);
-   return {status:response.status,valid:typeof body.eventId==='string' && (!previous||previous===body.eventId)};
+   return {status:response.status,valid:typeof body.eventId==='string' && (!previous||previous===body.eventId),phases:parseServerTiming(response.headers.get('server-timing'))};
  }});
  const first=await submit('first'), duplicate=await submit('duplicate');
  const reads=await recordConcurrentSamples({count:20,output:`${outputPrefix}-read.jsonl`,request:async i=>{
