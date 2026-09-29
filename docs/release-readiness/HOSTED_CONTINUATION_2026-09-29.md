@@ -81,3 +81,7 @@ Nine additional disposable load senders were created with public signup still di
 Original A/B/C links expired after the configured 30-minute lifetime. The user requested fresh invitations. The load preparation consumed the current three-invitations-per-destination/hour allowance; a guarded local resend process waits until 19:00 Sydney, checks health and original contact identities, and skips already-confirmed contacts. Do not claim emails resent until its result is recorded. No rate bucket was cleared or permission widened.
 
 Managed restore preparation: MANAGED_RESTORE_DRILL_PREPARATION.md. No purchase requested or performed; isolated-clone verification remains unfinished.
+
+## Original A/B/C resend — 19:00 Sydney
+
+The guarded resend completed after the hourly reset. A/B/C each returned 202 at 19:00:09–19:00:10 Sydney; no alert was created and no limiter was bypassed. Fresh confirmation links expire approximately 19:30. These statuses prove application acceptance, not inbox delivery or consent. The sender label is SignalWord controlled TEST; distinguish these from the separate Load TEST invitations. See evidence/2026-09-29-abc-resend.json.

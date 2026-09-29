@@ -5,7 +5,7 @@
 | Area | Verified status | Remaining work |
 |---|---|---|
 | H04 | Real normal-browser login 200, logout 204, reused/missing/invalid tokens rejected; signup disabled | Unused-token expiry and controlled anonymous enrollment; native bridge remains a device test |
-| H10 | Latest load invitation in each A/B/C inbox confirmed | Original three links expired; resend at rate-window reset, then both routing policies/lifecycle/isolation |
+| H10 | Latest load invitation in each A/B/C inbox confirmed | Original A/B/C resends accepted at 19:00; fresh consent then both routing policies/lifecycle/isolation |
 | H11 | Unsigned/malformed callbacks rejected | Active signed lifecycle, ordering/duplicates and uncertain-send recovery |
 | H16 | Ten distinct sender identities prepared; nine load invitations accepted | Six load consents plus original sender consent pending; full envelope and provider outcomes not run |
 | H08 | Restore sequence and measurement requirements documented | Isolated clone verifier, final source-safe checkpoint and live quote before purchase approval |
