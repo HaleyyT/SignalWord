@@ -1,5 +1,7 @@
 # SignalWord: physical-device testing guide
 
+Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Human Turnstile availability confirmed, harness not ready.
+
 ## Current signing/configuration candidate — 29 September 2026
 
 Code commit: `2c941269b7fba68aab4e84ea649bfbb90b1f0666`, app **1.0 (2)**. This supersedes older candidate identities in the historical notes below. **Not frozen; not ready for physical installation. Hosted acceptance remains 11/17.**
