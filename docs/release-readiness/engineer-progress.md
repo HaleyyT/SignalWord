@@ -1,24 +1,21 @@
 # SignalWord: engineering progress and candidate handoff
 
-## Current acceptance status — 29 September, evening
+## Current acceptance status — 29 September, late evening
 
-| Area | Verified status | Remaining work |
+**Hosted: 12/17 (71%). Not frozen; do not install.** See [exact results, failures and remaining gates](HOSTED_LATE_EVENING_2026-09-29.md) and [all redacted load samples](evidence/2026-09-29-evening-recipient-load.json).
+
+| Gate | Current result | Remaining work |
 |---|---|---|
-| H04 | Real normal-browser login 200, logout 204, reused/missing/invalid tokens rejected; signup disabled | Unused-token expiry and controlled anonymous enrollment; native bridge remains a device test |
-| H10 | All A/B/C confirmed; everyone routing delivered to three recipients; ten retries produced one event; cross-user recipient read empty; resolution 200 | Delayed policy, capability/acknowledgement/withdrawal isolation and full lifecycle |
-| H11 | Unsigned/malformed callbacks rejected | Active signed lifecycle, ordering/duplicates and uncertain-send recovery |
-| H16 | All ten sender identities have confirmed contacts | Full envelope and provider outcomes not run |
-| H08 | Restore sequence and measurement requirements documented | Isolated clone verifier, final source-safe checkpoint and live quote before purchase approval |
-| H17 | Development viewer deployed from 6a78f7d; six routing/header checks pass | All other hosted gates, exact signed artifact compatibility and final freeze |
+| H04 | Login/reuse proof passed; expiry/closed harness deployed | Human expiry/closed results and actual invited/mobile onboarding compatibility |
+| H08 | Clone verifier implemented; real local rehearsal passed | Live quote, safe source checkpoint, purchase approval and managed drill |
+| H10 | PASS: routing, acknowledgement, withdrawal, resolution, deletion and isolation | Physical-device experience remains separate |
+| H11 | Signed deliveries and four transactional recovery/order checks passed | Conclusive fresh signed replay and complete provider fault evidence |
+| H16 | 10 senders and 20 reads completed | Duplicate p95 2,020 ms fails 2,000 ms budget; provider acceptance correlation incomplete |
+| H17 | Viewer deployment dpl_AsQ8nzgF45ah9WbfZr3dYWHvhCeT | All other gates, exact signed artifact and one final manifest |
 
-**Hosted remains 11/17 (65%).** The human CAPTCHA result is a meaningful component pass, not proof of the full enrollment gate. Sentry sanitized ingestion now passes after geography scrubbing; symbolication/device proof remains pending. Authenticated subscription readback shows Business Plan Trial, no payment method and $0.00—not yet an active Developer plan. Crash reporting stays off. No installation, manifest freeze or paid upgrade occurred.
+Source preparation commits: `713de2e` (CAPTCHA harness), `f7f5e26` (isolated restore verifier). No purchase, production modification, public signup, freeze or installation. Sentry remains disabled. No active incidents/timers, queued alerts or unknown outcomes at final readback. B withdrawal and disposable sender deletion were intentional acceptance steps.
 
-
-Latest evening continuation: [hosted preparation and retained failures](HOSTED_CONTINUATION_2026-09-29.md). Hosted remains 11/17; all A/B/C and load invitations confirmed; ordinary-browser CAPTCHA replacement deployed; real human login/logout/reuse proof passes; Sentry sanitized ingestion retest passes after geography scrubbing; H08/H16 gates not passed.
-
-Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Normal-browser invited-login CAPTCHA passed; expiry and controlled anonymous enrollment remain pending.
-
-Latest controlled journey (19:12–19:14 Sydney): [redacted evidence](evidence/2026-09-29-confirmed-abc-journey.json). All 12 contact relationships confirmed across ten senders. Ten concurrent requests returned nine 200s and one 201, one event, maximum 1,039 ms. All three initial deliveries reached delivered; another controlled sender received an empty recipient list. Sender resolution returned 200. No REAL incident created. Resolution delivery and signed callback correlation are not inferred from this result.
+The signing checkpoint below is historical build evidence, not the current frozen source identity.
 
 ## Current signing/configuration candidate — 29 September 2026
 

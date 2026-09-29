@@ -1,6 +1,6 @@
 # SignalWord: physical-device testing guide
 
-**29 September evening:** installation remains blocked. Follow [hosted continuation](HOSTED_CONTINUATION_2026-09-29.md) for the real human CAPTCHA session, pending A/B/C invitations, managed restore prerequisites and full load evidence. Browser password-login proof is not native/anonymous onboarding proof. Sentry remains disabled pending symbolication, subscription/retention readback and signed-device crash verification; sanitized synthetic ingestion now passes.
+**29 September late evening: Hosted 12/17 (71%); installation remains blocked.** [Current evidence and remaining gates](HOSTED_LATE_EVENING_2026-09-29.md). H10 hosted recipient behavior passes; original B is intentionally withdrawn and disposable load sender 02 deleted. Do not repeat old invitation instructions. Save the current human unused-proof-expiry result, then reload the acceptance page and run “Public enrollment remains closed.” Never share the fixture or CAPTCHA token. These browser checks do not prove the native onboarding bridge. H08/H11/H16/H17 remain open; Sentry reporting stays disabled. The signed artifact below is an earlier checkpoint, not a frozen installation candidate.
 
 Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Normal-browser invited-login CAPTCHA passed; expiry and controlled anonymous enrollment remain pending.
 
