@@ -1,4 +1,4 @@
-import { verifyInvitedLogin, verifyClosedEnrollment } from './invited-session.js';
+import { verifyInvitedLogin, verifyClosedEnrollment, requestInvitedCode, verifyInvitedCode } from './invited-session.js';
 const status = document.getElementById('status');
 const input = document.getElementById('fixture');
 const download = document.getElementById('download');
@@ -31,6 +31,13 @@ input.addEventListener('change', async () => {
           status.textContent = 'Checking development authentication…';
           try {
             const mode=document.getElementById('mode').value;
+            if(mode==='otp') {
+              const requested=await requestInvitedCode({...fixture,captchaToken:token});
+              if(!requested.requestAccepted) { finish({environment:'development',scope:'invited-email-code',requested,passed:false}); return; }
+              status.textContent='Check the controlled invited inbox and enter its sign-in code below.';
+              document.getElementById('otp-form').hidden=false;
+              return;
+            }
             if(mode==='expired') {
               status.textContent='Leave this page open for 5 minutes 10 seconds. The unused proof will then be tested automatically.';
               const started=performance.now();
@@ -63,4 +70,16 @@ download.addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([JSON.stringify(result,null,2)+'\n'],{type:'application/json'}));
   const a = document.createElement('a'); a.href=url; a.download='signalword-human-verification.json'; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+
+document.getElementById('otp-verify').addEventListener('click',async()=>{
+  const button=document.getElementById('otp-verify'),field=document.getElementById('otp-code');
+  if(button.disabled || !fixture)return;
+  const code=field.value;field.value='';button.disabled=true;
+  try {
+    const fresh=await verifyInvitedCode({...fixture,code});
+    const replay=await verifyInvitedCode({...fixture,code});
+    finish({environment:'development',scope:'invited-email-code',recordedAt:new Date().toISOString(),fresh,replay,passed:fresh.accepted && fresh.logoutStatus===204 && !replay.accepted && replay.status>=400,nativeBridgeProven:false});
+  } catch {finish({environment:'development',scope:'invited-email-code',passed:false,failure:'AUTH_TRANSPORT_OR_INPUT_FAILED'});}
+  document.getElementById('otp-form').hidden=true;
 });

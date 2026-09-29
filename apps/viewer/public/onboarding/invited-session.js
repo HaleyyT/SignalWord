@@ -33,3 +33,30 @@ export async function verifyClosedEnrollment({password,publishableKey,captchaTok
   const disabled=(body?.error_code ?? body?.code)==='signup_disabled';
   return {status:response.status,signupDisabled:disabled,passed:!response.ok && disabled};
 }
+
+/** Same wire contract as the native invited email-code flow. Never creates users. */
+export async function requestInvitedCode({email,publishableKey,captchaToken,fetchImpl=fetch}) {
+  if (!email || !publishableKey || !captchaToken) throw Error('SESSION_INPUT_REQUIRED');
+  const response=await fetchImpl(`${backend}/auth/v1/otp`,{
+    method:'POST',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000),
+    headers:{apikey:publishableKey,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email.trim().toLowerCase(),create_user:false,gotrue_meta_security:{captcha_token:captchaToken}}),
+  });
+  return {status:response.status,requestAccepted:response.ok};
+}
+export async function verifyInvitedCode({email,publishableKey,code,fetchImpl=fetch}) {
+  if(!email || !publishableKey || !/^[0-9]{6,10}$/.test(code))throw Error('SESSION_INPUT_REQUIRED');
+  const response=await fetchImpl(`${backend}/auth/v1/verify`,{
+    method:'POST',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000),
+    headers:{apikey:publishableKey,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email.trim().toLowerCase(),token:code,type:'email'}),
+  });
+  const body=await response.json().catch(()=>null);
+  const accepted=response.ok && typeof body?.access_token==='string' && !!body?.user?.id;
+  let logoutStatus=null;
+  if(accepted) {
+    const logout=await fetchImpl(`${backend}/auth/v1/logout?scope=local`,{method:'POST',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{apikey:publishableKey,Authorization:`Bearer ${body.access_token}`}});
+    logoutStatus=logout.status;
+  }
+  return {status:response.status,accepted,logoutStatus};
+}
