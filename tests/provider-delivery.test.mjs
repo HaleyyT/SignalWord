@@ -86,7 +86,6 @@ test('Resend adapter sends an idempotent request without leaking credentials int
 });
 
 test('Resend adapter quarantines uncertain outcomes and distinguishes explicit rejection', async () => {
-  const temporary = new ResendDeliveryAdapter(resendConfiguration(), async () => new Response(null, { status: 503 }));
   const terminal = new ResendDeliveryAdapter(resendConfiguration(), async () => new Response(null, { status: 422 }));
   const concurrent = new ResendDeliveryAdapter(resendConfiguration(), async () =>
     Response.json({ name: 'concurrent_idempotent_requests' }, { status: 409 }));
@@ -94,7 +93,10 @@ test('Resend adapter quarantines uncertain outcomes and distinguishes explicit r
     Response.json({ name: 'invalid_idempotent_request' }, { status: 409 }));
   const delivery = { eventId: EVENT_ID, kind: 'real', messageType: 'initial', recipient: 'trusted@example.com',
     viewerToken: TOKEN, idempotencyKey: `alert/${EVENT_ID}/initial` };
-  await assert.rejects(temporary.send(delivery), (error) => error instanceof DeliveryAttemptError && error.safeCode === 'OUTCOME_UNKNOWN' && !error.retryable);
+  for (const status of [408, 429, 502, 503, 504]) {
+    const temporary = new ResendDeliveryAdapter(resendConfiguration(), async () => new Response(null, { status }));
+    await assert.rejects(temporary.send(delivery), (error) => error instanceof DeliveryAttemptError && error.safeCode === 'OUTCOME_UNKNOWN' && !error.retryable);
+  }
   await assert.rejects(terminal.send(delivery), (error) => error instanceof DeliveryAttemptError && !error.retryable);
   await assert.rejects(concurrent.send(delivery), (error) => error instanceof DeliveryAttemptError && error.safeCode === 'OUTCOME_UNKNOWN' && !error.retryable);
   await assert.rejects(conflicting.send(delivery), (error) => error instanceof DeliveryAttemptError && !error.retryable);
