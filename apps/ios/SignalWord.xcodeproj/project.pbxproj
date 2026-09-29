@@ -116,6 +116,7 @@
 			DEVELOPMENT_TEAM = "";
 			ENABLE_PREVIEWS = YES;
 			GENERATE_INFOPLIST_FILE = YES;
+			INFOPLIST_FILE = Config/SignalWord-Info.plist;
 			INFOPLIST_KEY_CFBundleDisplayName = SignalWord;
 			INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 			INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate before resolving an active SignalWord alert.";
@@ -149,6 +150,7 @@
 			CURRENT_PROJECT_VERSION = 2;
 			DEVELOPMENT_TEAM = "";
 			GENERATE_INFOPLIST_FILE = YES;
+			INFOPLIST_FILE = Config/SignalWord-Info.plist;
 			INFOPLIST_KEY_CFBundleDisplayName = SignalWord;
 			INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 			INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate before resolving an active SignalWord alert.";
