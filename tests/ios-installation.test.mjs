@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { installationProblems } from "../scripts/verify-ios-installation.mjs";
+import { readFileSync } from "node:fs";
+import { decodePlist, installationProblems } from "../scripts/verify-ios-installation.mjs";
 const team = "ABC123DE45", group = "group.com.signalword.shared";
 const info = {
   CFBundleIdentifier: "com.signalword.app",
@@ -64,4 +65,36 @@ test("unsafe credentials, wrong groups, stale builds and expired profiles block 
       "PROFILE_EXPIRED",
     ]
   ) assert.ok(errors.includes(code));
+});
+
+
+test("real profile plist dates and certificate data survive decoding", () => {
+  const parsed = decodePlist(Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+<key>ExpirationDate</key><date>2027-09-29T00:00:00Z</date>
+<key>DeveloperCertificates</key><array><data>AQID</data></array>
+<key>Entitlements</key><dict><key>get-task-allow</key><true/></dict>
+</dict></plist>`));
+  assert.equal(Date.parse(parsed.ExpirationDate), Date.parse("2027-09-29T00:00:00Z"));
+  assert.deepEqual(parsed.DeveloperCertificates, ["AQID"]);
+  assert.equal(parsed.Entitlements["get-task-allow"], true);
+  assert.throws(() => decodePlist(Buffer.from("invalid plist")));
+});
+
+
+test("both app configurations package the complete client settings plist", () => {
+  const source = decodePlist(readFileSync(new URL("../apps/ios/Config/SignalWord-Info.plist", import.meta.url)));
+  const expected = {
+    SignalWordAppGroupIdentifier: group,
+    SignalWordCrashReportingEnabled: "$(SIGNALWORD_CRASH_REPORTING_ENABLED)",
+    SignalWordSentryDSN: "$(SIGNALWORD_SENTRY_DSN)",
+    SignalWordSupabasePublishableKey: "$(SIGNALWORD_SUPABASE_PUBLISHABLE_KEY)",
+    SignalWordSupabaseURL: "$(SIGNALWORD_SUPABASE_URL)",
+    SignalWordTurnstileSiteKey: "$(SIGNALWORD_TURNSTILE_SITE_KEY)",
+    SignalWordUserAPIURL: "$(SIGNALWORD_USER_API_URL)",
+    SignalWordVerificationURL: "$(SIGNALWORD_VERIFICATION_URL)",
+  };
+  assert.deepEqual(source, expected);
+  const project = readFileSync(new URL("../apps/ios/SignalWord.xcodeproj/project.pbxproj", import.meta.url), "utf8");
+  assert.equal(project.split("INFOPLIST_FILE = Config/SignalWord-Info.plist;").length - 1, 2);
 });

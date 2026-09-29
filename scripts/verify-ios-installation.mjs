@@ -5,6 +5,20 @@ import { readFileSync } from "node:fs";
 const configuration = JSON.parse(
   readFileSync(new URL("../config/development.release.json", import.meta.url)),
 );
+// Provisioning profiles contain plist dates and binary certificates. plutil's
+// JSON conversion rejects these types, so normalize them without logging data.
+export function decodePlist(input) {
+  return JSON.parse(execFileSync("python3", ["-c", `
+import base64, datetime, json, plistlib, sys
+def encode(value):
+    if isinstance(value, datetime.datetime):
+        return value.replace(tzinfo=datetime.timezone.utc).isoformat()
+    if isinstance(value, bytes):
+        return base64.b64encode(value).decode("ascii")
+    raise TypeError("Unsupported plist value")
+json.dump(plistlib.loads(sys.stdin.buffer.read()), sys.stdout, default=encode)
+`], { input, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }));
+}
 export function installationProblems(
   info,
   entitlements,
@@ -81,13 +95,7 @@ if (
   if (!app.endsWith(".app")) throw Error("SIGNED_APP_PATH_REQUIRED");
   // Inspecting entitlements alone does not verify the code signature.
   execFileSync("codesign", ["--verify", "--deep", "--strict", app], { stdio: "ignore" });
-  const plist = (input) =>
-    JSON.parse(
-      execFileSync("plutil", ["-convert", "json", "-o", "-", "-"], {
-        input,
-        encoding: "utf8",
-      }),
-    );
+  const plist = decodePlist;
   const info = plist(readFileSync(resolve(app, "Info.plist")));
   const entitlements = plist(
     execFileSync("codesign", ["-d", "--entitlements", ":-", app], {
