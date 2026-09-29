@@ -1,0 +1,24 @@
+{
+  "environment": "development",
+  "scope": "operator-invitation-code",
+  "recordedAt": "2026-09-29T14:32:03.080Z",
+  "wrong": {
+    "status": 403,
+    "accepted": false,
+    "logoutStatus": null,
+    "rejection": "otp_expired"
+  },
+  "fresh": {
+    "status": 200,
+    "accepted": true,
+    "logoutStatus": 204
+  },
+  "replay": {
+    "status": 403,
+    "accepted": false,
+    "logoutStatus": null,
+    "rejection": "otp_expired"
+  },
+  "passed": true,
+  "nativeBridgeProven": false
+}

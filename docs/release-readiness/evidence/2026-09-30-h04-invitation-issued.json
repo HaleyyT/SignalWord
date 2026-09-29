@@ -1,0 +1,9 @@
+{
+  "environment": "development",
+  "recordedAt": "2026-09-29T14:29:52.860088+00:00",
+  "action": "operator-invitation",
+  "httpStatus": 200,
+  "invitationIssued": true,
+  "emailConfirmed": false,
+  "deliveryVerified": false
+}

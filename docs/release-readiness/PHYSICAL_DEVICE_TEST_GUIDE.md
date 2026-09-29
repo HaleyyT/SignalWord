@@ -1,3 +1,5 @@
+> CURRENT SCOPE — 30 September: submission-first private testing is authorized before formal 17/17. See [current blockers and exact first session](submission/SUBMISSION_FIRST_2026-09-30.md). Historical installation prohibitions below are superseded only by a verified private-test candidate and explicit installation handoff. Deferred gates remain OPEN; no public enrollment or PITR purchase.
+
 # SignalWord: physical-device testing guide
 
 **29 September late evening: Hosted 12/17 (71%); installation remains blocked.** [Current evidence and remaining gates](HOSTED_LATE_EVENING_2026-09-29.md). H10 hosted recipient behavior passes; original B is intentionally withdrawn and disposable load sender 02 deleted. Do not repeat old invitation instructions. Save the current human unused-proof-expiry result, then reload the acceptance page and run “Public enrollment remains closed.” Never share the fixture or CAPTCHA token. These browser checks do not prove the native onboarding bridge. H08/H11/H16/H17 remain open; Sentry reporting stays disabled. The signed artifact below is an earlier checkpoint, not a frozen installation candidate.
