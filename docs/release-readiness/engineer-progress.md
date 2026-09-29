@@ -1,5 +1,19 @@
 # SignalWord: engineering progress and candidate handoff
 
+## Current acceptance status — 29 September, evening
+
+| Area | Verified status | Remaining work |
+|---|---|---|
+| H04 | Real normal-browser login 200, logout 204, reused/missing/invalid tokens rejected; signup disabled | Unused-token expiry and controlled anonymous enrollment; native bridge remains a device test |
+| H10 | Latest load invitation in each A/B/C inbox confirmed | Original three links expired; resend at rate-window reset, then both routing policies/lifecycle/isolation |
+| H11 | Unsigned/malformed callbacks rejected | Active signed lifecycle, ordering/duplicates and uncertain-send recovery |
+| H16 | Ten distinct sender identities prepared; nine load invitations accepted | Six load consents plus original sender consent pending; full envelope and provider outcomes not run |
+| H08 | Restore sequence and measurement requirements documented | Isolated clone verifier, final source-safe checkpoint and live quote before purchase approval |
+| H17 | Development viewer deployed from 6a78f7d; six routing/header checks pass | All other hosted gates, exact signed artifact compatibility and final freeze |
+
+**Hosted remains 11/17 (65%).** The human CAPTCHA result is a meaningful component pass, not proof of the full enrollment gate. Sentry sanitized ingestion now passes after geography scrubbing; symbolication/device proof remains pending. Authenticated subscription readback shows Business Plan Trial, no payment method and $0.00—not yet an active Developer plan. Crash reporting stays off. No installation, manifest freeze or paid upgrade occurred.
+
+
 Latest evening continuation: [hosted preparation and retained failures](HOSTED_CONTINUATION_2026-09-29.md). Hosted remains 11/17; A/B/C invitations pending; ordinary-browser CAPTCHA replacement deployed; real human login/logout/reuse proof passes; Sentry sanitized ingestion retest passes after geography scrubbing; H08/H16 gates not passed.
 
 Service setup: [current Supabase quote, short-drill estimates, free Sentry steps and Turnstile prerequisite](SERVICE_SETUP_QUOTE_2026-09-29.md). Quote only; no purchase approved. Normal-browser invited-login CAPTCHA passed; expiry and controlled anonymous enrollment remain pending.
