@@ -1,6 +1,6 @@
 # H04 native invited email-code repair
 
-Status: implemented locally; hosted OTP acceptance and deployment window pending. H04 is NOT PASS. No hosted Auth setting, template, account or deployment has been changed by this implementation. H17 has not started.
+Status: implemented and locally verified; matching development harness deployed. H04 is NOT PASS. Hosted Auth SMTP credential entry and real OTP acceptance remain pending. H17 has not started.
 
 ## What changed
 
@@ -38,3 +38,11 @@ Initial Swift run was interrupted because old anonymous-signup race tests waited
 Exclusive H04 window approved by the user; Sol confirmed no hosted operations in flight and paused shared mutations. Readback: global signup false; anonymous flag true but global closure retained; OTP length 8, expiry 3600 seconds. Current Auth sender is default, custom SMTP absent, and the dashboard's default magic-link template exposes a link rather than the code. Template edit controls are disabled until SMTP setup. Additional scoped approval requested to connect the existing Resend sender; no SMTP change performed yet. No new paid service is required by this request.
 
 Local results: 199 Node, 44 viewer, 42 Swift core, actual Sentry-linked privacy suite, eight simulator UI journeys, Release simulator build, mocked OTP/browser journeys, repository/security/contracts and real isolated local API/database lifecycle integration passed. These are local checks, not hosted OTP acceptance. See evidence/2026-09-29-h04-native-local.json.
+
+## Approved SMTP setup and harness deployment
+
+The user approved connecting the existing Resend sender to development Auth. The private SMTP password entry/save is handed to the user under the computer-use credential-entry rule; no password or key is requested in chat. Expected settings: smtp.resend.com, TLS port 465, username resend, sending-only key restricted to mail.signalword.app, sender alerts@mail.signalword.app, display name SignalWord Development, 60-second per-user interval. Saved SMTP configuration and actual delivery are not yet verified. A code-only template is staged privately, not deployed. Existing OTP configuration remains eight digits / 3600 seconds until verified readback.
+
+Viewer deployment dpl_Dz47ogxhVDGL9aWcFtvHK7GAdq31 is published to the approved www.signalword.app development alias from source 9b03a7d. Both runtime proxy origins were explicitly pinned to project voepalyamwgenceawdvl during deployment. All six hosted routing/header checks passed; all three acceptance assets match the tested source by SHA-256. See evidence/2026-09-29-h04-otp-harness-deployment.json. This proves deployment compatibility, not hosted OTP acceptance. No backend function, migration, authority, schedule or enrollment setting was changed.
+
+The older private H04 fixture is not a consenting inbox and must not be reused for the email-code test. Prepare a fresh controlled invited fixture once SMTP is verified; never distribute embedded administrator credentials. Sol remains paused for hosted mutations until explicit handback.
