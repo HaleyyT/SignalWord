@@ -572,7 +572,6 @@
   .home-page .wordmark img { width: 26px; height: 26px; }
   .home-page nav { gap: .75rem; }
   .home-page nav a { font-size: .72rem; }
-  .home-header nav a[href="/support"] { display: none; }
   .home-hero { gap: 2.4rem; padding-block: 3.15rem 4.5rem; }
   .home-hero h1 { max-width: none; margin: 1.4rem 0 1.25rem; font-size: clamp(2.48rem, 10vw, 3.85rem); }
   .home-lede { font-size: 1rem; line-height: 1.68; }
@@ -619,6 +618,12 @@
   .home-footer > p { flex-basis: 100%; order: 3; }
   .home-footer nav { margin-left: auto; gap: .8rem; }
   .home-footer nav a { font-size: .75rem; }
+}
+
+@media (max-width: 400px) {
+  .home-header { flex-wrap: wrap; padding-block: .45rem; }
+  .home-page nav { flex-basis: 100%; justify-content: space-between; gap: .25rem; }
+  .home-page nav a { min-height: 40px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
