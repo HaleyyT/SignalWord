@@ -1,5 +1,27 @@
 # SignalWord: engineering progress and candidate handoff
 
+## Current signing/configuration candidate — 29 September 2026
+
+Code commit: `2c941269b7fba68aab4e84ea649bfbb90b1f0666`, app **1.0 (2)**. This supersedes older candidate identities in the historical notes below. **Not frozen; not ready for physical installation. Hosted acceptance remains 11/17.**
+
+Development certificate and automatic provisioning succeeded. The exact physical iPhone is included in the profile. The signed artifact preserves `com.signalword.app` and `group.com.signalword.shared`, the verified paid team, development backend/API/verification URLs and public Turnstile key. The team and device identifiers remain in local-only signing evidence; neither is hard-coded into the project.
+
+Two defects repaired: real provisioning plists contain dates/binary certificate data that the old JSON conversion rejected; generated Info.plist omitted custom client settings. The verifier now decodes real plists, and both app configurations explicitly include `Config/SignalWord-Info.plist`. Four signing/packaging regression tests pass. No server secret was placed into client configuration.
+
+Signed app: `/private/tmp/signalword-signing-preparation/DerivedData/Build/Products/Release-iphoneos/SignalWord.app`. Local signing configuration: `/private/tmp/signalword-signing-preparation/Development.xcconfig`. These temporary files are not a frozen distributable or authorization to install. Do not run Xcode Run or install/launch on the physical phone yet.
+
+Post-fix regression logs are retained in `/private/tmp/signalword-post-signing-regression`. Node (180), viewer (44), database/safe-update restore, integration, contact/timer races, Swift/core, real Sentry serializer, browser, monitor, seven Deno checks, release preflight, dependency audit and the first eight simulator journeys passed. Both Release simulator builds passed. The Sentry-linked UI run also passed all eight journeys, with zero failures or skips. Signed-artifact verification passed again after the full run. Local regression is complete for this repair; hosted acceptance is unchanged.
+
+History scan flagged ten apparent credentials in a source manifest. Each was recomputed against its recorded source commit and proved to be a SHA-256 file digest. Original flagged output and redacted triage are retained; the scan was not silently reported as having zero findings.
+
+Remaining hosted gates: H04 human CAPTCHA/closed enrollment; H08 managed restore/RPO/RTO; H10 complete A/B/C routing/isolation; H11 provider recovery/failure lifecycle; H16 complete ten-sender load; H17 compatible manifest freeze. Current readbacks confirm signup disabled, authority allowed at journal version 13, deleted identities denied, no health problems, and seven active expected function versions. These readbacks do not close the six gates.
+
+Human prerequisites: backup purchase remains unapproved (quote only requested); no Sentry development project exists yet; a human challenge session is still needed. See [setup and short-drill cost distinction](HOSTED_ACCEPTANCE_SETUP.md). Disabling PITR after a successful drill removes ongoing 15-minute recovery-point protection. Keep crash reporting disabled until project privacy/retention and ingestion are verified.
+
+Clean source export of `2c94126` independently produced a development-signed Release app; its verifier passed with no problems. Exact artifact: `/private/tmp/signalword-post-signing-regression/clean-signed-build/Build/Products/Release-iphoneos/SignalWord.app`. It remains **unfrozen and not authorized for installation**. See [post-signing evidence](POST_SIGNING_EVIDENCE_2026-09-29.json).
+
+## Earlier checkpoints (historical; not the current candidate)
+
 Updated 29 September 2026. **NOT READY TO INSTALL OR RELEASE. The hosted manifest is not frozen.**
 
 Branch: `feat/hosted-restore-compatibility`. Latest repair code: **`148dbf48ea2f484f3f8fa6c702bb7ba48a2f20e0`** (native source unchanged from `421f3c5`), app **1.0 (2)**. Documentation commits after this code revision do not authorize installation. No merge, push, public enrollment or separate production deployment was performed. Development viewer and delivery-function repairs were deployed as recorded below.

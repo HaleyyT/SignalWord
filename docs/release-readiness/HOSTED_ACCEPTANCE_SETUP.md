@@ -23,6 +23,16 @@ PITR is billed at **$0.137/hour** for seven-day retention, with partial hours ro
 
 Sources checked 29 September 2026: [Supabase pricing](https://supabase.com/pricing), [backup prerequisites and PITR](https://supabase.com/docs/guides/platform/backups), [PITR billing](https://supabase.com/docs/guides/platform/manage-your-usage/point-in-time-recovery).
 
+### Short development drill versus ongoing protection (29 September follow-up)
+
+The user requested a quote only; no upgrade is approved. Official PITR billing permits removal after a short drill. Seven-day PITR is $0.137 per enabled hour (partial hours rounded up): 24 hours is $3.29, 48 hours $6.58. The Pro subscription and source/target compute are additional. Supabase's published example with a Small source kept all month and PITR enabled for 24 hours totals $33.29 before taxes/overages; a temporary isolated target adds compute. This is a published example, **not an account-specific checkout quote or guaranteed minimum**. Actual backup initialization and recovery time determine the required window; do not promise a one-hour drill.
+
+The authenticated development dashboard still shows the organization on Free and says project backups are unavailable. No purchase was made. Confirm the final organization-wide checkout quote, existing projects/credits, target compute, taxes and downgrade billing before approval.
+
+After a successful drill, disabling PITR can stop future PITR hourly charges. Preserve the measured restore evidence, but mark ongoing 15-minute RPO protection unavailable when PITR is off. A historical drill does not satisfy ongoing pilot recovery protection. Reopening an invited pilot with that recovery objective requires PITR or another independently verified equivalent to remain active. Daily backups alone do not meet it. Typical ongoing source baseline remains approximately $130/month; a permanently retained Small target adds roughly $15/month. Do not disable independent deletion/consent journal retention.
+
+Source: https://supabase.com/docs/guides/platform/manage-your-usage/point-in-time-recovery
+
 ### Exact approval and drill boundary
 
 1. Inspect the organization's project inventory and quote. Stop if upgrading would affect an unapproved production organization/project. Request approval for the quoted source and isolated target costs before buying anything.
