@@ -30,3 +30,25 @@ test('bounds the burst before issuing any request', async () => {
   await assert.rejects(recordConcurrentSamples({ count: 21, output: '/unused', request: async () => { called = true; } }), /BURST_SIZE/);
   assert.equal(called, false);
 });
+
+test('retains only allowlisted numeric phase timings and derives client-edge time', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'signalword-timings-'));
+  try {
+    const output = join(dir, 'burst.jsonl');
+    const result = await recordConcurrentSamples({ count: 1, output, request: async () => ({
+      status: 200,
+      valid: true,
+      phases: { authSessionMs: 4.6, preparationMs: 2, databaseMs: 3, appMs: 5, secret: 'must-not-leak' },
+    }) });
+    const recorded = readFileSync(output, 'utf8');
+    assert.deepEqual(result.samples[0].phases, {
+      authSessionMs: 5,
+      preparationMs: 2,
+      databaseMs: 3,
+      appMs: 5,
+      clientEdgeMs: Math.max(0, result.samples[0].durationMs - 5),
+    });
+    assert.equal(recorded.includes('secret'), false);
+    assert.equal(recorded.includes('must-not-leak'), false);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

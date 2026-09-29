@@ -17,16 +17,32 @@ export async function recordConcurrentSamples({ count, output, request }) {
       let status = 0;
       let valid = false;
       let transportError = false;
+      let phases;
       try {
         const result = await request(sequence);
         status = Number.isInteger(result?.status) && result.status >= 100 && result.status <= 599
           ? result.status : 0;
         valid = status >= 200 && status < 300 && result?.valid === true;
+        if (result?.phases && typeof result.phases === 'object' && !Array.isArray(result.phases)) {
+          const allowed = ['authSessionMs', 'preparationMs', 'databaseMs', 'appMs'];
+          const retained = Object.fromEntries(allowed.flatMap(key => {
+            const value = result.phases[key];
+            return Number.isFinite(value) && value >= 0 ? [[key, Math.round(value)]] : [];
+          }));
+          if (Object.keys(retained).length > 0) phases = retained;
+        }
       } catch {
         // Network errors may embed private URLs. Retain the category, not the message.
         transportError = true;
       }
-      const sample = { sequence, status, durationMs: Math.round(performance.now() - started), valid, transportError };
+      const durationMs = Math.round(performance.now() - started);
+      const sample = {
+        sequence, status, durationMs, valid, transportError,
+        ...(phases ? { phases: {
+          ...phases,
+          ...(Number.isFinite(phases.appMs) ? { clientEdgeMs: Math.max(0, durationMs - phases.appMs) } : {}),
+        } } : {}),
+      };
       appendFileSync(fd, JSON.stringify(sample) + '\n');
       return sample;
     }));

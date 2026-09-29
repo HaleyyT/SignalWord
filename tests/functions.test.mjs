@@ -145,9 +145,34 @@ test('user API returns only the stable public create-alert projection', async ()
     reused: false,
   });
   assert.equal(response.headers.get('X-Request-ID'), REQUEST_ID);
+  assert.equal(response.headers.get('Server-Timing'), null);
   assert.equal(JSON.stringify(body).includes(TOKEN), false);
   assert.equal(JSON.stringify(logs).includes(TOKEN), false);
   assert.deepEqual(Object.keys(logs[0]).sort(), ['durationMs', 'method', 'requestId', 'reused', 'route', 'status']);
+});
+
+test('development v2 alert responses expose numeric phase timing without identifiers', async () => {
+  let clock = Date.parse('2026-09-24T00:00:10Z');
+  const handler = userHandler(baseBackend(), [], baseLifecycle(), {
+    exposeServerTiming: true,
+    now: () => { clock += 5; return clock; },
+    network: {
+      create: async () => ({
+        eventId: EVENT_ID, state: 'active', delivery: 'queued',
+        serverTriggeredAt: '2026-09-24T00:00:11Z', reused: false,
+      }),
+    },
+  });
+  const request = alertRequest({ body: {
+    kind: 'test', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',
+  } });
+  const response = await handler(new Request(request.url.replace('/v1/', '/v2/'), request));
+  const timing = response.headers.get('Server-Timing');
+  assert.equal(response.status, 201);
+  assert.match(timing, /^auth_session;dur=\d+(?:\.\d+)?, preparation;dur=\d+(?:\.\d+)?, database;dur=\d+(?:\.\d+)?, app;dur=\d+(?:\.\d+)?$/);
+  assert.equal(timing.includes(USER_ID), false);
+  assert.equal(timing.includes(EVENT_ID), false);
+  assert.equal((await handler(alertRequest())).headers.get('Server-Timing'), null);
 });
 
 test('twenty concurrent identical creates produce one canonical event and outbox row', async () => {
