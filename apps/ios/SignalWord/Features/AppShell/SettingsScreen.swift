@@ -1,10 +1,12 @@
 import SwiftUI
 import AppIntents
 import Observation
+import SupporterKit
 
 struct SettingsScreen: View {
     @Environment(\.dynamicTypeSize) private var textSize
     @Bindable var model: AppShellModel
+    let supporter: SupporterModel
     let openPeople: () -> Void
     let openDeleteConfirmation: () -> Void
 
@@ -76,6 +78,17 @@ struct SettingsScreen: View {
                     PrivacyLine(symbol: "lock.fill", title: "Private by default", detail: "A recent point-in-time location may be shared with an alert. SignalWord does not track movement.")
                     Divider().overlay(SignalWordColor.separator)
                     PrivacyLine(symbol: "waveform.slash", title: "No continuous recording", detail: "Your chosen phrase is managed by iOS Vocal Shortcuts.")
+                }
+
+                settingsGroup(title: "Make it yours") {
+                    NavigationLink {
+                        SupporterScreen(model: supporter)
+                    } label: {
+                        Label("Supporter appearance", systemImage: "heart.circle")
+                            .frame(minHeight: 48)
+                    }.accessibilityIdentifier("supporter.open")
+                    Text("Optional appearance purchase. All safety features stay free.")
+                        .font(.caption).foregroundStyle(SignalWordColor.secondaryText)
                 }
 
                 settingsGroup(title: "Account") {

@@ -6,7 +6,7 @@ const team = "ABC123DE45", group = "group.com.signalword.shared";
 const info = {
   UILaunchScreen: {},
   CFBundleIdentifier: "com.signalword.app",
-  CFBundleVersion: "2",
+  CFBundleVersion: "3",
   CFBundleShortVersionString: "1.0",
   SignalWordAppGroupIdentifier: group,
   SignalWordSupabaseURL: "https://voepalyamwgenceawdvl.supabase.co",
@@ -89,6 +89,7 @@ test("both app configurations package the complete client settings plist", () =>
     UILaunchScreen: { UIColorName: "LaunchBackground" },
     SignalWordAppGroupIdentifier: group,
     SignalWordCrashReportingEnabled: "$(SIGNALWORD_CRASH_REPORTING_ENABLED)",
+    SignalWordRevenueCatAPIKey: "$(SIGNALWORD_REVENUECAT_PUBLIC_API_KEY)",
     SignalWordSentryDSN: "$(SIGNALWORD_SENTRY_DSN)",
     SignalWordSupabasePublishableKey: "$(SIGNALWORD_SUPABASE_PUBLISHABLE_KEY)",
     SignalWordSupabaseURL: "$(SIGNALWORD_SUPABASE_URL)",
