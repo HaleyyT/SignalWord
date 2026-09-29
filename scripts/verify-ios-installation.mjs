@@ -27,6 +27,9 @@ export function installationProblems(
   now = Date.now(),
 ) {
   const errors = [];
+  if (!info.UILaunchScreen || typeof info.UILaunchScreen !== "object" || Array.isArray(info.UILaunchScreen)) {
+    errors.push("MODERN_LAUNCH_SCREEN_REQUIRED");
+  }
   if (!/^[A-Z0-9]{10}$/.test(team ?? "")) {
     errors.push("OWNED_PAID_TEAM_ID_REQUIRED");
   }

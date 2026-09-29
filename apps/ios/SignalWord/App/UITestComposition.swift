@@ -12,11 +12,19 @@ enum UITestComposition {
         if arguments.contains("--reset-ui-state") {
             preferences.removePersistentDomain(forName: "SignalWord.UIJourney")
         }
+        if arguments.contains("--ui-layout-ready") {
+            preferences.set(true, forKey: "onboardingComplete")
+            preferences.set("Alex", forKey: "fixture.name")
+            preferences.set(arguments.contains("--ui-long-name") ? "Alexandria Charlotte Nguyen Montgomery" : "Hoa", forKey: "fixture.contact")
+            preferences.set(arguments.contains("--ui-contact-pending") ? "pending" : "confirmed", forKey: "fixture.contactStatus")
+        }
         let service = UITestService(preferences: preferences)
         return AppShellModel(backendConfigured: true, trigger: { kind, _ in
             await service.trigger(kind)
         }, lifecycle: .init(
-            prepare: { _ in }, profile: { name in await service.profile(name) },
+            prepare: { _ in
+                if arguments.contains("--ui-recovery-failure") { throw UserAPIError.invalidResponse }
+            }, profile: { name in await service.profile(name) },
             recover: { _ in await service.recover() },
             saveContact: { name, _ in await service.saveContact(name) },
             getContact: { await service.contact() },

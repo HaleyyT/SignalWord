@@ -1,22 +1,32 @@
 import SwiftUI
+import AppIntents
 import Observation
 
 struct SettingsScreen: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     @Bindable var model: AppShellModel
     let openPeople: () -> Void
     let openDeleteConfirmation: () -> Void
 
+    @State private var showHelp = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                PageHeading(eyebrow: "YOUR SETUP", title: "Settings", detail: "Keep your signal familiar, private, and ready to use.")
+                PageHeading(eyebrow: "YOUR SETUP", title: "Settings", detail: "Your signal, privacy and account.")
 
+                settingsGroup(title: "Help") {
+                    SettingsRow(symbol: "info.circle", title: "How SignalWord works", detail: "Setup, TEST and REAL alerts", tint: SignalWordColor.link) { showHelp = true }
+                        .accessibilityIdentifier("settings.help")
+                }
                 settingsGroup(title: "Signal") {
                     PrivacyLine(
                         symbol: "waveform",
                         title: "Vocal Shortcuts",
-                        detail: "In Settings › Accessibility › Vocal Shortcuts, add separate TEST and REAL actions with different phrases."
+                        detail: "iOS recognises the phrase you teach it and runs your chosen action. SignalWord does not detect danger or configure your phrase automatically."
                     )
+                    Divider().overlay(SignalWordColor.separator)
+                    VocalShortcutSetupInstructions()
                     Divider().overlay(SignalWordColor.separator)
                     Toggle(isOn: Binding(get: { model.shortcutConfigured }, set: { model.setShortcutConfigured($0) })) {
                         VStack(alignment: .leading, spacing: 3) {
@@ -56,6 +66,12 @@ struct SettingsScreen: View {
                                 .frame(minHeight: 44)
                         }
                     }
+                    DisclosureGroup("Location permissions & limitations") {
+                    Text("To change permission: iPhone Settings › Privacy & Security › Location Services › SignalWord › While Using the App. For a location rehearsal, reopen SignalWord and send a new TEST after resolving any active alert. Location is best effort; it may be unavailable, especially during locked or background use.")
+                        .font(.caption)
+                        .foregroundStyle(SignalWordColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
                     Divider().overlay(SignalWordColor.separator)
                     PrivacyLine(symbol: "lock.fill", title: "Private by default", detail: "A recent point-in-time location may be shared with an alert. SignalWord does not track movement.")
                     Divider().overlay(SignalWordColor.separator)
@@ -74,6 +90,7 @@ struct SettingsScreen: View {
                     Button(action: openDeleteConfirmation) {
                         HStack(spacing: 12) {
                             Image(systemName: "person.crop.circle.badge.xmark")
+                                .font(.system(size: 18, weight: .medium))
                                 .foregroundStyle(SignalWordColor.critical)
                                 .frame(width: 24, height: 24)
                                 .accessibilityHidden(true)
@@ -100,9 +117,10 @@ struct SettingsScreen: View {
                 }
 
                 if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
-                Text("SignalWord notifies your confirmed person only. It does not contact emergency services or guarantee delivery.")
+                Text("SignalWord notifies your confirmed contacts. It does not contact emergency services or guarantee delivery.")
                     .font(.caption)
                     .foregroundStyle(SignalWordColor.mutedText)
+                    .accessibilityIdentifier("settings.footer")
                     .frame(maxWidth: .infinity)
                     .multilineTextAlignment(.center)
             }
@@ -112,8 +130,9 @@ struct SettingsScreen: View {
             .padding(.bottom, 32)
             .frame(maxWidth: .infinity)
         }
-        .background(SignalWordColor.canvas.ignoresSafeArea())
+        .background(SignalWordBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $showHelp) { SignalWordHelpSheet().environment(\.dynamicTypeSize, textSize) }
     }
 
     private func settingsGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -124,5 +143,34 @@ struct SettingsScreen: View {
                 .foregroundStyle(SignalWordColor.secondaryText)
             SignalWordCard { VStack(spacing: 13, content: content) }
         }
+    }
+}
+
+/// Shared by onboarding and Settings; these steps never run an alert themselves.
+struct VocalShortcutSetupInstructions: View {
+    var expanded = false
+    var body: some View {
+        if expanded { instructions } else {
+            DisclosureGroup("How to connect your phrase") { instructions }
+                .accessibilityIdentifier("shortcut.setup.instructions")
+        }
+    }
+    private var instructions: some View {
+            VStack(alignment: .leading, spacing: 14) {
+                ShortcutsLink()
+                    .accessibilityIdentifier("shortcut.openAppleShortcuts")
+                Text("Open the SignalWord actions above. Save the TEST action as a shortcut before choosing it in Vocal Shortcuts. Opening this list does not send an alert.")
+                Text("1. Open Apple's Shortcuts app (Phím tắt). Tap +, search actions for SignalWord, and add Send TEST Alert. Name this shortcut SignalWord TEST and save it.")
+                Text("2. Open iPhone Settings › Accessibility › Vocal Shortcuts (Phím tắt giọng nói). Tap Add Action and choose your saved SignalWord TEST shortcut. If you see a blue Done checkmark, finish editing first.")
+                Text("3. Choose a practice phrase and repeat it as iOS requests. Keep Vocal Shortcuts enabled. Saying that phrase runs the TEST action; no new recording is needed each time.")
+                Text("4. With your contact confirmed, resolve any existing alert, then try the TEST phrase. Check the TEST email, recipient acknowledgement and resolution in SignalWord. Repeat with the phone locked before relying on that setup.")
+                Text("5. For a REAL alert, create another shortcut using SignalWord's Trigger Alert action. Name it SignalWord REAL and assign a different private phrase in Vocal Shortcuts. Trigger Alert sends a REAL alert; do not run it for rehearsal.")
+                Text("If SignalWord is missing, open SignalWord once, then return to Shortcuts and search its actions again. Choose the SignalWord action, not an unrelated sample shortcut or a Siri request. If it is still missing, stop and report it.")
+                Text("The setup switch is only your report. It does not connect or verify either shortcut. SignalWord does not continuously record audio, infer danger, or contact emergency services. Voice recognition, network access and delivery can fail.")
+            }
+            .font(.subheadline)
+            .foregroundStyle(SignalWordColor.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 10)
     }
 }

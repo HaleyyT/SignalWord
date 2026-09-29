@@ -52,9 +52,10 @@ struct SignalWordSetupFlow: View {
                 .padding(.bottom, 32)
                 .frame(maxWidth: .infinity)
             }
+            .scrollDismissesKeyboard(.interactively)
             // Each setup step starts at its heading, including at accessibility text sizes.
             .id(model.stage)
-            .background(SignalWordColor.canvas.ignoresSafeArea())
+            .background(SignalWordBackground())
             .navigationTitle(model.stage.title)
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -88,7 +89,7 @@ struct SignalWordSetupFlow: View {
                             .frame(minHeight: 44)
                     }
                 }
-                Text("A little setup. A quieter signal.")
+                Text("Set up your signal")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(SignalWordColor.secondaryText)
                 Spacer()
@@ -115,11 +116,11 @@ struct SignalWordSetupFlow: View {
                 .padding(.vertical, 4)
             VStack(alignment: .leading, spacing: 10) {
                 Text("A quiet way to reach someone you trust.")
-                    .font(.largeTitle.weight(.semibold))
+                    .font(.title.weight(.semibold))
                     .tracking(-0.6)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
-                Text("SignalWord uses an iOS Vocal Shortcut and your chosen phrase to send a private alert to one trusted person.")
+                Text("Send a private alert to your confirmed contacts with a phrase you configure in iOS, or a manual action.")
                     .font(.body)
                     .foregroundStyle(SignalWordColor.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -128,7 +129,7 @@ struct SignalWordSetupFlow: View {
                 VStack(alignment: .leading, spacing: 14) {
                     PrivacyLine(symbol: "waveform.slash", title: "No ambient audio is stored", detail: "Vocal Shortcuts is configured and managed by iOS.")
                     Divider().overlay(SignalWordColor.separator)
-                    PrivacyLine(symbol: "person.crop.circle.badge.checkmark", title: "One confirmed person", detail: "SignalWord does not contact police or emergency services.")
+                    PrivacyLine(symbol: "person.crop.circle.badge.checkmark", title: "Your confirmed contacts", detail: "SignalWord does not contact police or emergency services.")
                 }
             }
             PrimaryButton(title: "Set up SignalWord", symbol: "arrow.right") {
@@ -183,10 +184,11 @@ struct SignalWordSetupFlow: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Label("Set up your Vocal Shortcuts", systemImage: "waveform")
                         .font(.headline)
-                    Text("In Settings › Accessibility › Vocal Shortcuts, add one action for a TEST and one for a REAL alert. Choose different phrases.")
+                    Text("First save SignalWord actions in Apple’s Shortcuts app, then assign your phrases in iOS Vocal Shortcuts. SignalWord does not detect danger automatically.")
                         .font(.subheadline)
                         .foregroundStyle(SignalWordColor.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                    VocalShortcutSetupInstructions()
                     Toggle("I added both Vocal Shortcuts", isOn: Binding(
                         get: { model.shortcutConfigured },
                         set: { model.setShortcutConfigured($0) }

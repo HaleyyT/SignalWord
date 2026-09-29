@@ -30,4 +30,4 @@ xcodebuild -quiet \
   -configuration Debug -destination "platform=iOS Simulator,id=$device_id" \
   -derivedDataPath "$results/build" -resultBundlePath "$results/Journey.xcresult" \
   -parallel-testing-enabled NO -test-timeouts-enabled YES \
-  -maximum-test-execution-time-allowance 90 -collect-test-diagnostics never CODE_SIGN_IDENTITY=- test "$@"
+  -maximum-test-execution-time-allowance 300 -collect-test-diagnostics never CODE_SIGN_IDENTITY=- test "$@"

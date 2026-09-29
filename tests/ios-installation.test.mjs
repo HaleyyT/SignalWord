@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { decodePlist, installationProblems } from "../scripts/verify-ios-installation.mjs";
 const team = "ABC123DE45", group = "group.com.signalword.shared";
 const info = {
+  UILaunchScreen: {},
   CFBundleIdentifier: "com.signalword.app",
   CFBundleVersion: "2",
   CFBundleShortVersionString: "1.0",
@@ -85,6 +86,7 @@ test("real profile plist dates and certificate data survive decoding", () => {
 test("both app configurations package the complete client settings plist", () => {
   const source = decodePlist(readFileSync(new URL("../apps/ios/Config/SignalWord-Info.plist", import.meta.url)));
   const expected = {
+    UILaunchScreen: { UIColorName: "LaunchBackground" },
     SignalWordAppGroupIdentifier: group,
     SignalWordCrashReportingEnabled: "$(SIGNALWORD_CRASH_REPORTING_ENABLED)",
     SignalWordSentryDSN: "$(SIGNALWORD_SENTRY_DSN)",
@@ -97,4 +99,11 @@ test("both app configurations package the complete client settings plist", () =>
   assert.deepEqual(source, expected);
   const project = readFileSync(new URL("../apps/ios/SignalWord.xcodeproj/project.pbxproj", import.meta.url), "utf8");
   assert.equal(project.split("INFOPLIST_FILE = Config/SignalWord-Info.plist;").length - 1, 2);
+});
+
+
+test("the signed artifact must declare its launch screen", () => {
+  const { UILaunchScreen, ...legacy } = info;
+  assert.ok(installationProblems(legacy, entitlements, profile, team).includes("MODERN_LAUNCH_SCREEN_REQUIRED"));
+  assert.ok(installationProblems({ ...info, UILaunchScreen: "" }, entitlements, profile, team).includes("MODERN_LAUNCH_SCREEN_REQUIRED"));
 });
