@@ -590,3 +590,7 @@ Do not install until all 17 hosted gates pass and the manifest is frozen. See [H
 Candidate repair `148dbf4` adds migration `20261001040000_confirmation_retry.sql`; native source remains unchanged. Hosted acceptance is still **11/17**, and there is **no frozen manifest**. Three TEST and three resolution deliveries passed, but full A/B/C isolation/delayed routing, active provider failure/replay coverage, the full multi-sender load, human Turnstile and managed restore remain open. The test fixture was resolved and durably deleted; zero users/contacts/deliveries remain. Do not reuse old recipient links.
 
 Before physical tests, follow [the hosted prerequisites](HOSTED_ACCEPTANCE_SETUP.md). Keep Sentry disabled until the development project/privacy settings are verified. SDK-linked simulator success does not prove signed-device crash reporting. The guide's installation steps remain deferred until engineering issues a frozen 17/17 hosted manifest.
+
+## First session — release acceleration order
+
+Use [A1 → C1 → C2 → L1 → L2](submission/FIRST_DEVICE_SESSION.md) as the first-session order, superseding earlier suggestions to begin at C1. Do not run later scenarios until these pass. The new evidence command records redacted status and immutable failure/retest references. Hosted 17/17 and a frozen manifest remain mandatory before installation.

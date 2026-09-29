@@ -10,3 +10,7 @@ Start here for the development candidate's status and acceptance instructions.
 **Installation remains on hold.** The candidate manifest is not frozen. The restore repair is deployed; remaining hosted checks and monitoring acceptance must be completed before installing the candidate. These documents distinguish local results from hosted and physical-device evidence.
 
 The previous document locations contain forwarding links so existing bookmarks continue to work. No production resources are changed by this documentation update.
+
+## Release acceleration
+
+Start with [the submission preparation folder](submission/README.md). It contains the first five device cases, signing, store metadata and pilot operations. Hosted acceptance remains a prerequisite; no installation is authorized yet.
