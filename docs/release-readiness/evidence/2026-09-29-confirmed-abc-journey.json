@@ -1,0 +1,222 @@
+{
+  "environment": "development",
+  "consent": {
+    "recordedAt": "2026-09-29T09:12:30.538583+00:00",
+    "environment": "development",
+    "senders": [
+      {
+        "sender": "original ABC",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "A",
+            "status": "confirmed",
+            "primary": true
+          },
+          {
+            "recipientLabel": "B",
+            "status": "confirmed",
+            "primary": false
+          },
+          {
+            "recipientLabel": "C",
+            "status": "confirmed",
+            "primary": false
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 02",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "A",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 03",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "A",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 04",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "A",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 05",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "B",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 06",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "B",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 07",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "B",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 08",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "C",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 09",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "C",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "sender": "Load TEST 10",
+        "httpStatus": 200,
+        "contacts": [
+          {
+            "recipientLabel": "C",
+            "status": "confirmed",
+            "primary": true
+          }
+        ]
+      }
+    ]
+  },
+  "samples": [
+    {
+      "sequence": 0,
+      "status": 200,
+      "ms": 1039
+    },
+    {
+      "sequence": 1,
+      "status": 200,
+      "ms": 1038
+    },
+    {
+      "sequence": 2,
+      "status": 200,
+      "ms": 1038
+    },
+    {
+      "sequence": 3,
+      "status": 200,
+      "ms": 745
+    },
+    {
+      "sequence": 4,
+      "status": 200,
+      "ms": 826
+    },
+    {
+      "sequence": 5,
+      "status": 201,
+      "ms": 733
+    },
+    {
+      "sequence": 6,
+      "status": 200,
+      "ms": 1037
+    },
+    {
+      "sequence": 7,
+      "status": 200,
+      "ms": 927
+    },
+    {
+      "sequence": 8,
+      "status": 200,
+      "ms": 1037
+    },
+    {
+      "sequence": 9,
+      "status": 200,
+      "ms": 1037
+    }
+  ],
+  "distinctEvents": 1,
+  "progress": [
+    {
+      "at": "2026-09-29T09:13:50.840855+00:00",
+      "status": 200,
+      "recipients": [
+        {
+          "recipient": "C",
+          "delivery": "delivered",
+          "revoked": false,
+          "acknowledged": false
+        },
+        {
+          "recipient": "A",
+          "delivery": "delivered",
+          "revoked": false,
+          "acknowledged": false
+        },
+        {
+          "recipient": "B",
+          "delivery": "delivered",
+          "revoked": false,
+          "acknowledged": false
+        }
+      ]
+    }
+  ],
+  "crossUserRecipients": {
+    "status": 200,
+    "denied": true
+  },
+  "resolution": {
+    "status": 200,
+    "at": "2026-09-29T09:14:08.658874+00:00"
+  },
+  "limitations": [
+    "Signed callback rows not independently correlated in this run",
+    "Resolution email delivery not yet independently verified",
+    "Delayed routing and recipient capability isolation remain open",
+    "Not the full ten-sender load envelope"
+  ]
+}
