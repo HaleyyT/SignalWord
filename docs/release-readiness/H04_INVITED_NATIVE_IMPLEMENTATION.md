@@ -1,6 +1,6 @@
 # H04 native invited email-code repair
 
-Status: implemented and locally verified; matching development harness deployed. H04 is NOT PASS. Hosted Auth SMTP credential entry and real OTP acceptance remain pending. H17 has not started.
+Status: implemented and locally verified; updated development harness deployed. SMTP and code-only template saved and read back. H04 is NOT PASS: real OTP acceptance and remaining hosted negatives are pending. H17 has not started.
 
 ## What changed
 
@@ -46,3 +46,11 @@ The user approved connecting the existing Resend sender to development Auth. The
 Viewer deployment dpl_Dz47ogxhVDGL9aWcFtvHK7GAdq31 is published to the approved www.signalword.app development alias from source 9b03a7d. Both runtime proxy origins were explicitly pinned to project voepalyamwgenceawdvl during deployment. All six hosted routing/header checks passed; all three acceptance assets match the tested source by SHA-256. See evidence/2026-09-29-h04-otp-harness-deployment.json. This proves deployment compatibility, not hosted OTP acceptance. No backend function, migration, authority, schedule or enrollment setting was changed.
 
 The older private H04 fixture is not a consenting inbox and must not be reused for the email-code test. Prepare a fresh controlled invited fixture once SMTP is verified; never distribute embedded administrator credentials. Sol remains paused for hosted mutations until explicit handback.
+
+## Current SMTP/OTP checkpoint — 29 September, 23:00 Sydney
+
+User saved custom SMTP and corrected its username to lowercase resend. Dashboard readback confirms smtp.resend.com:465 with the password still hidden; no credential was extracted. Code-only magic-link/OTP subject and body were saved and survived reload. Existing eight-digit / 3600-second expiry is retained. Actual SMTP delivery remains unverified.
+
+A separately labelled, operator-provisioned H04 invited Auth identity was created for the consenting A inbox with email confirmation false and no password. It sends no invitation during provisioning, does not grant a session and does not enable public signup. The human OTP verification must establish inbox ownership. Private fixture contains only the invited email, development marker and public client key; no administrator key, password or session.
+
+Updated harness deployment dpl_7zPRfrM6qkF86dNkP7xU4CEd6Uva at www.signalword.app uses explicitly pinned development origins. All three assets match local hashes and all six routing/header checks pass. Live missing/invalid CAPTCHA requests both reject with HTTP 400 captcha_failed. Human OTP instructions were issued; no success is assumed. See evidence/2026-09-29-h04-smtp-otp-ready.json. Sol hosted changes remain paused; H08 read-only preparation continues.
