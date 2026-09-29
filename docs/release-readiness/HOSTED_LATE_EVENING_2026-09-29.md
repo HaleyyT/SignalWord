@@ -23,3 +23,11 @@ Commands: `npm test`; repository check and viewer build/test commands from packa
 Nine controlled identities remain, zero unexpected users, zero active incidents/timers, zero queued alert deliveries, zero unknown alert outcomes, five active development schedules. Authority allowed with journal version 16 and no health problems at readback. Original B is intentionally withdrawn; load sender 02 is deleted. Do not reuse that deleted identity or assume all original contacts remain confirmed.
 
 Save the human expired-proof result, then reload and run Public enrollment remains closed. Preserve fixture contents privately. Complete actual invited/mobile onboarding compatibility before closing H04. Finish provider fault/replay evidence and investigate/retest the load miss without weakening its budget. H08 purchase is not yet requested. H17 and exact signed-artifact reverification follow all hosted passes. Sentry stays disabled pending remaining symbolication/retention/subscription and device checks.
+
+## 20:04 human expiry result and independent recheck
+
+User screenshot confirms unused-token expiry: 310002.4 ms elapsed, HTTP 400, accepted false, captcha_failed, passed true. The [transcribed screenshot evidence](evidence/2026-09-29-human-turnstile-expiry-screenshot.json) is explicitly distinguished from the original downloaded JSON. Closed-enrollment human result remains pending.
+
+Onboarding code inspection confirms `SupabaseSessionManager.signInAnonymously` posts to `/auth/v1/signup`; there is no invited-session bootstrap in that manager. With global signup disabled, password-login harness success cannot establish a working fresh-device onboarding journey. H04 must remain open until a reviewed invitation-only onboarding path is implemented and verified, without enabling public enrollment. This is an engineering blocker, not a reason to repeat the same human test.
+
+Fresh verification: 195 Node and 44 viewer tests, repository/security/contracts, real local clone rehearsal and mocked browser harness all passed. [Log digests](evidence/2026-09-29-2004-local-recheck.json). These do not close H11, H16 or managed H08. Hosted remains 12/17. No paid operation, new hosted send, installation or manifest freeze performed.

@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "f9694ea",
+  "nodePassed": 195,
+  "viewerPassed": 44,
+  "repositorySecurityContracts": "pass",
+  "localCloneRehearsal": "pass",
+  "mockedBrowserHarness": "pass",
+  "realHostedGatesClosed": 0,
+  "logs": {
+    "regression": {
+      "path": "/private/tmp/signalword-2004-regression.log",
+      "sha256": "4aba0cdf7b4e47a350620b14e2bbcc4781d67e56eb8e11b1c6a79b9d288d2f67"
+    },
+    "clone": {
+      "path": "/private/tmp/signalword-2004-clone.log",
+      "sha256": "993aca203fa97d0b41bf2e53ebd93f8372fd83dedf58d696fa9211fb8b7bcbdd"
+    },
+    "browser": {
+      "path": "/private/tmp/signalword-2004-browser.log",
+      "sha256": "6c9a935909dc95cd7d32120194eeac1d3d231eac2a6e1a8b5720a353fc93c5e2"
+    }
+  }
+}
