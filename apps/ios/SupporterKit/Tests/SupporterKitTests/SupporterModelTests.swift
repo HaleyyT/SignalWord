@@ -61,6 +61,23 @@ import XCTest
         await relaunched.restore()
         XCTAssertEqual(relaunched.selectedAppearance, "ocean")
     }
+    func testColdLaunchRefreshRecoversSavedAppearanceWithoutRestorePurchase() async {
+        let fake = Fake(); fake.active = true
+        let suite = UUID().uuidString
+        let prefs = UserDefaults(suiteName: suite)!
+        defer { prefs.removePersistentDomain(forName: suite) }
+        let first = SupporterModel(service: fake, preferences: prefs)
+        await first.refresh(); first.select("ocean")
+        let relaunched = SupporterModel(service: fake, preferences: prefs)
+        XCTAssertEqual(relaunched.appearance, "ocean")
+        XCTAssertFalse(relaunched.active)
+        await relaunched.refresh()
+        XCTAssertEqual(relaunched.selectedAppearance, "ocean")
+        XCTAssertEqual(fake.purchases, 0)
+        fake.active = false
+        await relaunched.refresh()
+        XCTAssertEqual(relaunched.selectedAppearance, "standard")
+    }
     func testPurchaseFailureNeverUnlocksOrLeavesBusy() async {
         let fake = Fake(); let subject = model(fake)
         await subject.refresh(); fake.fails = true

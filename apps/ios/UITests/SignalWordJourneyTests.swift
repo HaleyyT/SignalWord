@@ -29,7 +29,7 @@ final class SignalWordJourneyTests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-contact-read-fails-once"]
         app.launch()
-        let warning = app.staticTexts["SignalWord could not restore your protected session. Check the connection and try again."]
+        let warning = app.staticTexts["Your account data could not be loaded. Check the connection and retry. Your saved contact has not been replaced."]
         XCTAssertTrue(warning.waitForExistence(timeout: 5))
         XCTAssertTrue(warning.waitForNonExistence(timeout: 25))
         XCTAssertTrue(app.buttons["Send TEST alert"].exists)
@@ -39,7 +39,7 @@ final class SignalWordJourneyTests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-contact-read-failure"]
         app.launch()
-        let warning = app.staticTexts["SignalWord could not restore your protected session. Check the connection and try again."]
+        let warning = app.staticTexts["Your account data could not be loaded. Check the connection and retry. Your saved contact has not been replaced."]
         XCTAssertTrue(warning.waitForExistence(timeout: 5))
         XCTAssertFalse(warning.waitForNonExistence(timeout: 15))
     }
@@ -49,7 +49,7 @@ final class SignalWordJourneyTests: XCTestCase {
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-contact-read-cancelled"]
         app.launch()
         XCTAssertTrue(app.staticTexts["Finish your setup"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["SignalWord could not restore your protected session. Check the connection and try again."].exists)
+        XCTAssertFalse(app.staticTexts["Your account data could not be loaded. Check the connection and retry. Your saved contact has not been replaced."].exists)
     }
 
     func testSignOutKeepsAccountAndReturnsToSignIn() {
@@ -152,6 +152,21 @@ final class SignalWordJourneyTests: XCTestCase {
         XCTAssertTrue(app.buttons["supporter.open"].waitForExistence(timeout: 5))
         app.buttons["navigation.Home"].tap()
         XCTAssertTrue(app.buttons["alert.trigger"].waitForExistence(timeout: 5))
+    }
+
+    func testSupporterPurchaseAndSelectedAppearanceSurviveColdLaunch() {
+        launchFresh(); completeContactSetup()
+        app.buttons["navigation.Settings"].tap(); tap("supporter.open")
+        tap("supporter.buy"); tap("supporter.appearance.ocean")
+        app.terminate(); app.launchArguments = ["--ui-testing"]; app.launch()
+        XCTAssertTrue(app.buttons["navigation.Home"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "value == %@", "Appearance: ocean")).firstMatch.waitForExistence(timeout: 10), "Saved accent refreshes before opening Settings")
+        app.buttons["navigation.Settings"].tap(); tap("supporter.open")
+        XCTAssertTrue(app.buttons["supporter.appearance.ocean"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["supporter.appearance.ocean"].isSelected)
+        XCTAssertFalse(app.buttons["supporter.buy"].exists)
+        tap("supporter.restore")
+        XCTAssertTrue(app.staticTexts["Your supporter purchase is restored."].waitForExistence(timeout: 5))
     }
 
     func testContactNetworkInvitationRoutingAndRelaunch() {

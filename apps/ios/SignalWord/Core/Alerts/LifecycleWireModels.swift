@@ -48,3 +48,16 @@ struct ResolvedAlertProjection: Decodable, Equatable, Sendable {
 
 
 struct ProfileProjection: Codable, Sendable { let displayName: String }
+
+enum UserAPIError: Error, Sendable {
+    case unavailable
+    case rejected(statusCode: Int)
+    case invalidResponse
+}
+
+enum DeviceLocationAuthorization: Sendable {
+    case notRequested
+    case approximate
+    case precise
+    case denied
+}

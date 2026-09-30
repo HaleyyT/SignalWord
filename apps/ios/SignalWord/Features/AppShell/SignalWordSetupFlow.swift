@@ -18,25 +18,26 @@ struct SignalWordSetupFlow: View {
                     if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
                     if model.needsIdentityVerification {
                         if SignalWordConfiguration.verificationURL != nil {
-                            TextField("Invited email", text: $model.invitedEmail)
+                            Text(model.isCreatingAccount ? "Create account" : "Sign in").font(.title2.weight(.semibold))
+                            TextField("Email address", text: $model.invitedEmail)
                                 .textContentType(.emailAddress)
                                 .keyboardType(.emailAddress)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .disabled(model.isSigningIn || model.invitedCodeRequested)
                                 .accessibilityIdentifier("onboarding.invitedEmail")
-                            if usePassword {
+                            if usePassword && !model.isCreatingAccount {
                                 SecureField("Password", text: $password)
                                     .textContentType(.password)
                                     .accessibilityIdentifier("onboarding.password")
-                                Text("Use a password already set for your invited account. This does not create a new account.")
+                                Text("Use the password for your existing account.")
                                     .font(.footnote)
                             } else if model.invitedCodeRequested {
                                 SecureField("Email sign-in code", text: $model.invitedCode)
                                     .textContentType(.oneTimeCode)
                                     .keyboardType(.numberPad)
                                     .accessibilityIdentifier("onboarding.invitedCode")
-                                Button("Use another invited email") { model.changeInvitedEmail() }
+                                Button("Change email address") { model.changeInvitedEmail() }
                                     .disabled(model.isSigningIn)
                                 Button("Sign in") { Task { await model.verifyInvitedCode() } }
                                     .disabled(model.isSigningIn || model.invitedCode.isEmpty)
@@ -45,22 +46,39 @@ struct SignalWordSetupFlow: View {
                             Button(usePassword ? "Verify and sign in" : (model.invitedCodeRequested ? "Request another code" : "Verify and request code")) { verificationPassword = password; showVerification = true }
                                 .buttonStyle(.borderedProminent)
                                 .accessibilityIdentifier("onboarding.verifyIdentity")
-                                .disabled(model.isSigningIn || model.invitedEmail.isEmpty || (usePassword && password.isEmpty))
+                                .disabled(model.isSigningIn || model.invitedEmail.isEmpty || (usePassword && !model.isCreatingAccount && password.isEmpty))
+                            if !model.isCreatingAccount {
+                            Link("Forgot password", destination: URL(string: "https://www.signalword.app/auth/recovery")!)
                             Button(usePassword ? "Use an email code" : "Use an existing password") {
                                 model.changeInvitedEmail()
                                 password = ""
                                 usePassword.toggle()
                             }
                             .disabled(model.isSigningIn)
+                            }
+                            if !model.requiresSessionRecovery && !model.hasEnteredDashboard {
+                                Button(model.isCreatingAccount ? "Already have an account? Sign in" : "New to SignalWord? Create account") {
+                                    model.changeInvitedEmail(); password = ""; usePassword = false
+                                    model.isCreatingAccount.toggle()
+                                }.disabled(model.isSigningIn)
+                            }
                         } else {
                             Text("Account verification is not configured in this build. Contact support before continuing.")
                                 .font(.footnote)
                         }
                     }
-                    switch model.stage {
-                    case .understand: introduction
-                    case .contact: contactSetup
-                    case .rehearse: rehearsalSetup
+                    if !model.needsIdentityVerification {
+                        if model.requiresSessionRecovery {
+                            Button("Sign in again") { Task { await model.signInAgain() } }
+                        } else if model.accountLoadState == .unavailable {
+                            Button("Retry account loading") { Task { await model.recover() } }
+                        } else {
+                            switch model.stage {
+                            case .understand: introduction
+                            case .contact: contactSetup
+                            case .rehearse: rehearsalSetup
+                            }
+                        }
                     }
                     if model.identityReady {
                         Button("Sign out") { showSignOut = true }
@@ -97,7 +115,7 @@ struct SignalWordSetupFlow: View {
                 if let url = SignalWordConfiguration.verificationURL {
                     SignupVerificationView(url: url) { token in
                         showVerification = false
-                        if usePassword {
+                        if usePassword && !model.isCreatingAccount {
                             let submittedPassword = verificationPassword
                             verificationPassword = ""
                             password = ""
@@ -106,7 +124,7 @@ struct SignalWordSetupFlow: View {
                             Task { await model.requestInvitedCode(captchaToken: token) }
                         }
                     }
-                    .navigationTitle("Verify invited sign-in")
+                    .navigationTitle("Verify account access")
                     .toolbar { Button("Cancel") { verificationPassword = ""; showVerification = false } }
                 }
             }

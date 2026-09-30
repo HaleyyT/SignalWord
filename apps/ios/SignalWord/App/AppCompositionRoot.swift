@@ -44,6 +44,9 @@ enum AppCompositionRoot {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
             },
+            identityID: { try await api.identityID() },
+            beginReauthentication: { try await api.beginReauthentication() },
+            requestRegistrationCode: { email, token in try await api.requestRegistrationCode(email: email, captchaToken: token) },
             requestInvitedCode: { email, token in try await api.requestInvitedCode(email: email, captchaToken: token) },
             verifyInvitedCode: { email, code in try await api.verifyInvitedCode(email: email, code: code) },
             signOut: { try await alertRunner.signOut(api: api) },
