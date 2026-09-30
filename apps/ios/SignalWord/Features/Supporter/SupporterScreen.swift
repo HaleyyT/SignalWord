@@ -51,7 +51,7 @@ struct SupporterScreen: View {
         .task { await model.refresh() }
     }
     private var accent: Color {
-        model.selectedAppearance == "ocean" ? .cyan : model.selectedAppearance == "lavender" ? .purple : SignalWordColor.action
+        SignalWordAccent(appearance: model.selectedAppearance).link
     }
 }
 

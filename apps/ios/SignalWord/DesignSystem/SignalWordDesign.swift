@@ -17,6 +17,37 @@ enum SignalWordColor {
     static let calm = Color(red: 0.08, green: 0.10, blue: 0.13)
 }
 
+/// Cosmetic accents never replace warning, delivery or safety-state colours.
+struct SignalWordAccent {
+    let link: Color
+    let action: Color
+
+    init(appearance: String = "standard") {
+        switch appearance {
+        case "ocean":
+            link = Color(red: 0.52, green: 0.87, blue: 1)
+            action = Color(red: 0.20, green: 0.63, blue: 0.88)
+        case "lavender":
+            link = Color(red: 0.88, green: 0.70, blue: 1)
+            action = Color(red: 0.64, green: 0.36, blue: 0.86)
+        default:
+            link = SignalWordColor.link
+            action = SignalWordColor.action
+        }
+    }
+}
+
+private struct SignalWordAccentKey: EnvironmentKey {
+    static let defaultValue = SignalWordAccent()
+}
+
+extension EnvironmentValues {
+    var signalWordAccent: SignalWordAccent {
+        get { self[SignalWordAccentKey.self] }
+        set { self[SignalWordAccentKey.self] = newValue }
+    }
+}
+
 enum SignalWordSpacing {
     static let compact: CGFloat = 8
     static let control: CGFloat = 12

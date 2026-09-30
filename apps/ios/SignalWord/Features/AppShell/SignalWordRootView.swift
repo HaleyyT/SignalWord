@@ -49,6 +49,8 @@ struct SignalWordRootView: View {
     @State private var showSignOutConfirmation = false
     @State private var showContactEditor = false
 
+    private var accent: SignalWordAccent { SignalWordAccent(appearance: supporter.selectedAppearance) }
+
     var body: some View {
         Group {
             if model.hasEnteredDashboard && !model.needsIdentityVerification {
@@ -65,10 +67,11 @@ struct SignalWordRootView: View {
         }
         .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear(); timer.clear() } }
         .accessibilityValue("Appearance: " + supporter.selectedAppearance)
-        .tint(supporter.selectedAppearance == "ocean" ? .cyan : supporter.selectedAppearance == "lavender" ? Color(red: 0.76, green: 0.67, blue: 1) : SignalWordColor.link)
+        .environment(\.signalWordAccent, accent)
+        .tint(accent.link)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
-            ContactEditorSheet(model: model).environment(\.dynamicTypeSize, textSize)
+            ContactEditorSheet(model: model).environment(\.dynamicTypeSize, textSize).environment(\.signalWordAccent, accent)
         }
         .task { await model.recover() }
         .task(id: scenePhase) {
@@ -155,10 +158,10 @@ struct SignalWordRootView: View {
                             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                             .lineLimit(1)
                     }
-                    .foregroundStyle(selectedTab == tab ? SignalWordColor.link : SignalWordColor.secondaryText)
+                    .foregroundStyle(selectedTab == tab ? accent.link : SignalWordColor.secondaryText)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .padding(.vertical, 4)
-                    .background(selectedTab == tab ? SignalWordColor.action.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 14))
+                    .background(selectedTab == tab ? accent.action.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 14))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

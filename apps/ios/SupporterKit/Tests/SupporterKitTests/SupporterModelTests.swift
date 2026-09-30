@@ -62,21 +62,29 @@ import XCTest
         XCTAssertEqual(relaunched.selectedAppearance, "ocean")
     }
     func testColdLaunchRefreshRecoversSavedAppearanceWithoutRestorePurchase() async {
-        let fake = Fake(); fake.active = true
+        let fake = Fake(); fake.active = true; fake.restored = true
         let suite = UUID().uuidString
         let prefs = UserDefaults(suiteName: suite)!
         defer { prefs.removePersistentDomain(forName: suite) }
-        let first = SupporterModel(service: fake, preferences: prefs)
-        await first.refresh(); first.select("ocean")
-        let relaunched = SupporterModel(service: fake, preferences: prefs)
-        XCTAssertEqual(relaunched.appearance, "ocean")
-        XCTAssertFalse(relaunched.active)
-        await relaunched.refresh()
-        XCTAssertEqual(relaunched.selectedAppearance, "ocean")
-        XCTAssertEqual(fake.purchases, 0)
+        var current = SupporterModel(service: fake, preferences: prefs)
+        await current.refresh()
+        for choice in ["ocean", "lavender"] {
+            current.select(choice)
+            // A fresh UserDefaults instance verifies persisted preference, not
+            // just the first model's in-memory selection.
+            let relaunched = SupporterModel(service: fake, preferences: UserDefaults(suiteName: suite)!)
+            XCTAssertEqual(relaunched.appearance, choice)
+            XCTAssertFalse(relaunched.active)
+            await relaunched.refresh()
+            XCTAssertEqual(relaunched.selectedAppearance, choice)
+            await relaunched.restore()
+            XCTAssertEqual(relaunched.selectedAppearance, choice)
+            XCTAssertEqual(fake.purchases, 0)
+            current = relaunched
+        }
         fake.active = false
-        await relaunched.refresh()
-        XCTAssertEqual(relaunched.selectedAppearance, "standard")
+        await current.refresh()
+        XCTAssertEqual(current.selectedAppearance, "standard")
     }
     func testPurchaseFailureNeverUnlocksOrLeavesBusy() async {
         let fake = Fake(); let subject = model(fake)

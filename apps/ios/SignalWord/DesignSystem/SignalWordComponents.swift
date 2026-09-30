@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct PageHeading: View {
+    @Environment(\.signalWordAccent) private var accent
     let eyebrow: String
     let title: String
     let detail: String
@@ -11,7 +12,7 @@ struct PageHeading: View {
             Text(eyebrow)
                 .font(.caption.weight(.bold))
                 .tracking(1.3)
-                .foregroundStyle(SignalWordColor.link)
+                .foregroundStyle(accent.link)
             Text(title)
                 .font(.title.weight(.semibold))
                 .tracking(-0.55)
@@ -26,6 +27,7 @@ struct PageHeading: View {
 }
 
 struct PrivacyLine: View {
+    @Environment(\.signalWordAccent) private var accent
     let symbol: String
     let title: String
     let detail: String
@@ -34,7 +36,7 @@ struct PrivacyLine: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol)
                 .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(SignalWordColor.link)
+                .foregroundStyle(accent.link)
                 .frame(width: 22, height: 22)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
@@ -195,6 +197,7 @@ struct SignalOrb: View {
 }
 
 struct PrimaryButton: View {
+    @Environment(\.signalWordAccent) private var accent
     @Environment(\.isEnabled) private var isEnabled
     let title: String
     let symbol: String
@@ -212,7 +215,7 @@ struct PrimaryButton: View {
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, minHeight: 50)
             .foregroundStyle(SignalWordColor.canvas)
-            .background(LinearGradient(colors: [SignalWordColor.link, SignalWordColor.action], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
+            .background(LinearGradient(colors: [accent.link, accent.action], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
             .opacity(isEnabled ? 1 : 0.48)
         }
