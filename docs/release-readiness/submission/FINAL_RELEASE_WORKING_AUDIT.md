@@ -55,7 +55,7 @@ These are impacted regressions, NOT the complete final hosted/release suite.
 
 ## Live external state
 Devpost project 1449148, slug signalword: submission_draft, no video, no submitted_at, website field is marketing site rather than public store listing.
-RevenueCat project e0c77650: dashboard freshly showed Test Store only, no live transactions. Apple configuration form requires bundle ID and private in-app purchase P8/Key ID/Issuer ID. No credential uploaded or new app saved.
+RevenueCat update: Apple app app80bbacf3d1 now has valid owner-uploaded IAP credentials and bundle com.signalword.app. Verified product com.signalword.supporter.appearance (non-consumable), supporter entitlement, supporter offering and $rc_lifetime package mapping. Actual Apple purchase/restore remains unverified; no transaction proof. See REVENUECAT_AND_REVIEWER_HANDOFF.md for the current account blocker and source changes.
 Normal Shipaton requirements freshly obtained through Devpost MCP: working RevenueCat purchase, public listing, public <=2 minute video, 1024 icon, 1179x2556 screenshot without device frame, trial or judge premium code.
 Submission deadline: 2026-10-01T06:45:00Z = 1 October 2026 16:45 Australia/Sydney.
 Public release eligibility is separately stated as August 1–September 30; do not infer that a later public release qualifies merely because form remains open.
@@ -92,9 +92,9 @@ https://developer.apple.com/app-store/review/guidelines/
 
 ## Owner-only dependencies
 1. Complete legitimate Apple agreements/tax/banking where required; never send personal identifiers in chat.
-2. Upload Apple purchase key into the prepared RevenueCat form directly; no private key committed or shared in chat.
+2. Apple purchase key upload is complete and RevenueCat reports Valid credentials. No private key committed or shared in chat.
 3. Perform final physical purchase/restore and targeted recovery tests once engineering supplies the replacement build.
 4. Approve final App Review submission only when complete, then approve public release after Apple approval.
 No claim of >=96 or full readiness. Engineering work remains: full inventory, reviewer flow, provider setup, hosted gates, final assets/video, archive and freeze.
 
-Recovery repair committed as b7ea4e1. Build-4 configuration checks passed after increment. RevenueCat Apple form was prepared with com.signalword.app; Save was not pressed and no private key uploaded.
+Recovery repair committed as b7ea4e1. Build-4 configuration checks passed after increment. The subsequent RevenueCat setup and reviewer authentication implementation are recorded in REVENUECAT_AND_REVIEWER_HANDOFF.md; older readiness entries above are historical unless explicitly updated.
