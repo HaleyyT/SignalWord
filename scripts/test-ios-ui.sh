@@ -25,7 +25,12 @@ sys.exit("No available iPhone simulator. Install an iOS runtime in Xcode.")
 fi
 results="$(mktemp -d "${TMPDIR:-/tmp}/signalword-ui.XXXXXX")"
 printf 'UI test artifacts: %s\n' "$results"
-xcodebuild -quiet \
+# UI fixtures do not exempt the app from build configuration validation.
+config_args=()
+if [ -n "${SIGNALWORD_XCCONFIG:-}" ]; then
+  config_args=(-xcconfig "$SIGNALWORD_XCCONFIG")
+fi
+xcodebuild -quiet "${config_args[@]}" \
   -project apps/ios/SignalWord.xcodeproj -scheme SignalWord \
   -configuration Debug -destination "platform=iOS Simulator,id=$device_id" \
   -derivedDataPath "$results/build" -resultBundlePath "$results/Journey.xcresult" \
