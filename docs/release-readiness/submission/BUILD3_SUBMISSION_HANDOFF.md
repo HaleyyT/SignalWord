@@ -43,3 +43,7 @@ At the owner's subsequent request, build 1.0 (3) was archived, exported with App
 Archive: `/private/tmp/SignalWord-1.0-3-TestFlight.xcarchive`. Distribution profile verified: correct team/bundle/App Group, get-task-allow false, no device list, beta-reports-active true. Archive app and dSYM UUID match. Upload and screenshot evidence are retained alongside `2026-09-30-testflight-build3.json`.
 
 Next account action: build detail → Provide Export Compliance Information. Final export declaration remains owner-reviewed; no legal answer was submitted automatically. Browser inspection reached the exact build page, but attempts to open its questionnaire timed out. Once compliance is complete, add the owner to an internal test group and assign this build. TestFlight installation is not yet represented as available. RevenueCat connection and physical acceptance remain pending.
+
+## Updated status — 30 September 2026, afternoon Sydney
+
+Owner cleared compliance, installed internal TestFlight Build 3 and reported successful physical journeys. The recurring session warning has a locally regression-tested repair at b7ea4e1; successor version is 1.0 (4), not archived or uploaded. See FINAL_RELEASE_WORKING_AUDIT.md for current failures, user-reported passes, live RevenueCat/Devpost state, branch decisions and required retests. Earlier Missing Compliance/no-install entries above are historical. H17 remains unfrozen.
