@@ -22,7 +22,7 @@ export function PrivacyPage() {
         </section>
         <section className="information-section">
           <h2>Optional purchases</h2>
-          <p>The Shipaton build offers a one-time supporter appearance purchase through RevenueCat and your app store. Billing uses a separate anonymous purchase identifier, transaction information, and SDK device information. We do not attach your safety account, contact addresses, phrases, alert links, or location to RevenueCat. Safety features remain free. Store transaction records are separate from safety-account deletion; deleting your account does not refund a purchase. Contact support for billing-data questions.</p>
+          <p>SignalWord offers a one-time supporter appearance purchase through RevenueCat and your app store. Billing uses a separate anonymous purchase identifier, transaction information, and SDK device information to provide purchases, restore entitlements, and analyse purchase activity. We do not attach your safety account, contact addresses, phrases, alert links, or location to RevenueCat. Safety features remain free. Store transaction records are separate from safety-account deletion; deleting your account does not refund a purchase. Contact support for billing-data questions.</p>
         </section>
         <section className="information-section">
           <h2>Retention</h2>
