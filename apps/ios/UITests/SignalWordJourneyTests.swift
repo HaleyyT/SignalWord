@@ -4,6 +4,33 @@ import XCTest
 final class SignalWordJourneyTests: XCTestCase {
     private var app: XCUIApplication!
 
+    func testPreparationWarningClearsAfterSuccessfulRetryWithoutRelaunch() {
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-contact-read-fails-once"]
+        app.launch()
+        let warning = app.staticTexts["SignalWord could not restore your protected session. Check the connection and try again."]
+        XCTAssertTrue(warning.waitForExistence(timeout: 5))
+        XCTAssertTrue(warning.waitForNonExistence(timeout: 25))
+        XCTAssertTrue(app.buttons["Send TEST alert"].exists)
+    }
+
+    func testPreparationWarningRemainsWhileContactReadStillFails() {
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-contact-read-failure"]
+        app.launch()
+        let warning = app.staticTexts["SignalWord could not restore your protected session. Check the connection and try again."]
+        XCTAssertTrue(warning.waitForExistence(timeout: 5))
+        XCTAssertFalse(warning.waitForNonExistence(timeout: 15))
+    }
+
+    func testCancelledPreparationDoesNotShowSessionFailure() {
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-contact-read-cancelled"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Finish your setup"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["SignalWord could not restore your protected session. Check the connection and try again."].exists)
+    }
+
     private func launchFresh() {
         continueAfterFailure = false
         app = XCUIApplication()

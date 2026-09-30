@@ -4,7 +4,7 @@
   "viewerOrigin": "https://www.signalword.app",
   "app": {
     "version": "1.0",
-    "build": "3",
+    "build": "4",
     "bundleId": "com.signalword.app",
     "appGroup": "group.com.signalword.shared",
     "minimumIOS": "18.0"
@@ -18,6 +18,9 @@
     "sms": false,
     "professionalMonitoring": false
   },
-  "apiContractVersions": [1, 2],
+  "apiContractVersions": [
+    1,
+    2
+  ],
   "crashReporting": "disabled-pending-hosted-and-device-verification"
 }
