@@ -45,7 +45,8 @@ enum AppCompositionRoot {
                 }
             },
             requestInvitedCode: { email, token in try await api.requestInvitedCode(email: email, captchaToken: token) },
-            verifyInvitedCode: { email, code in try await api.verifyInvitedCode(email: email, code: code) }
+            verifyInvitedCode: { email, code in try await api.verifyInvitedCode(email: email, code: code) },
+            signInWithPassword: { email, password, token in try await api.signInWithPassword(email: email, password: password, captchaToken: token) }
         )
     }
 

@@ -75,4 +75,54 @@ final class InvitedSignInTests: XCTestCase {
         do { try await pending.value; XCTFail() } catch {}
         XCTAssertNil(box.load())
     }
+    func testPasswordSignInUsesProtectedBodyAndPersistsOnlyTokens() async throws {
+        let box = SessionBox(); let payload = success
+        let m = manager(box) { request in
+            XCTAssertEqual(request.url?.path, "/auth/v1/token")
+            XCTAssertEqual(request.url?.query, "grant_type=password")
+            XCTAssertEqual(request.httpMethod, "POST")
+            let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+            XCTAssertEqual(body["email"] as? String, "review@example.com")
+            XCTAssertEqual(body["password"] as? String, " exact password ")
+            XCTAssertEqual((body["gotrue_meta_security"] as? [String: String])?["captcha_token"], "proof")
+            XCTAssertNil(body["create_user"])
+            return (payload, HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+        try await m.signInWithPassword(email: " Review@Example.com ", password: " exact password ", captchaToken: "proof")
+        XCTAssertEqual(box.load()?.accessToken, "access")
+        let relaunched = manager(box) { _ in XCTFail("Reuse valid session"); throw URLError(.badURL) }
+        let token = try await relaunched.accessToken(createIfMissing: false)
+        XCTAssertEqual(token, "access")
+    }
+    func testInvalidPasswordInputNeverReachesNetwork() async {
+        let m = manager(SessionBox()) { _ in XCTFail("Invalid input must not be sent"); throw URLError(.badURL) }
+        for (email, password, captcha) in [("bad", "password", "proof"), ("a@example.com", "", "proof"), ("a@example.com", "password", "")] {
+            do { try await m.signInWithPassword(email: email, password: password, captchaToken: captcha); XCTFail() } catch {}
+        }
+    }
+    func testRejectedPasswordNeverCreatesSession() async {
+        for status in [400, 401, 403, 422, 429, 500] {
+            let box = SessionBox()
+            let m = manager(box) { request in
+                (Data("{}".utf8), HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+            }
+            do { try await m.signInWithPassword(email: "a@example.com", password: "wrong", captchaToken: "proof"); XCTFail() } catch {}
+            XCTAssertNil(box.load())
+        }
+    }
+    func testDeletionDuringPasswordSignInCannotRestoreSession() async throws {
+        let box = SessionBox(); let payload = success
+        let started = expectation(description: "password request started")
+        let m = manager(box) { request in
+            started.fulfill()
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            return (payload, HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+        let pending = Task { try await m.signInWithPassword(email: "a@example.com", password: "password", captchaToken: "proof") }
+        await fulfillment(of: [started], timeout: 2)
+        try await m.deleteLocalSession()
+        do { try await pending.value; XCTFail() } catch {}
+        XCTAssertNil(box.load())
+    }
+
 }

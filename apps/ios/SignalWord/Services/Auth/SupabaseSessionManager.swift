@@ -81,6 +81,22 @@ actor SupabaseSessionManager {
         _ = try await task.value
     }
 
+    func signInWithPassword(email: String, password: String, captchaToken: String) async throws {
+        guard tokenTask == nil, try load() == nil else { throw SessionError.configuration }
+        var components = URLComponents(url: supabaseURL.appending(path: "/auth/v1/token"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "grant_type", value: "password")]
+        guard let url = components?.url else { throw SessionError.configuration }
+        var request = request(path: "/auth/v1/token")
+        request.url = url
+        request.httpMethod = "POST"
+        request.httpBody = try InvitedSignIn.passwordBody(email: email, password: password, captchaToken: captchaToken)
+        let requestGeneration = generation
+        let task = Task { try await self.perform(request, fallbackRefreshToken: nil, generation: requestGeneration) }
+        tokenTask = task
+        defer { if generation == requestGeneration { tokenTask = nil } }
+        _ = try await task.value
+    }
+
     func deleteLocalSession() throws {
         // Invalidate outstanding responses even if their transport ignores cancellation.
         // Otherwise a late refresh/signup could recreate credentials after deletion.

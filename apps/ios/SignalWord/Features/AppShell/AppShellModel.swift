@@ -60,6 +60,8 @@ final class AppShellModel {
         var requestInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
         var verifyInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
 
+        var signInWithPassword: @Sendable (String, String, String) async throws -> Void = { _, _, _ in throw SessionError.configuration }
+
         static let unconfigured = LifecycleActions(
             prepare: { _ in throw SessionError.configuration },
             profile: { _ in throw SessionError.configuration },
@@ -281,6 +283,21 @@ final class AppShellModel {
             await prepare()
         } catch {
             accountMessage = "Code not accepted. It may be incorrect, expired or already used. Try again or request a new code."
+        }
+    }
+
+    func signInWithPassword(password: String, captchaToken: String) async {
+        guard !isSigningIn, !deletionBlocksSignIn else { return }
+        isSigningIn = true
+        defer { isSigningIn = false }
+        do {
+            try await lifecycle.signInWithPassword(invitedEmail, password, captchaToken)
+            invitedEmail = ""
+            invitedCode = ""
+            invitedCodeRequested = false
+            await prepare()
+        } catch {
+            accountMessage = "Sign-in was not completed. Check your existing account credentials and connection, then verify again."
         }
     }
 

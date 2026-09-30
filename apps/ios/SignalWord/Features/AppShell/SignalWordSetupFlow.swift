@@ -4,6 +4,9 @@ import Observation
 struct SignalWordSetupFlow: View {
     @Bindable var model: AppShellModel
     @State private var showVerification = false
+    @State private var usePassword = false
+    @State private var password = ""
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -20,7 +23,13 @@ struct SignalWordSetupFlow: View {
                                 .autocorrectionDisabled()
                                 .disabled(model.isSigningIn || model.invitedCodeRequested)
                                 .accessibilityIdentifier("onboarding.invitedEmail")
-                            if model.invitedCodeRequested {
+                            if usePassword {
+                                SecureField("Password", text: $password)
+                                    .textContentType(.password)
+                                    .accessibilityIdentifier("onboarding.password")
+                                Text("Use a password already set for your invited account. This does not create a new account.")
+                                    .font(.footnote)
+                            } else if model.invitedCodeRequested {
                                 SecureField("Email sign-in code", text: $model.invitedCode)
                                     .textContentType(.oneTimeCode)
                                     .keyboardType(.numberPad)
@@ -31,10 +40,16 @@ struct SignalWordSetupFlow: View {
                                     .disabled(model.isSigningIn || model.invitedCode.isEmpty)
                                     .accessibilityIdentifier("onboarding.signIn")
                             }
-                            Button(model.invitedCodeRequested ? "Request another code" : "Verify and request code") { showVerification = true }
+                            Button(usePassword ? "Verify and sign in" : (model.invitedCodeRequested ? "Request another code" : "Verify and request code")) { showVerification = true }
                                 .buttonStyle(.borderedProminent)
                                 .accessibilityIdentifier("onboarding.verifyIdentity")
-                                .disabled(model.isSigningIn || model.invitedEmail.isEmpty)
+                                .disabled(model.isSigningIn || model.invitedEmail.isEmpty || (usePassword && password.isEmpty))
+                            Button(usePassword ? "Use an email code" : "Use an existing password") {
+                                model.changeInvitedEmail()
+                                password = ""
+                                usePassword.toggle()
+                            }
+                            .disabled(model.isSigningIn)
                         } else {
                             Text("Account verification is not configured in this build. Contact support before continuing.")
                                 .font(.footnote)
@@ -59,12 +74,22 @@ struct SignalWordSetupFlow: View {
             .navigationTitle(model.stage.title)
             .navigationBarTitleDisplayMode(.inline)
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { password = "" }
+        }
+        .onDisappear { password = "" }
         .sheet(isPresented: $showVerification) {
             NavigationStack {
                 if let url = SignalWordConfiguration.verificationURL {
                     SignupVerificationView(url: url) { token in
                         showVerification = false
-                        Task { await model.requestInvitedCode(captchaToken: token) }
+                        if usePassword {
+                            let submittedPassword = password
+                            password = ""
+                            Task { await model.signInWithPassword(password: submittedPassword, captchaToken: token) }
+                        } else {
+                            Task { await model.requestInvitedCode(captchaToken: token) }
+                        }
                     }
                     .navigationTitle("Verify invited sign-in")
                     .toolbar { Button("Cancel") { showVerification = false } }

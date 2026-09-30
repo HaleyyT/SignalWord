@@ -72,6 +72,10 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
         try await sessionManager.verifyInvitedCode(email: email, code: code)
     }
 
+    func signInWithPassword(email: String, password: String, captchaToken: String) async throws {
+        try await sessionManager.signInWithPassword(email: email, password: password, captchaToken: captchaToken)
+    }
+
     func prepareIdentity(captchaToken: String? = nil) async throws {
         _ = try await sessionManager.accessToken(createIfMissing: true, captchaToken: captchaToken)
     }
