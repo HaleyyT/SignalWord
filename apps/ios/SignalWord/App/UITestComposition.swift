@@ -23,6 +23,7 @@ enum UITestComposition {
             await service.trigger(kind)
         }, lifecycle: .init(
             prepare: { _ in
+                if arguments.contains("--ui-invited-login") { throw SessionError.verificationRequired }
                 if arguments.contains("--ui-recovery-failure") { throw UserAPIError.invalidResponse }
             }, profile: { name in await service.profile(name) },
             recover: { _ in await service.recover() },

@@ -34,6 +34,17 @@ public enum InvitedSignIn {
             "gotrue_meta_security": ["captcha_token": captchaToken]
         ])
     }
+    public static func passwordBody(email: String, password: String, captchaToken: String) throws -> Data {
+        guard !password.isEmpty, password.utf8.count <= 4096,
+              SignupVerification.validToken(captchaToken) else {
+            throw SignupVerification.ValidationError.invalidToken
+        }
+        // Preserve the password exactly; only the email is normalized.
+        return try JSONSerialization.data(withJSONObject: [
+            "email": normalizedEmail(email), "password": password,
+            "gotrue_meta_security": ["captcha_token": captchaToken]
+        ])
+    }
     public static func verificationBody(email: String, code: String) throws -> Data {
         // Accept provider-configured 6–10 digit codes; expiry/single-use is server-owned.
         guard (6...10).contains(code.count), code.allSatisfy({ $0.isASCII && $0.isNumber }) else {

@@ -4,6 +4,27 @@ import XCTest
 final class SignalWordJourneyTests: XCTestCase {
     private var app: XCUIApplication!
 
+    func testExistingPasswordSignInKeepsEmailCodeOption() {
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-invited-login"]
+        app.launch()
+        let email = app.textFields["onboarding.invitedEmail"]
+        XCTAssertTrue(email.waitForExistence(timeout: 5))
+        tap("Use an existing password")
+        let password = app.secureTextFields["onboarding.password"]
+        XCTAssertTrue(password.exists)
+        XCTAssertFalse(app.buttons["onboarding.verifyIdentity"].isEnabled)
+        email.tap(); email.typeText("review@example.test")
+        password.tap(); password.typeText("fixture-password")
+        XCTAssertTrue(app.buttons["onboarding.verifyIdentity"].isEnabled)
+        app.swipeDown()
+        tap("Use an email code")
+        XCTAssertFalse(password.exists)
+        XCTAssertTrue(app.buttons["Verify and request code"].exists)
+        tap("Use an existing password")
+        XCTAssertFalse(app.buttons["onboarding.verifyIdentity"].isEnabled, "Switching modes must clear the password")
+    }
+
     func testPreparationWarningClearsAfterSuccessfulRetryWithoutRelaunch() {
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-contact-read-fails-once"]
