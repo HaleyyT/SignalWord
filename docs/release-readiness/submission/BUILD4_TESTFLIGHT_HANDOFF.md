@@ -19,3 +19,13 @@ Artifacts: /private/tmp/SignalWord-1.0-4-Release.xcarchive; /private/tmp/SignalW
 ## Apple processing readback
 
 At approximately 19:13 Sydney Apple lists upload Complete and Build 4 Missing Compliance; Groups (0). Owner export declaration requested. Not yet represented as installable. Production and sandbox notification fields both showed the full matching RevenueCat endpoint after saving; no notification delivery claimed. Apple UI did not expose a version selector in those dialogs. Confirm callback format with the actual sandbox event.
+
+## Follow-up after owner export compliance
+
+Apple Build 4 detail no longer shows the export-compliance prompt, and SignalWord Internal is assigned with one tester. Build 4 is selectable for normal App Store submission; Build 3 remains disabled in that picker. Build 4 was selected and saved in version 1.0. This does not prove installation on the owner's phone.
+
+Version 1.0 was changed from automatic to manual release and saved. Promotional text was replaced with the conservative check-in/rehearsal/email wording from STORE_SUBMISSION.md. Six existing store screenshots are listed but their visual accuracy is not yet revalidated. Review credentials and contact fields were blank at inspection. No App Review submission was performed.
+
+Build 4 has existing-account password sign-in but no sign-out UI. Do not use account deletion to reach reviewer login. Test on a separate clean installation, or implement and test a safe sign-out/account-switch path before recommending a replacement build. An external TestFlight group named Review is separate from the private App Review credential fields.
+
+Owner acceptance next: install/update through TestFlight, confirm 1.0 (4), preserve existing data, verify TEST delivery/acknowledgement/resolution and session recovery; then sandbox purchase/unlock/relaunch/restore. Reviewer authentication and controlled-contact setup remain unverified. IAP review screenshot, first-IAP association, privacy, age rating, review contact and final screenshot audit remain open.
