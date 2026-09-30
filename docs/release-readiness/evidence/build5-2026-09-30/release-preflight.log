@@ -1,0 +1,10 @@
+
+> signalword@0.1.0 release:preflight
+> node scripts/release-preflight.mjs
+
+PASS Repository verification - > signalword@0.1.0 verify
+PASS iOS source syntax
+PASS Full Xcode toolchain - Xcode 27.0
+PASS Local Supabase stack - Local Supabase services are running.
+PASS Database migration and RLS integration - Database integration and RLS policy tests passed.
+PASS Viewer copy audit - No em/en dashes in public viewer copy
