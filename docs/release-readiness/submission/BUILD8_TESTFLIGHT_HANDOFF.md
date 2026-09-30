@@ -1,5 +1,15 @@
 # Build 8 final candidate and acceptance handoff — 1 October 2026
 
+## Latest Apple status — 04:16 Sydney, 1 October 2026
+
+**SUBMITTED: Waiting for Review.** Apple independently shows two submitted items: **iOS App 1.0 (8)** and **SignalWord Supporter Appearance**, both Waiting for Review. Submission ID `871aa417-f89f-48d8-b7ee-5bb67d86c2f8`. The owner provided the required IAP screenshot and confirmed submission; the browser readback verifies receipt. App download pricing is free. Automatic release was saved before submission.
+
+[Open the received submission](https://appstoreconnect.apple.com/apps/6817293151/distribution/reviewsubmissions/details/871aa417-f89f-48d8-b7ee-5bb67d86c2f8). [Redacted evidence](../evidence/build8-2026-10-01/apple-submission-readback.json).
+
+This closes the Apple IAP screenshot, association, and final submission tasks. It does **not** establish Apple approval, public store availability, Devpost submission, or completion of the independent hosted operational gates. The owner reports the remaining account setup completed; exact final DSA status has not been independently retained. Earlier checklist/status sections below are the historical pre-submission audit and must not be mistaken for the latest submission status.
+
+## Historical candidate and pre-submission audit
+
 This replaces the Build 6/7 testing instructions. Build 8 is the intended submission candidate; the owner has passed the focused password/session and both appearance/Apple-restore acceptance checks. This does not assert Apple approval or completion of hosted release gates. Keep this candidate unchanged unless a release blocker is found.
 
 ## Exact artifact and focused changes

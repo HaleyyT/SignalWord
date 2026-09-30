@@ -13,17 +13,17 @@
   "age_rating": "Saved: global 4+; regional exceptions include Age 12+. Owner approved exact proposed feature/content answers. Complete questionnaire response readback not retained yet.",
   "content_rights": "Saved: no third-party content, after owner confirmation of external-map-link distinction",
   "app_privacy": "Published after explicit owner approval; Apple readback: Published a few seconds ago; all ten audited categories present",
-  "iap_status": "Prepare for Submission",
-  "final_review_submitted": false,
+  "iap_status": "Waiting for Review",
+  "final_review_submitted": true,
   "url": "https://appstoreconnect.apple.com/apps/6817293151/distribution/ios/version/inflight",
   "privacy": "Only booleans retained for private reviewer credentials and owner contact details; values excluded.",
   "iap_us_base_price": "USD 5.99, verified in Current Price table",
-  "iap_availability": "133 of 175 countries or regions selected; preserved owner selection",
+  "iap_availability": "All 175 countries or regions selected in the final IAP page readback; earlier 133-country selection is historical.",
   "iap_localization": "English (U.S.): Ocean & Lavender theme; Unlock Ocean and Lavender accent colours.",
   "iap_review_notes_saved": true,
-  "iap_review_screenshot": "empty; actual Build 8 screenshot requested",
-  "dsa_status": "Non-trader shown; owner asked about updating for commercial activity; EU/public-contact owner step explained; no automatic reclassification performed",
-  "review_submission_authorization": "Owner explicitly instructed submission when ready; no submission performed while required gaps remain",
+  "iap_review_screenshot": "Owner supplied; Apple accepted the IAP into the same two-item submission.",
+  "dsa_status": "Owner reports completing the remaining setup; exact final trader/verification status has not been independently retained.",
+  "review_submission_authorization": "Owner authorized submission when ready and confirms both items submitted; live Apple readback independently verifies receipt.",
   "encryption_documentation": "No proprietary or independently implemented encryption found in app source. Native OS URLSession/Security used. Archive lacks ITSAppUsesNonExemptEncryption key; Apple showed no Missing Compliance warning. No new binary created solely to add an optional automation key.",
   "app_privacy_owner_legal_confirmation": true,
   "draft_validation": {
@@ -35,6 +35,28 @@
     "missing_field_list_provided": false,
     "local_time_sydney": "2026-10-01 03:20 approximately",
     "final_submission_sent": false,
-    "next_step": "Complete required IAP screenshot/association and owner DSA assessment, then retry. If unexplained error persists after draft requirements are complete, use Apple support; do not claim submission or approval."
-  }
+    "next_step": "Complete required IAP screenshot/association and owner DSA assessment, then retry. If unexplained error persists after draft requirements are complete, use Apple support; do not claim submission or approval.",
+    "historical": true,
+    "superseded_by": "Successful two-item submission at 04:16 Sydney; historical errors retained."
+  },
+  "submission_id": "871aa417-f89f-48d8-b7ee-5bb67d86c2f8",
+  "submission_url": "https://appstoreconnect.apple.com/apps/6817293151/distribution/reviewsubmissions/details/871aa417-f89f-48d8-b7ee-5bb67d86c2f8",
+  "submitted_at_sydney": "2026-10-01 04:16",
+  "submission_status": "Waiting for Review",
+  "submitted_items": [
+    {
+      "name": "iOS App 1.0",
+      "build": "8",
+      "type": "App Version",
+      "status": "Waiting for Review"
+    },
+    {
+      "name": "SignalWord Supporter Appearance",
+      "type": "In-App Purchase",
+      "status": "Waiting for Review"
+    }
+  ],
+  "app_download_price": "USD 0.00 / AUD 0.00 and other visible countries in owner Current Price screenshot.",
+  "encryption_apple_metadata": "Build 8 metadata: Binary State Validated; App Uses Non-Exempt Encryption No; Includes Symbols Yes.",
+  "approval_or_public_release_verified": false
 }
