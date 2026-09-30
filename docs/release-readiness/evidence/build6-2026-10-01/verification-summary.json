@@ -45,7 +45,13 @@
   "apple_processing": "Complete",
   "export_compliance": "Owner saved; Missing Compliance no longer shown",
   "internal_group": "SignalWord Internal",
-  "physical_build6_acceptance": "PENDING",
+  "physical_build6_acceptance": {
+    "ocean_relaunch": "Owner reports PASS",
+    "lavender_relaunch": "Owner reports colour did not stay; awaiting selected checkmark result to distinguish preference from visual similarity",
+    "password_login": "PENDING: owner confirmed which latest password to use",
+    "actual_restore_result": "PENDING explicit success/result",
+    "no_new_purchase_required_for_second_accent": true
+  },
   "settings": {
     "project_ref": "voepalyamwgenceawdvl",
     "project_name": "signalword-dev",
@@ -66,5 +72,26 @@
     "H11 fresh provider replay proof",
     "H16 retained duplicate p95 failure",
     "H17 coordinated final freeze"
-  ]
+  ],
+  "apple_test_instructions": "Saved",
+  "approved_metadata": {
+    "primary_category": "Utilities",
+    "subtitle": "Trusted contacts kept informed",
+    "state": "Saved"
+  },
+  "live_store_draft": {
+    "selected_build": 4,
+    "review_credentials": "blank at readback",
+    "review_contact": "blank at readback; owner handoff requested",
+    "age_rating": "not configured",
+    "screenshots_uploaded": 6,
+    "release_option": "manual",
+    "app_review_submitted": false
+  },
+  "superseded_by": {
+    "version": "1.0 (8)",
+    "source": "0326ece1cd5b99e3aea1844e569ac9bb7e88b7d9",
+    "handoff": "../../submission/BUILD8_TESTFLIGHT_HANDOFF.md",
+    "reason": "Later clarified Home/navigation appearance defect repaired; privacy declarations aligned with approximate location and delivery diagnostics."
+  }
 }

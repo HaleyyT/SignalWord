@@ -27,7 +27,7 @@ HAMM: Optional one-time supporter appearance monetises cosmetics rather than acc
 
 Build in Public: omit unless actual qualifying public posts are verified.
 Grand Prize growth: omit fabricated traction; report only verified public launch/download/revenue data.
-Project ID: e0c77650 (verify against live Project Settings before submission).
+Project ID: **proje0c77650**, verified in live Project Settings. The dashboard URL slug e0c77650 is not the full project ID requested by the submission field.
 Judge access: Apple non-consumable offer codes after approval, plus a separate functioning app login. Redemption -> open Supporter -> Restore purchases -> select Ocean or Lavender. Final exact code and expiry remain pending.
 
 ## Asset checklist

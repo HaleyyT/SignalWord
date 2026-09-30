@@ -1,5 +1,7 @@
 # Build 6 focused repair and TestFlight handoff — 1 October 2026
 
+**Superseded:** use [Build 8 acceptance instructions](BUILD8_TESTFLIGHT_HANDOFF.md). The later concrete Home/navigation palette defect was repaired in commit 43ee3fa. Both final appearance simulator journeys pass; actual replacement device acceptance remains open. Preserve the results below as historical Build 6 evidence.
+
 This supersedes Build 5's instructions for authentication, returning-account recovery and Supporter appearance. It is a testing candidate, not a declaration that all release gates passed.
 
 ## Exact candidate and changes
@@ -24,9 +26,13 @@ The bundled backend URL/public key match **signalword-dev / voepalyamwgenceawdvl
 
 Hosted recovery routes return 200 with no-store and restricted CSP. Supabase Site URL and recovery template point to HTTPS, not localhost. Explicitly approved email-code registration is enabled with email confirmation and Turnstile kept enabled. The existing anonymous-provider setting was left unchanged; the native app does not create anonymous accounts. `user-api` is ACTIVE version 13 with JWT verification true; other function versions are retained in evidence. No migration was introduced by this focused repair.
 
-Apple upload completed at **00:48 Sydney, 1 October**. Apple readback: Build Uploads **Complete**, compliance saved by owner, **SignalWord Internal assigned**. Build detail: [Build 6](https://appstoreconnect.apple.com/teams/f7b5e6dc-616b-47e4-ace2-bac071116633/apps/6817293151/testflight/ios/43b8ed3f-546e-4b13-afaa-61747aa3865c). External beta review and public App Review are separate; no final public submission or release was performed here.
+Apple upload completed at **00:48 Sydney, 1 October**. Apple readback: Build Uploads **Complete**, compliance saved by owner, **SignalWord Internal assigned**. Build detail: [Build 6](https://appstoreconnect.apple.com/teams/f7b5e6dc-616b-47e4-ace2-bac071116633/apps/6817293151/testflight/ios/43b8ed3f-546e-4b13-afaa-61747aa3865c). Focused What to Test instructions are saved. The owner approved and Apple saved primary category Utilities and subtitle “Trusted contacts kept informed” (30 characters). External beta review and public App Review are separate; no final public submission or release was performed here.
 
 Archive `/private/tmp/SignalWord-1.0-6-Release.xcarchive`; IPA `/private/tmp/SignalWord-1.0-6-export/SignalWord.ipa`; SHA-256 `ddb63271475151053510140ff2c6e530d1ba8976c979015e123b9d5e4695adba`. Full local logs/xcresults are referenced in [verification summary](../evidence/build6-2026-10-01/verification-summary.json).
+
+## Latest device report
+
+The owner reports Ocean remains after close/reopen. Lavender is reported as not remaining; the selected checkmark after relaunch is pending clarification because Lavender is close to Standard visually. One purchase unlocks both accents. Keep this item open until the device result is clear. Supplemental tests now exercise switching Ocean → Lavender, cold launch and restore; model tests pass, simulator result pending. No runtime change was made solely on this ambiguous report.
 
 ## Exact iPhone acceptance sequence
 
@@ -46,7 +52,7 @@ Completed: focused repairs, regression, signed artifact, upload/processing, owne
 
 ## B. Apple App Review Submission — YELLOW
 
-Build: uploaded/processed; compliance owner-saved. IAP: `com.signalword.supporter.appearance`, non-consumable, USD 5.99 base price; RevenueCat `supporter` offering/entitlement and lifetime package configured. Actual replacement purchase/restore and real IAP review screenshot still pending. Reviewer login: latest password route must pass on Build 6 without owner's inbox. Privacy/metadata/age/screenshots and same-submission first-IAP association require final live audit. Use [prepared review notes](APP_REVIEW_BUILD6_NOTES.md); credentials only in Apple's private fields. Do not click final Submit for Review before acceptance and owner approval.
+Build: uploaded/processed; compliance owner-saved. IAP: `com.signalword.supporter.appearance`, non-consumable, USD 5.99 base price; RevenueCat `supporter` offering/entitlement and lifetime package configured. Actual replacement purchase/restore and real IAP review screenshot still pending. Reviewer login: latest password route must pass on Build 6 without owner's inbox. Live draft still selects Build 4; six existing screenshots are uploaded but need comparison with the accepted candidate. Review sign-in and contact fields are blank, age rating is not configured, and final App Privacy and same-submission first-IAP association remain pending. Description/support link need the Build 6 draft adjustments below. Use [prepared review notes](APP_REVIEW_BUILD6_NOTES.md); credentials only in Apple's private fields. Do not click final Submit for Review before acceptance and owner approval.
 
 ## C. Public App Store Release — RED
 
