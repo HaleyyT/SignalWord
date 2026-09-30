@@ -2,6 +2,7 @@ import SwiftUI
 import Observation
 
 struct HomeScreen: View {
+    @Environment(\.signalWordAccent) private var accent
     @Environment(\.dynamicTypeSize) private var textSize
     @Bindable var model: AppShellModel
     let openPeople: () -> Void
@@ -68,7 +69,7 @@ struct HomeScreen: View {
                         .accessibilityHidden(true)
                 }
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(SignalWordColor.link)
+                    .foregroundStyle(accent.link)
                 Spacer()
                 Button(action: openSettings) {
                     Image(systemName: "slider.horizontal.3")

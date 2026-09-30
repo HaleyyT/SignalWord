@@ -157,16 +157,27 @@ final class SignalWordJourneyTests: XCTestCase {
     func testSupporterPurchaseAndSelectedAppearanceSurviveColdLaunch() {
         launchFresh(); completeContactSetup()
         app.buttons["navigation.Settings"].tap(); tap("supporter.open")
-        tap("supporter.buy"); tap("supporter.appearance.ocean")
-        app.terminate(); app.launchArguments = ["--ui-testing"]; app.launch()
-        XCTAssertTrue(app.buttons["navigation.Home"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "value == %@", "Appearance: ocean")).firstMatch.waitForExistence(timeout: 10), "Saved accent refreshes before opening Settings")
-        app.buttons["navigation.Settings"].tap(); tap("supporter.open")
-        XCTAssertTrue(app.buttons["supporter.appearance.ocean"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["supporter.appearance.ocean"].isSelected)
-        XCTAssertFalse(app.buttons["supporter.buy"].exists)
-        tap("supporter.restore")
-        XCTAssertTrue(app.staticTexts["Your supporter purchase is restored."].waitForExistence(timeout: 5))
+        tap("supporter.buy")
+        // A single non-consumable unlocks both accents; switching must replace the
+        // previous preference and survive a real process restart and restore.
+        for choice in ["ocean", "lavender"] {
+            tap("supporter.appearance." + choice)
+            XCTAssertTrue(app.buttons["supporter.appearance." + choice].isSelected)
+            app.terminate(); app.launchArguments = ["--ui-testing"]; app.launch()
+            XCTAssertTrue(app.buttons["navigation.Home"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "value == %@", "Appearance: " + choice)).firstMatch.waitForExistence(timeout: 10), "Saved accent refreshes before opening Settings")
+            let homeAccent = XCTAttachment(screenshot: app.screenshot())
+            homeAccent.name = choice.capitalized + " Home accent after cold launch — simulator fixture"
+            homeAccent.lifetime = .keepAlways
+            add(homeAccent)
+            app.buttons["navigation.Settings"].tap(); tap("supporter.open")
+            XCTAssertTrue(app.buttons["supporter.appearance." + choice].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["supporter.appearance." + choice].isSelected)
+            XCTAssertFalse(app.buttons["supporter.buy"].exists)
+            tap("supporter.restore")
+            XCTAssertTrue(app.staticTexts["Your supporter purchase is restored."].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["supporter.appearance." + choice].isSelected)
+        }
     }
 
     func testContactNetworkInvitationRoutingAndRelaunch() {
