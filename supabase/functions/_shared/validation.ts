@@ -41,6 +41,7 @@ export function parseIdempotencyKey(value: string | null): string {
 
 export function parseCreateAlert(value: unknown, nowMilliseconds = Date.now()): CreateAlertInput {
   if (!isRecord(value)) invalid("Request body must be an object.");
+  if (Object.keys(value).some(key => !["kind","triggerMethod","clientTriggeredAt","device","location","idempotencyKey"].includes(key))) invalid("Unsupported alert field.");
   if ("idempotencyKey" in value) invalid("Idempotency-Key must be sent only as a header.");
   if (value.kind !== "test" && value.kind !== "real") invalid("kind must be test or real.");
   if (!["vocalShortcut", "siri", "actionButton", "manual"].includes(String(value.triggerMethod))) {

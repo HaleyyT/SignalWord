@@ -2,6 +2,7 @@ import SwiftUI
 import Observation
 
 struct PeopleScreen: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     @Bindable var model: AppShellModel
     let editContact: () -> Void
     @State private var showWithdrawalConfirmation = false
@@ -12,9 +13,14 @@ struct PeopleScreen: View {
                 PageHeading(
                     eyebrow: "YOUR CIRCLE",
                     title: "People",
-                    detail: "One trusted person receives your alert and secure status link."
+                    detail: "Choose who receives your alerts. Each person confirms by email."
                 )
-                if model.hasContactDraft && model.contactStatus != "disabled" {
+                if !model.canEditContact {
+                    InlineMessage("Your saved contact is unavailable until account loading succeeds. Retry before making changes.", kind: .attention)
+                    SecondaryButton(title: model.requiresSessionRecovery ? "Sign in again" : "Retry account loading", symbol: "arrow.clockwise") {
+                        Task { if model.requiresSessionRecovery { await model.signInAgain() } else { await model.recover() } }
+                    }
+                } else if model.hasContactDraft && model.contactStatus != "disabled" {
                     recipientCard
                     if model.contactStatus != "confirmed" {
                         SecondaryButton(title: "Check confirmation", symbol: "arrow.clockwise") {
@@ -56,12 +62,14 @@ struct PeopleScreen: View {
                         }
                     }
                 }
+                ContactNetworkPanel()
                 if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
                 if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
                 Text("TEST messages are labelled TEST. Acknowledgement does not identify the reader or mean help is coming.")
                     .font(.caption)
                     .foregroundStyle(SignalWordColor.mutedText)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("people.footer")
             }
             .frame(maxWidth: 600)
             .padding(.horizontal, SignalWordSpacing.page)
@@ -69,7 +77,7 @@ struct PeopleScreen: View {
             .padding(.bottom, 32)
             .frame(maxWidth: .infinity)
         }
-        .background(SignalWordColor.canvas.ignoresSafeArea())
+        .background(SignalWordBackground())
         .toolbar(.hidden, for: .navigationBar)
         .confirmationDialog("Withdraw this person’s consent?", isPresented: $showWithdrawalConfirmation, titleVisibility: .visible) {
             Button("Withdraw consent", role: .destructive) { Task { await model.withdrawContact() } }
@@ -81,29 +89,50 @@ struct PeopleScreen: View {
 
     private var recipientCard: some View {
         SignalWordCard {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(SignalWordColor.action.opacity(0.14))
-                    Text(initials).font(.headline.weight(.semibold)).foregroundStyle(SignalWordColor.action)
-                }
-                .frame(width: 52, height: 52)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(model.contactName.isEmpty ? "Trusted person" : model.contactName)
-                        .font(.headline)
-                    HStack(spacing: 6) {
-                        Circle().fill(statusColor).frame(width: 7, height: 7)
-                            .accessibilityHidden(true)
-                        Text(statusLabel)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(SignalWordColor.secondaryText)
+            Group {
+                if textSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack { recipientAvatar; Spacer(); recipientBadge }
+                        recipientIdentity
+                    }
+                } else {
+                    HStack(spacing: 14) {
+                        recipientAvatar
+                        recipientIdentity
+                        Spacer(minLength: 0)
+                        recipientBadge
                     }
                 }
-                Spacer(minLength: 0)
-                Image(systemName: model.contactStatus == "confirmed" ? "checkmark.shield.fill" : "envelope.badge")
-                    .foregroundStyle(model.contactStatus == "confirmed" ? SignalWordColor.ready : SignalWordColor.attention)
-                    .accessibilityHidden(true)
             }
             .accessibilityElement(children: .combine)
+        }
+    }
+
+    private var recipientAvatar: some View {
+        Text(initials)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(SignalWordColor.link)
+            .frame(width: 52, height: 52)
+            .background(SignalWordColor.action.opacity(0.14), in: Circle())
+            .accessibilityHidden(true)
+    }
+
+    private var recipientBadge: some View {
+        Image(systemName: model.contactStatus == "confirmed" ? "checkmark.shield.fill" : "envelope.badge")
+            .font(.system(size: 22))
+            .foregroundStyle(statusColor)
+            .accessibilityHidden(true)
+    }
+
+    private var recipientIdentity: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(model.contactName.isEmpty ? "Trusted person" : model.contactName)
+                .font(.headline)
+                .fixedSize(horizontal: false, vertical: true)
+            Label(statusLabel, systemImage: model.contactStatus == "confirmed" ? "checkmark.circle" : "clock")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(SignalWordColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -221,7 +250,7 @@ struct ContactEditorSheet: View {
                     if let message = model.contactValidationMessage {
                         Text(message).font(.footnote).foregroundStyle(SignalWordColor.secondaryText)
                     }
-                    if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
+                if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
                     Text("Sending a new confirmation request invalidates the previous confirmation and clears earlier TEST evidence. The recipient must confirm again.")
                         .font(.caption)
                         .foregroundStyle(SignalWordColor.mutedText)
@@ -240,7 +269,8 @@ struct ContactEditorSheet: View {
                 .padding(.bottom, 32)
                 .frame(maxWidth: .infinity)
             }
-            .background(SignalWordColor.canvas.ignoresSafeArea())
+            .scrollDismissesKeyboard(.interactively)
+            .background(SignalWordBackground())
             .navigationTitle("Trusted person")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -252,7 +282,7 @@ struct ContactEditorSheet: View {
                 }
             }
         }
-        .tint(SignalWordColor.action)
+        .tint(SignalWordColor.link)
         .onAppear { model.beginContactEdit() }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)

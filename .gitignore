@@ -35,3 +35,6 @@ supabase/.env
 
 # Local isolated feature worktrees
 .worktrees/
+
+# Local Vercel project link and deployment cache
+.vercel/

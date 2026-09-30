@@ -9,6 +9,13 @@ enum DeviceCredentialStore {
         let accessToken: String
         let refreshToken: String
         let expiresAt: Date
+        let userID: String?
+        let reauthenticationUserID: String?
+        init(accessToken: String, refreshToken: String, expiresAt: Date, userID: String? = nil, reauthenticationUserID: String? = nil) {
+            self.accessToken = accessToken; self.refreshToken = refreshToken
+            self.expiresAt = expiresAt; self.userID = userID
+            self.reauthenticationUserID = reauthenticationUserID
+        }
     }
 
     static func loadBearerToken() throws -> String? {

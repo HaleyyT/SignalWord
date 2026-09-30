@@ -42,6 +42,7 @@ export function createDeliveryOutbox(configuration: { url: string; serviceRoleKe
           deliveryId: row.delivery_id,
           eventId: row.event_id,
           ...(typeof row.sender_name === "string" ? { senderName: row.sender_name.slice(0, 80) } : {}),
+          cause: row.cause === "missed_check_in" ? "missed_check_in" : "user_triggered",
           kind: row.kind,
           messageType: row.message_type,
           provider: row.provider,

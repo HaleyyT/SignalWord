@@ -11,7 +11,7 @@ struct CapabilityRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: symbol)
-                    .font(.body.weight(.medium))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(isReady ? SignalWordColor.ready : SignalWordColor.action)
                     .frame(width: 30, height: 30)
                     .accessibilityHidden(true)
@@ -24,7 +24,7 @@ struct CapabilityRow: View {
                 }
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(SignalWordColor.mutedText)
                     .accessibilityHidden(true)
             }

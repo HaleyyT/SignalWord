@@ -75,7 +75,8 @@ export function ViewerApp() {
       <section className="card" aria-labelledby="alert-title">
         {state.status === 'error' && <p className="refresh-warning" role="status">The information shown may not be current. Retrying…</p>}
         <p className="eyebrow">{event.kind === 'test' ? 'TEST · NO EMERGENCY' : 'REAL ALERT'}</p>
-        <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? 'resolved the alert' : 'sent an alert'}</h1>
+        <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? 'resolved the alert' : event.cause === 'missed_check_in' ? 'missed a check-in' : 'sent an alert'}</h1>
+        {event.cause === 'missed_check_in' && <p>A scheduled check-in was not completed within its grace period. This does not confirm danger. Contact the person directly.{event.checkInDeadline && ` Check-in was due ${formatTime(event.checkInDeadline)}.`}</p>}
         <p className="timestamp">Sent {formatTime(event.triggeredAt)}</p>
         <p className={`state state-${event.state}`} role="status" aria-live="polite" aria-atomic="true">
           {eventStateCopy[event.state]}

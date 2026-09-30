@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 select no_plan();
 insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values('81000000-0000-4000-8000-000000000001','authenticated','authenticated','correlation@example.test','{}','{}',now(),now());
@@ -7,7 +8,10 @@ insert into public.trusted_contacts(id,user_id,name,channel,destination_cipherte
 values('82000000-0000-4000-8000-000000000002','81000000-0000-4000-8000-000000000001','Trusted','email',repeat('d',48),repeat('f',64),1,'confirmed',now());
 set local role authenticated;
 select set_config('request.jwt.claim.sub','81000000-0000-4000-8000-000000000001',true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select * from public.create_or_reuse_alert('81000000-0000-4000-8000-000000000001','83000000-0000-4000-8000-000000000003','test','manual',repeat('t',43),'resend',repeat('p',48),1,null,now());
+set local role authenticated;
 reset role;
 select * from public.claim_alert_deliveries('84000000-0000-4000-8000-000000000004',1);
 update public.alert_deliveries set status='failed',completed_at=now(),last_error_code='OUTCOME_UNKNOWN',lease_owner=null,lease_expires_at=null;

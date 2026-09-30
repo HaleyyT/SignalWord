@@ -45,7 +45,7 @@ struct RemoteAlertAPI: AlertCreating {
     }
 
     func createAlert(_ command: AlertCommand, location: AlertLocationSnapshot?) async throws -> CreatedAlert {
-        var urlRequest = URLRequest(url: baseURL.appending(path: "/v1/alerts"))
+        var urlRequest = URLRequest(url: baseURL.appending(path: "/v2/alerts"))
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue(command.idempotencyKey.uuidString, forHTTPHeaderField: "Idempotency-Key")

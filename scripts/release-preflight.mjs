@@ -1,3 +1,4 @@
+import { localWorkdir } from "./local-fixture.mjs";
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
@@ -25,7 +26,7 @@ function check(label, passed, detail) {
 command('Repository verification', 'npm', ['run', 'verify'])
 command('iOS source syntax', 'bash', ['-lc', "find apps/ios/SignalWord -name '*.swift' -print0 | xargs -0 swiftc -parse && swiftc -parse apps/ios/Verification/main.swift"])
 command('Full Xcode toolchain', 'xcodebuild', ['-version'])
-command('Local Supabase stack', 'npx', ['supabase', 'status'], {
+command('Local Supabase stack', 'npx', ['supabase', '--workdir', localWorkdir, 'status'], {
   summarize: (passed) => passed
     ? 'Local Supabase services are running.'
     : 'Supabase status failed; run npx supabase status locally for diagnostics.',

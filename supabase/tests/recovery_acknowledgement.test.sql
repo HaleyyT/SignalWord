@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 select no_plan();
 insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values('71000000-0000-4000-8000-000000000001','authenticated','authenticated','recovery@example.test','{}','{}',now(),now());
@@ -8,8 +9,14 @@ values('72000000-0000-4000-8000-000000000002','71000000-0000-4000-8000-000000000
 set local role authenticated;
 select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
 select is(public.signalword_profile('71000000-0000-4000-8000-000000000001','My name')->>'displayName','My name','sender name can be set');
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$select * from public.create_or_reuse_alert('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000003','test','vocalShortcut',repeat('v',43),'resend',repeat('p',48),1,null,now()-interval '3 minutes')$$,'new client creates test with original trigger time');
+set local role authenticated;
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$select * from public.create_or_reuse_alert('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000004','test','vocalShortcut',repeat('w',43),'resend',repeat('p',48),1,null)$$,'old client signature stays compatible');
+set local role authenticated;
 select is(jsonb_array_length(public.recover_alerts('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000004')),1,'cooldown aliases recover their original event');
 reset role;
 select is((select count(*) from public.alert_events),1::bigint,'cooldown alias never creates another event');

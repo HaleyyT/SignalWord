@@ -4,6 +4,11 @@ import Observation
 struct SignalWordSetupFlow: View {
     @Bindable var model: AppShellModel
     @State private var showVerification = false
+    @State private var usePassword = false
+    @State private var showSignOut = false
+    @State private var password = ""
+    @State private var verificationPassword = ""
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -13,18 +18,72 @@ struct SignalWordSetupFlow: View {
                     if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
                     if model.needsIdentityVerification {
                         if SignalWordConfiguration.verificationURL != nil {
-                            Button("Verify new account") { showVerification = true }
+                            Text(model.isCreatingAccount ? "Create account" : "Sign in").font(.title2.weight(.semibold))
+                            TextField("Email address", text: $model.invitedEmail)
+                                .textContentType(.emailAddress)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .disabled(model.isSigningIn || model.invitedCodeRequested)
+                                .accessibilityIdentifier("onboarding.invitedEmail")
+                            if usePassword && !model.isCreatingAccount {
+                                SecureField("Password", text: $password)
+                                    .textContentType(.password)
+                                    .accessibilityIdentifier("onboarding.password")
+                                Text("Use the password for your existing account.")
+                                    .font(.footnote)
+                            } else if model.invitedCodeRequested {
+                                SecureField("Email sign-in code", text: $model.invitedCode)
+                                    .textContentType(.oneTimeCode)
+                                    .keyboardType(.numberPad)
+                                    .accessibilityIdentifier("onboarding.invitedCode")
+                                Button("Change email address") { model.changeInvitedEmail() }
+                                    .disabled(model.isSigningIn)
+                                Button("Sign in") { Task { await model.verifyInvitedCode() } }
+                                    .disabled(model.isSigningIn || model.invitedCode.isEmpty)
+                                    .accessibilityIdentifier("onboarding.signIn")
+                            }
+                            Button(usePassword ? "Verify and sign in" : (model.invitedCodeRequested ? "Request another code" : "Verify and request code")) { verificationPassword = password; showVerification = true }
                                 .buttonStyle(.borderedProminent)
                                 .accessibilityIdentifier("onboarding.verifyIdentity")
+                                .disabled(model.isSigningIn || model.invitedEmail.isEmpty || (usePassword && !model.isCreatingAccount && password.isEmpty))
+                            if !model.isCreatingAccount {
+                            Link("Forgot password", destination: URL(string: "https://www.signalword.app/auth/recovery")!)
+                            Button(usePassword ? "Use an email code" : "Use an existing password") {
+                                model.changeInvitedEmail()
+                                password = ""
+                                usePassword.toggle()
+                            }
+                            .disabled(model.isSigningIn)
+                            }
+                            if !model.requiresSessionRecovery && !model.hasEnteredDashboard {
+                                Button(model.isCreatingAccount ? "Already have an account? Sign in" : "New to SignalWord? Create account") {
+                                    model.changeInvitedEmail(); password = ""; usePassword = false
+                                    model.isCreatingAccount.toggle()
+                                }.disabled(model.isSigningIn)
+                            }
                         } else {
                             Text("Account verification is not configured in this build. Contact support before continuing.")
                                 .font(.footnote)
                         }
                     }
-                    switch model.stage {
-                    case .understand: introduction
-                    case .contact: contactSetup
-                    case .rehearse: rehearsalSetup
+                    if !model.needsIdentityVerification {
+                        if model.requiresSessionRecovery {
+                            Button("Sign in again") { Task { await model.signInAgain() } }
+                        } else if model.accountLoadState == .unavailable {
+                            Button("Retry account loading") { Task { await model.recover() } }
+                        } else {
+                            switch model.stage {
+                            case .understand: introduction
+                            case .contact: contactSetup
+                            case .rehearse: rehearsalSetup
+                            }
+                        }
+                    }
+                    if model.identityReady {
+                        Button("Sign out") { showSignOut = true }
+                            .disabled(!model.canSignOut)
+                            .accessibilityIdentifier("account.signOut")
                     }
                 }
                 .frame(maxWidth: 560)
@@ -33,19 +92,40 @@ struct SignalWordSetupFlow: View {
                 .padding(.bottom, 32)
                 .frame(maxWidth: .infinity)
             }
-            .background(SignalWordColor.canvas.ignoresSafeArea())
+            .scrollDismissesKeyboard(.interactively)
+            // Each setup step starts at its heading, including at accessibility text sizes.
+            .id(model.stage)
+            .background(SignalWordBackground())
             .navigationTitle(model.stage.title)
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { password = ""; verificationPassword = ""; showVerification = false }
+        }
+        .onDisappear { password = ""; if !showVerification { verificationPassword = "" } }
+        .confirmationDialog("Sign out of SignalWord?", isPresented: $showSignOut, titleVisibility: .visible) {
+            Button("Sign out") { Task { await model.signOut() } }
+                .accessibilityIdentifier("account.confirmSignOut")
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your account and server data are kept. Finish active alerts and check-in timers first. Vocal Shortcuts cannot send alerts until you sign in again.")
         }
         .sheet(isPresented: $showVerification) {
             NavigationStack {
                 if let url = SignalWordConfiguration.verificationURL {
                     SignupVerificationView(url: url) { token in
                         showVerification = false
-                        Task { await model.prepare(captchaToken: token) }
+                        if usePassword && !model.isCreatingAccount {
+                            let submittedPassword = verificationPassword
+                            verificationPassword = ""
+                            password = ""
+                            Task { await model.signInWithPassword(password: submittedPassword, captchaToken: token) }
+                        } else {
+                            Task { await model.requestInvitedCode(captchaToken: token) }
+                        }
                     }
-                    .navigationTitle("Verify new account")
-                    .toolbar { Button("Cancel") { showVerification = false } }
+                    .navigationTitle("Verify account access")
+                    .toolbar { Button("Cancel") { verificationPassword = ""; showVerification = false } }
                 }
             }
         }
@@ -67,7 +147,7 @@ struct SignalWordSetupFlow: View {
                             .frame(minHeight: 44)
                     }
                 }
-                Text("A little setup. A quieter signal.")
+                Text("Set up your signal")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(SignalWordColor.secondaryText)
                 Spacer()
@@ -94,11 +174,11 @@ struct SignalWordSetupFlow: View {
                 .padding(.vertical, 4)
             VStack(alignment: .leading, spacing: 10) {
                 Text("A quiet way to reach someone you trust.")
-                    .font(.largeTitle.weight(.semibold))
+                    .font(.title.weight(.semibold))
                     .tracking(-0.6)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
-                Text("SignalWord uses an iOS Vocal Shortcut and your chosen phrase to send a private alert to one trusted person.")
+                Text("Send a private alert to your confirmed contacts with a phrase you configure in iOS, or a manual action.")
                     .font(.body)
                     .foregroundStyle(SignalWordColor.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -107,7 +187,7 @@ struct SignalWordSetupFlow: View {
                 VStack(alignment: .leading, spacing: 14) {
                     PrivacyLine(symbol: "waveform.slash", title: "No ambient audio is stored", detail: "Vocal Shortcuts is configured and managed by iOS.")
                     Divider().overlay(SignalWordColor.separator)
-                    PrivacyLine(symbol: "person.crop.circle.badge.checkmark", title: "One confirmed person", detail: "SignalWord does not contact police or emergency services.")
+                    PrivacyLine(symbol: "person.crop.circle.badge.checkmark", title: "Your confirmed contacts", detail: "SignalWord does not contact police or emergency services.")
                 }
             }
             PrimaryButton(title: "Set up SignalWord", symbol: "arrow.right") {
@@ -135,7 +215,12 @@ struct SignalWordSetupFlow: View {
             if let message = model.contactValidationMessage {
                 Text(message).font(.footnote).foregroundStyle(SignalWordColor.secondaryText)
             }
-            if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
+            if let message = model.contactMessage {
+                InlineMessage(message, kind: .attention)
+                SecondaryButton(title: "Check invitation status", symbol: "arrow.clockwise") {
+                    Task { await model.checkInvitationStatus() }
+                }.disabled(model.isSavingContact)
+            }
             if !model.identityReady {
                 InlineMessage("Prepare this iPhone before sending an invitation. Your entries stay here while the device connects.", kind: .attention)
                 SecondaryButton(title: "Prepare this iPhone", symbol: "arrow.clockwise") { Task { await model.recover() } }
@@ -162,10 +247,11 @@ struct SignalWordSetupFlow: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Label("Set up your Vocal Shortcuts", systemImage: "waveform")
                         .font(.headline)
-                    Text("In Settings › Accessibility › Vocal Shortcuts, add one action for a TEST and one for a REAL alert. Choose different phrases.")
+                    Text("First save SignalWord actions in Apple’s Shortcuts app, then assign your phrases in iOS Vocal Shortcuts. SignalWord does not detect danger automatically.")
                         .font(.subheadline)
                         .foregroundStyle(SignalWordColor.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                    VocalShortcutSetupInstructions()
                     Toggle("I added both Vocal Shortcuts", isOn: Binding(
                         get: { model.shortcutConfigured },
                         set: { model.setShortcutConfigured($0) }

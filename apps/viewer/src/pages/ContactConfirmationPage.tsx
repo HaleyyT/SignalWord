@@ -7,14 +7,20 @@ export function ContactConfirmationPage() {
   const token = confirmationTokenFromPath(window.location.pathname)
   const [state, setState] = useState<State>(token ? 'ready' : 'unavailable')
 
+  // Keep the user's choice across uncertain responses; a retry must never
+  // turn a withdrawal into consent.
+  const [action, setAction] = useState<'confirm' | 'withdraw'>('confirm')
+
   async function confirm() {
     if (!token || state === 'submitting') return
+    setAction('confirm')
     setState('submitting')
     setState(await confirmTrustedContact(token))
   }
 
   async function withdraw() {
     if (!token || state === 'submitting') return
+    setAction('withdraw')
     setState('submitting')
     setState(await withdrawTrustedContact(token))
   }
@@ -30,7 +36,15 @@ export function ContactConfirmationPage() {
         ) : state === 'unavailable' ? (
           <><h1>This link is unavailable</h1><p>It may have expired, already been used, or been replaced. Ask the person to send a new confirmation.</p></>
         ) : state === 'temporary' ? (
-          <><h1>Couldn’t confirm yet</h1><p>No confirmation was recorded. Check your connection and try again.</p><button className="primary-button" onClick={confirm}>Try again</button></>
+          <>
+            <h1>{action === 'withdraw' ? 'Withdrawal is not confirmed yet' : 'Confirmation is not available yet'}</h1>
+            <p>Your request may already have been received. Check your connection and retry the same action to confirm its status.</p>
+            <button className="primary-button" onClick={action === 'withdraw' ? withdraw : confirm}>
+              {action === 'withdraw' ? 'Retry withdrawal' : 'Retry confirmation'}
+            </button>
+          </>
+        ) : state === 'submitting' && action === 'withdraw' ? (
+          <><h1>Withdrawing consent…</h1><p>Waiting for confirmation that your privacy change has been saved.</p></>
         ) : (
           <>
             <h1>Accept trusted-contact role?</h1>
@@ -41,7 +55,7 @@ export function ContactConfirmationPage() {
             </button>
           </>
         )}
-        {token && state !== 'withdrawn' && (
+        {token && state !== 'withdrawn' && !(state === 'temporary' && action === 'withdraw') && (
           <><p>You can withdraw consent here after confirming. This stops future and unclaimed sends. A message already submitted to the email provider cannot be retracted.</p>
             <button onClick={withdraw} disabled={state === 'submitting'}>Withdraw trusted-contact consent</button></>
         )}

@@ -36,6 +36,7 @@ export function createDeliveryPolicy(
 
 export interface ClaimedDelivery {
   senderName?: string;
+  cause?: "user_triggered" | "missed_check_in";
   deliveryId: string;
   eventId: string;
   kind: AlertKind;
@@ -69,6 +70,7 @@ export interface DeliveryDestinationCipher {
 
 export interface ProviderDelivery {
   senderName?: string;
+  cause?: "user_triggered" | "missed_check_in";
   eventId: string;
   kind: AlertKind;
   messageType: "initial" | "resolved";
@@ -173,6 +175,7 @@ export async function runDeliveryWorker(dependencies: {
       );
       const result = await dependencies.adapter.send({
         senderName: delivery.senderName,
+        cause: delivery.cause,
         eventId: delivery.eventId,
         kind: delivery.kind,
         messageType: delivery.messageType,

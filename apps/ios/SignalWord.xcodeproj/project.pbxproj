@@ -4,6 +4,9 @@
 	classes = {};
 	objectVersion = 77;
 	objects = {
+        300000000000000000000001 = {isa = XCLocalSwiftPackageReference; relativePath = TelemetrySDK; };
+        300000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = 300000000000000000000001; productName = SignalWordSentry; };
+        300000000000000000000003 = {isa = PBXBuildFile; productRef = 300000000000000000000002; };
 
         200000000000000000000001 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = SignalWordUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
         200000000000000000000002 = {isa = PBXFileSystemSynchronizedRootGroup; path = UITests; sourceTree = "<group>"; };
@@ -18,6 +21,9 @@
         20000000000000000000000B = {isa = PBXContainerItemProxy; containerPortal = 10000000000000000000000A; proxyType = 1; remoteGlobalIDString = 100000000000000000000006; remoteInfo = SignalWord; };
 
 
+        400000000000000000000001 = {isa = XCLocalSwiftPackageReference; relativePath = SupporterKit; };
+        400000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = 400000000000000000000001; productName = SupporterKit; };
+        400000000000000000000003 = {isa = PBXBuildFile; productRef = 400000000000000000000002; };
 /* Begin PBXFileReference section */
 		100000000000000000000001 /* SignalWord.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SignalWord.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -27,7 +33,7 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		100000000000000000000003 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		100000000000000000000003 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (300000000000000000000003,400000000000000000000003,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -53,15 +59,17 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 100000000000000000000007 /* Build configuration list for PBXNativeTarget "SignalWord" */;
 			buildPhases = (
+                500000000000000000000001 /* Validate environment */,
 				100000000000000000000008 /* Sources */,
 				100000000000000000000003 /* Frameworks */,
 				100000000000000000000009 /* Resources */,
+                500000000000000000000002 /* Verify bundled environment */,
 			);
 			buildRules = ();
 			dependencies = ();
 			fileSystemSynchronizedGroups = (100000000000000000000002 /* SignalWord */,);
 			name = SignalWord;
-			packageProductDependencies = ();
+			packageProductDependencies = (300000000000000000000002,400000000000000000000002,);
 			productName = SignalWord;
 			productReference = 100000000000000000000001 /* SignalWord.app */;
 			productType = "com.apple.product-type.application";
@@ -71,11 +79,12 @@
 /* Begin PBXProject section */
 		10000000000000000000000A /* Project object */ = {
 			isa = PBXProject;
+            packageReferences = (300000000000000000000001,400000000000000000000001,);
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2700;
-				TargetAttributes = { 100000000000000000000006 = { CreatedOnToolsVersion = 27.0; }; };
+				TargetAttributes = { 100000000000000000000006 = { CreatedOnToolsVersion = 27.0; SystemCapabilities = { com.apple.InAppPurchase = { enabled = 1; }; }; }; };
 			};
 			buildConfigurationList = 10000000000000000000000B /* Build configuration list for PBXProject "SignalWord" */;
 			compatibilityVersion = "Xcode 16.0";
@@ -96,6 +105,11 @@
 		100000000000000000000009 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+        500000000000000000000001 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py",); name = "Validate environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\""; showEnvVarsInLog = 0; };
+        500000000000000000000002 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py", "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",); name = "Verify bundled environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\" --plist \"$TARGET_BUILD_DIR/$INFOPLIST_PATH\""; showEnvVarsInLog = 0; };
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		100000000000000000000008 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
@@ -107,10 +121,11 @@
 			ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 			CODE_SIGN_ENTITLEMENTS = SignalWord/SignalWord.entitlements;
 			CODE_SIGN_STYLE = Automatic;
-			CURRENT_PROJECT_VERSION = 1;
+			CURRENT_PROJECT_VERSION = 8;
 			DEVELOPMENT_TEAM = "";
 			ENABLE_PREVIEWS = YES;
 			GENERATE_INFOPLIST_FILE = YES;
+			INFOPLIST_FILE = Config/SignalWord-Info.plist;
 			INFOPLIST_KEY_CFBundleDisplayName = SignalWord;
 			INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 			INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate before resolving an active SignalWord alert.";
@@ -120,7 +135,10 @@
 			INFOPLIST_KEY_SignalWordSupabaseURL = "$(SIGNALWORD_SUPABASE_URL)";
 			INFOPLIST_KEY_SignalWordUserAPIURL = "$(SIGNALWORD_USER_API_URL)";
             INFOPLIST_KEY_SignalWordVerificationURL = "$(SIGNALWORD_VERIFICATION_URL)";
-            INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
+            INFOPLIST_KEY_SignalWordCrashReportingEnabled = "$(SIGNALWORD_CRASH_REPORTING_ENABLED)";
+                INFOPLIST_KEY_SignalWordSentryDSN = "$(SIGNALWORD_SENTRY_DSN)";
+                INFOPLIST_KEY_SignalWordRevenueCatAPIKey = "$(SIGNALWORD_REVENUECAT_PUBLIC_API_KEY)";
+                INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
 			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 			MARKETING_VERSION = 1.0;
 			PRODUCT_BUNDLE_IDENTIFIER = com.signalword.app;
@@ -130,6 +148,7 @@
 			SWIFT_EMIT_LOC_STRINGS = YES;
 			SWIFT_VERSION = 6.0;
 			SIGNALWORD_SUPABASE_PUBLISHABLE_KEY = "";
+			SIGNALWORD_REVENUECAT_PUBLIC_API_KEY = "appl_KfJcQUUaOjjIfmkGxwKtIlcixPQ";
 			SIGNALWORD_SUPABASE_URL = "";
 			SIGNALWORD_USER_API_URL = "";
 			TARGETED_DEVICE_FAMILY = 1;
@@ -138,9 +157,10 @@
 			ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 			CODE_SIGN_ENTITLEMENTS = SignalWord/SignalWord.entitlements;
 			CODE_SIGN_STYLE = Automatic;
-			CURRENT_PROJECT_VERSION = 1;
+			CURRENT_PROJECT_VERSION = 8;
 			DEVELOPMENT_TEAM = "";
 			GENERATE_INFOPLIST_FILE = YES;
+			INFOPLIST_FILE = Config/SignalWord-Info.plist;
 			INFOPLIST_KEY_CFBundleDisplayName = SignalWord;
 			INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 			INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate before resolving an active SignalWord alert.";
@@ -150,7 +170,10 @@
 			INFOPLIST_KEY_SignalWordSupabaseURL = "$(SIGNALWORD_SUPABASE_URL)";
 			INFOPLIST_KEY_SignalWordUserAPIURL = "$(SIGNALWORD_USER_API_URL)";
             INFOPLIST_KEY_SignalWordVerificationURL = "$(SIGNALWORD_VERIFICATION_URL)";
-            INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
+            INFOPLIST_KEY_SignalWordCrashReportingEnabled = "$(SIGNALWORD_CRASH_REPORTING_ENABLED)";
+                INFOPLIST_KEY_SignalWordSentryDSN = "$(SIGNALWORD_SENTRY_DSN)";
+                INFOPLIST_KEY_SignalWordRevenueCatAPIKey = "$(SIGNALWORD_REVENUECAT_PUBLIC_API_KEY)";
+                INFOPLIST_KEY_SignalWordTurnstileSiteKey = "$(SIGNALWORD_TURNSTILE_SITE_KEY)";
 			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 			MARKETING_VERSION = 1.0;
 			PRODUCT_BUNDLE_IDENTIFIER = com.signalword.app;
@@ -160,6 +183,7 @@
 			SWIFT_EMIT_LOC_STRINGS = YES;
 			SWIFT_VERSION = 6.0;
 			SIGNALWORD_SUPABASE_PUBLISHABLE_KEY = "";
+			SIGNALWORD_REVENUECAT_PUBLIC_API_KEY = "appl_KfJcQUUaOjjIfmkGxwKtIlcixPQ";
 			SIGNALWORD_SUPABASE_URL = "";
 			SIGNALWORD_USER_API_URL = "";
 			TARGETED_DEVICE_FAMILY = 1;

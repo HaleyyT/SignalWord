@@ -1,6 +1,7 @@
+import { journalFromEnvironment } from "../_shared/safety-journal.ts";
 import { ApiError, asApiError, errorResponse, jsonResponse, requestId } from "../_shared/http.ts";
 import { createLifecycleGateway, type LifecycleGateway } from "../_shared/lifecycle.ts";
-import { structuredLogger, type SafeLogger } from "../_shared/logging.ts";
+import { structuredLogger, writeSafely, type SafeLogger } from "../_shared/logging.ts";
 import { sha256Hex } from "../_shared/tokens.ts";
 import { parseViewerToken } from "../_shared/validation.ts";
 
@@ -48,7 +49,7 @@ export function createContactConfirmHandler(dependencies: {
       code = error.code;
       return errorResponse(error, id, { ...HEADERS, "X-Request-ID": id });
     } finally {
-      dependencies.logger.write({
+      writeSafely(dependencies.logger, {
         requestId: id, route: "contact-confirm", method: request.method,
         status, durationMs: Math.max(0, dependencies.now() - startedAt),
         ...(code ? { code } : {}),
@@ -62,7 +63,7 @@ if (import.meta.main) {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !anonKey) throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY are required");
   Deno.serve(createContactConfirmHandler({
-    lifecycle: createLifecycleGateway({ url, anonKey }),
+    lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), journal: journalFromEnvironment() }),
     logger: structuredLogger,
     now: () => Date.now(),
   }));
