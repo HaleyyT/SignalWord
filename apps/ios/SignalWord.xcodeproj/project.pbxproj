@@ -59,9 +59,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 100000000000000000000007 /* Build configuration list for PBXNativeTarget "SignalWord" */;
 			buildPhases = (
+                500000000000000000000001 /* Validate environment */,
 				100000000000000000000008 /* Sources */,
 				100000000000000000000003 /* Frameworks */,
 				100000000000000000000009 /* Resources */,
+                500000000000000000000002 /* Verify bundled environment */,
 			);
 			buildRules = ();
 			dependencies = ();
@@ -102,6 +104,11 @@
 /* Begin PBXResourcesBuildPhase section */
 		100000000000000000000009 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+        500000000000000000000001 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py",); name = "Validate environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\""; showEnvVarsInLog = 0; };
+        500000000000000000000002 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py", "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",); name = "Verify bundled environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\" --plist \"$TARGET_BUILD_DIR/$INFOPLIST_PATH\""; showEnvVarsInLog = 0; };
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		100000000000000000000008 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
