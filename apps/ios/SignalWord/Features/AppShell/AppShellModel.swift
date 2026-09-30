@@ -302,6 +302,14 @@ final class AppShellModel {
             }
             if displayName.isEmpty { displayName = try await lifecycle.profile(nil) }
             applyContact(try await lifecycle.getContact())
+            // Clear a previous preparation error only after every required read succeeds.
+            accountMessage = nil
+            needsIdentityVerification = false
+        } catch is CancellationError {
+            // Scene changes cancel foreground recovery; cancellation is not an auth failure.
+            return
+        } catch let error as URLError where error.code == .cancelled {
+            return
         } catch SessionError.verificationRequired {
             needsIdentityVerification = true
             accountMessage = hasEnteredDashboard
@@ -310,6 +318,7 @@ final class AppShellModel {
         } catch is KeychainError {
             accountMessage = "Your saved identity is unavailable. Unlock the device and retry. Your account has not been replaced."
         } catch {
+            guard !Task.isCancelled else { return }
             accountMessage = "SignalWord could not restore your protected session. Check the connection and try again."
         }
     }

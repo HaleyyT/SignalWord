@@ -27,7 +27,7 @@ enum UITestComposition {
             }, profile: { name in await service.profile(name) },
             recover: { _ in await service.recover() },
             saveContact: { name, _ in await service.saveContact(name) },
-            getContact: { await service.contact() },
+            getContact: { try await service.loadContact() },
             disableContact: { _ in await service.withdraw() },
             getAlertStatus: { id in try await service.status(id) },
             authenticateResolution: { true },
@@ -54,6 +54,17 @@ private final class UITestService {
         preferences.set(name, forKey: "fixture.contact")
         preferences.set("confirmed", forKey: "fixture.contactStatus")
         return contact()!
+    }
+    private var contactReadCount = 0
+    func loadContact() throws -> TrustedContactProjection? {
+        contactReadCount += 1
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--ui-contact-read-failure") ||
+            (arguments.contains("--ui-contact-read-fails-once") && contactReadCount == 1) {
+            throw UserAPIError.unavailable
+        }
+        if arguments.contains("--ui-contact-read-cancelled") { throw URLError(.cancelled) }
+        return contact()
     }
     func contact() -> TrustedContactProjection? {
         guard let name = preferences.string(forKey: "fixture.contact") else { return nil }
