@@ -50,3 +50,8 @@ for (const [contract, name] of Object.entries({
   appendLocation: 'append-location', createAlert: 'create-alert',
 })) parseUserResponse(contract, fixture(`${name}.response`));
 console.log('Authenticated response contract fixtures are valid.');
+for (const [contract, name] of [['contactNetwork','contact-network'],['recipients','recipients']]) {
+  parseUserResponse(contract, JSON.parse(readFileSync(`contracts/v2/${name}.response.json`, 'utf8')));
+}
+console.log('Recipient-scoped v2 response fixtures are valid.');
+parseUserResponse('checkIn', JSON.parse(readFileSync('contracts/v2/check-in.response.json', 'utf8')));

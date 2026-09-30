@@ -1,0 +1,23 @@
+{
+  "environment": "development",
+  "attempts": [
+    {
+      "label": "A",
+      "status": 202,
+      "accepted": true,
+      "recordedAt": "2026-09-29T09:00:09.300902+00:00"
+    },
+    {
+      "label": "B",
+      "status": 202,
+      "accepted": true,
+      "recordedAt": "2026-09-29T09:00:09.951181+00:00"
+    },
+    {
+      "label": "C",
+      "status": 202,
+      "accepted": true,
+      "recordedAt": "2026-09-29T09:00:10.562535+00:00"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 
 select plan(56);
 

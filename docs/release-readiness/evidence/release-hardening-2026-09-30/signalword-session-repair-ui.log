@@ -1,0 +1,45 @@
+UI test artifacts: /var/folders/hx/q701f8992p35385dn217cg1w0000gn/T//signalword-ui.dDag1c
+Writing result bundle at path:
+	/var/folders/hx/q701f8992p35385dn217cg1w0000gn/T/signalword-ui.dDag1c/Journey.xcresult
+
+2026-09-30 12:47:21.463 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:47:21.463 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:47:37.234 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:47:37.235 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:47:58.887 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:47:58.888 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:48:12.214 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:48:12.215 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:48:37.827 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:48:37.828 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:48:55.373 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:48:55.373 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:49:21.265 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:49:21.266 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:49:42.103 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:49:42.103 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:50:31.781 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:50:31.781 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:50:52.630 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:50:52.630 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:51:10.993 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:51:10.994 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:51:19.039 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:51:19.040 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:51:35.037 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:51:35.038 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:51:57.848 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:51:57.848 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:52:26.929 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:52:26.929 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:52:55.619 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 12:52:55.619 xcodebuild[22257:5894509] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 12:53:17.207 xcodebuild[22257:5894509] [MT] IDETestOperationsObserverDebug: 372.070 elapsed -- Testing started completed.
+2026-09-30 12:53:17.207 xcodebuild[22257:5894509] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-09-30 12:53:17.207 xcodebuild[22257:5894509] [MT] IDETestOperationsObserverDebug: 372.070 sec, +372.070 sec -- end
+Failing tests:
+	SignalWordJourneyTests.testCancelledPreparationDoesNotShowSessionFailure()
+
+** TEST FAILED **
+
+Testing started

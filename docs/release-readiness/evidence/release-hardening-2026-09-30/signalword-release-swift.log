@@ -1,0 +1,136 @@
+Building for debugging...
+[Using on-disk description]
+[1 / 26]
+[5 / 7] SignalWordCoreTests-product
+[5 / 6] CrashReportingPrivacyTests-product
+Build complete! (1.47 secs)
+Test Suite 'All tests' started at 2026-09-30 13:03:43.722.
+Test Suite 'SignalWordCoreTests.xctest' started at 2026-09-30 13:03:43.730.
+Test Suite 'CheckInTests' started at 2026-09-30 13:03:43.730.
+Test Case '-[SignalWordCoreTests.CheckInTests testDeletionClearsPendingRequestAndRecoveredState]' started.
+Test Case '-[SignalWordCoreTests.CheckInTests testDeletionClearsPendingRequestAndRecoveredState]' passed (0.035 seconds).
+Test Case '-[SignalWordCoreTests.CheckInTests testLateResponseAfterDeletionCannotRestoreTimerState]' started.
+Test Case '-[SignalWordCoreTests.CheckInTests testLateResponseAfterDeletionCannotRestoreTimerState]' passed (0.001 seconds).
+Test Case '-[SignalWordCoreTests.CheckInTests testLostResponseReconcilesWithoutRepeatingTheChange]' started.
+Test Case '-[SignalWordCoreTests.CheckInTests testLostResponseReconcilesWithoutRepeatingTheChange]' passed (0.001 seconds).
+Test Case '-[SignalWordCoreTests.CheckInTests testSharedTimerFixtureUsesServerOwnedDates]' started.
+Test Case '-[SignalWordCoreTests.CheckInTests testSharedTimerFixtureUsesServerOwnedDates]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.CheckInTests testUnconfirmedStartSurvivesRelaunchWithoutPretendingActive]' started.
+Test Case '-[SignalWordCoreTests.CheckInTests testUnconfirmedStartSurvivesRelaunchWithoutPretendingActive]' passed (0.001 seconds).
+Test Suite 'CheckInTests' passed at 2026-09-30 13:03:43.770.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.039 (0.040) seconds
+Test Suite 'CommandRecoveryTests' started at 2026-09-30 13:03:43.770.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testConcurrentConnectionsLeaseExactlyOneCommand]' started.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testConcurrentConnectionsLeaseExactlyOneCommand]' passed (0.044 seconds).
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testDelayedRecoveryRequiresConfirmationAndKeepsKey]' started.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testDelayedRecoveryRequiresConfirmationAndKeepsKey]' passed (0.003 seconds).
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testLifecycleContractsDecodeInLiveClientModels]' started.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testLifecycleContractsDecodeInLiveClientModels]' passed (0.003 seconds).
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testRecoveryDoesNotCreateCommandsAndMigratesLegacy]' started.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testRecoveryDoesNotCreateCommandsAndMigratesLegacy]' passed (0.003 seconds).
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testServerTimestampsWithAndWithoutFractionalSeconds]' started.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testServerTimestampsWithAndWithoutFractionalSeconds]' passed (0.001 seconds).
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testSharedAlertContractExamplesDecodeInSwift]' started.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testSharedAlertContractExamplesDecodeInSwift]' passed (0.002 seconds).
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testTestCannotOverwritePendingRealAfterCooldown]' started.
+Test Case '-[SignalWordCoreTests.CommandRecoveryTests testTestCannotOverwritePendingRealAfterCooldown]' passed (0.003 seconds).
+Test Suite 'CommandRecoveryTests' passed at 2026-09-30 13:03:43.828.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.058 (0.058) seconds
+Test Suite 'ContactNetworkTests' started at 2026-09-30 13:03:43.828.
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testPoliciesRoundTripWithoutLosingTheirMeaning]' started.
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testPoliciesRoundTripWithoutLosingTheirMeaning]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testRecipientProgressKeepsDeliveryDistinctFromAcknowledgement]' started.
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testRecipientProgressKeepsDeliveryDistinctFromAcknowledgement]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testSharedBackendFixturesDecodeForTheSender]' started.
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testSharedBackendFixturesDecodeForTheSender]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testWithdrawalTakesPrecedenceOverPreviousDelivery]' started.
+Test Case '-[SignalWordCoreTests.ContactNetworkTests testWithdrawalTakesPrecedenceOverPreviousDelivery]' passed (0.000 seconds).
+Test Suite 'ContactNetworkTests' passed at 2026-09-30 13:03:43.829.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'InvitedSignInTests' started at 2026-09-30 13:03:43.829.
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testDeletionDuringVerificationCannotRestoreCredentials]' started.
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testDeletionDuringVerificationCannotRestoreCredentials]' passed (0.005 seconds).
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testMissingIdentityCannotCreateAnonymousAccount]' started.
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testMissingIdentityCannotCreateAnonymousAccount]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testOfflineRequestDoesNotCreateSession]' started.
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testOfflineRequestDoesNotCreateSession]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testOTPContractNeverCreatesUserAndRejectsInvalidInput]' started.
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testOTPContractNeverCreatesUserAndRejectsInvalidInput]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testRequestDoesNotPersistIdentityAndVerificationSurvivesRelaunch]' started.
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testRequestDoesNotPersistIdentityAndVerificationSurvivesRelaunch]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testServerRejectionForExpiredReplayedOrUninvitedProofNeverSavesSession]' started.
+Test Case '-[SignalWordCoreTests.InvitedSignInTests testServerRejectionForExpiredReplayedOrUninvitedProofNeverSavesSession]' passed (0.001 seconds).
+Test Suite 'InvitedSignInTests' passed at 2026-09-30 13:03:43.836.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+Test Suite 'PresentationModelsTests' started at 2026-09-30 13:03:43.836.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testAlertKindAndLifecycleRemainVisibleInPresentation]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testAlertKindAndLifecycleRemainVisibleInPresentation]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testDeliveryAndResolutionDeliveryAreIndependent]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testDeliveryAndResolutionDeliveryAreIndependent]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testEveryDocumentedDeliveryStateHasItsOwnPresentation]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testEveryDocumentedDeliveryStateHasItsOwnPresentation]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testLocationFreshnessIsExplicitAndNeverImpliesTracking]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testLocationFreshnessIsExplicitAndNeverImpliesTracking]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testMissingResolutionDeliveryStaysUnknownAfterResolution]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testMissingResolutionDeliveryStaysUnknownAfterResolution]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testOptionalLocationAndShortcutReportDoNotGateManualAlertReadiness]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testOptionalLocationAndShortcutReportDoNotGateManualAlertReadiness]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testTwoDistinctAcknowledgedTestsDefineRehearsalEvidence]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testTwoDistinctAcknowledgedTestsDefineRehearsalEvidence]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testUnknownAlertKindDoesNotBecomeARealAlert]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testUnknownAlertKindDoesNotBecomeARealAlert]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testUnknownWireValuesNeverBecomeSuccess]' started.
+Test Case '-[SignalWordCoreTests.PresentationModelsTests testUnknownWireValuesNeverBecomeSuccess]' passed (0.000 seconds).
+Test Suite 'PresentationModelsTests' passed at 2026-09-30 13:03:43.837.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'SessionLifecycleTests' started at 2026-09-30 13:03:43.837.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testDeletionPreventsLateSignupAndRefreshFromRestoringCredentials]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testDeletionPreventsLateSignupAndRefreshFromRestoringCredentials]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testInvitedVerificationSavesSession]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testInvitedVerificationSavesSession]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testMalformedResponseIsRetryClassifiedWithoutErasingCredentials]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testMalformedResponseIsRetryClassifiedWithoutErasingCredentials]' passed (0.001 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testMissingIdentityRequiresCaptchaWithoutNetworkRequest]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testMissingIdentityRequiresCaptchaWithoutNetworkRequest]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testNewSignupSurvivesCompletionOfAnOlderDeletedRefresh]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testNewSignupSurvivesCompletionOfAnOlderDeletedRefresh]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testRefreshPreservesIdentityAndDoesNotSendCaptcha]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testRefreshPreservesIdentityAndDoesNotSendCaptcha]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testRejectedRefreshDoesNotFallBackToSignupOrEraseCredentials]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testRejectedRefreshDoesNotFallBackToSignupOrEraseCredentials]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testUnavailableCredentialsNeverCreateAnotherIdentity]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testUnavailableCredentialsNeverCreateAnotherIdentity]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testValidStoredSessionNeedsNeitherCaptchaNorNetwork]' started.
+Test Case '-[SignalWordCoreTests.SessionLifecycleTests testValidStoredSessionNeedsNeitherCaptchaNorNetwork]' passed (0.000 seconds).
+Test Suite 'SessionLifecycleTests' passed at 2026-09-30 13:03:43.840.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'SignupVerificationTests' started at 2026-09-30 13:03:43.840.
+Test Case '-[SignalWordCoreTests.SignupVerificationTests testMissingOversizedAndWhitespaceTokensAreRejected]' started.
+Test Case '-[SignalWordCoreTests.SignupVerificationTests testMissingOversizedAndWhitespaceTokensAreRejected]' passed (0.000 seconds).
+Test Case '-[SignalWordCoreTests.SignupVerificationTests testSignupUsesSupabaseCaptchaContract]' started.
+Test Case '-[SignalWordCoreTests.SignupVerificationTests testSignupUsesSupabaseCaptchaContract]' passed (0.000 seconds).
+Test Suite 'SignupVerificationTests' passed at 2026-09-30 13:03:43.841.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'SignalWordCoreTests.xctest' passed at 2026-09-30 13:03:43.841.
+	 Executed 42 tests, with 0 failures (0 unexpected) in 0.108 (0.111) seconds
+Test Suite 'All tests' passed at 2026-09-30 13:03:43.841.
+	 Executed 42 tests, with 0 failures (0 unexpected) in 0.108 (0.119) seconds
+Test Suite 'All tests' started at 2026-09-30 13:03:43.917.
+Test Suite 'CrashReportingPrivacyTests.xctest' started at 2026-09-30 13:03:43.923.
+Test Suite 'CrashReportingUnavailableTests' started at 2026-09-30 13:03:43.923.
+Test Case '-[CrashReportingPrivacyTests.CrashReportingUnavailableTests testUnavailableSDKLeavesSafetyWorkflowUsable]' started.
+Test Case '-[CrashReportingPrivacyTests.CrashReportingUnavailableTests testUnavailableSDKLeavesSafetyWorkflowUsable]' passed (0.000 seconds).
+Test Suite 'CrashReportingUnavailableTests' passed at 2026-09-30 13:03:43.924.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'CrashReportingPrivacyTests.xctest' passed at 2026-09-30 13:03:43.924.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'All tests' passed at 2026-09-30 13:03:43.924.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.007) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

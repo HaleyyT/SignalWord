@@ -1,0 +1,76 @@
+{
+  "version": "1.0 (6)",
+  "source": "faa650bce06a3700e226e8334623531b9c2e31f3",
+  "crash_reporting_enabled_setting": false,
+  "sentry_dsn_configured": false,
+  "manifest_collected_types": [
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeContacts",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePreciseLocation",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherUserContent",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
+      "NSPrivacyCollectedDataTypeLinked": false,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+        "NSPrivacyCollectedDataTypePurposeAnalytics"
+      ],
+      "NSPrivacyCollectedDataTypeTracking": false
+    }
+  ],
+  "tracking": false,
+  "app_privacy_live_answers_verified": false,
+  "reference": "https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy"
+}

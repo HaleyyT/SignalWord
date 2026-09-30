@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 
 select plan(18);
 
@@ -21,6 +22,8 @@ insert into public.trusted_contacts (
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '51000000-0000-4000-8000-000000000001', true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$
   select * from public.create_or_reuse_alert(
     '51000000-0000-4000-8000-000000000001',
@@ -28,6 +31,7 @@ select lives_ok($$
     repeat('v', 43), 'resend', repeat('p', 48), 1, null
   )
 $$, 'a resend alert is transactionally queued');
+set local role authenticated;
 
 reset role;
 select set_config('test.alert_delivery_id', (select id::text from public.alert_deliveries), true);

@@ -1,0 +1,137 @@
+{
+  "recorded_at": "2026-09-28T19:04:04.216182+00:00",
+  "scope": "development only; one consenting recipient; controlled TEST, no REAL or timer expiry",
+  "tested_before_repairs": "ce317ece521e0fa5a09996cadd0ef1acada3308e",
+  "repair_code": "14e1c9c1efdcad0a7c1198b091713d589dd14eb9",
+  "manifest_frozen": false,
+  "submission": {
+    "confirmed_via_hosted_proxy": true,
+    "concurrent_identical_test_requests": 10,
+    "distinct_events": 1,
+    "http_statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      201,
+      200,
+      200,
+      200
+    ],
+    "p95_ms": 1043
+  },
+  "viewer": {
+    "viewer_requests": 20,
+    "viewer_p95_ms": 5008,
+    "view_does_not_acknowledge": true,
+    "duplicate_acknowledgement_safe": true,
+    "sender_recovery": true,
+    "resolved_view": true
+  },
+  "repeat_read_bursts": [
+    {
+      "requests": 20,
+      "p95_ms": 2311,
+      "max_ms": 2752
+    },
+    {
+      "requests": 20,
+      "p95_ms": 2506,
+      "max_ms": 2528
+    },
+    {
+      "requests": 20,
+      "p95_ms": 1848,
+      "max_ms": 2039
+    }
+  ],
+  "provider": {
+    "initial_attempts": 1,
+    "resolution_attempts": 1,
+    "both_delivered": true,
+    "signed_receipts": {
+      "sent": 2,
+      "delivered": 2
+    },
+    "inbox_receipt_confirmed": true,
+    "resolution_test_label_missing_before_repair": true,
+    "new_resolution_copy_live_retest_pending": true,
+    "signed_replay_after_deletion": {
+      "delivered_http_status": 202,
+      "delivered_attempts": 2,
+      "earlier_sent_http_status": 202,
+      "earlier_sent_attempts": 2,
+      "same_controlled_message_verified": true,
+      "resurrected_users_contacts_deliveries": 0,
+      "scope": "Deleted consent fixture; does not prove active-incident terminal-state ordering"
+    }
+  },
+  "withdrawal": {
+    "initial_proxy_status": 503,
+    "direct_retry_status": 200,
+    "repeated_proxy_status": 200,
+    "root_cause_of_first_503": "not established; no permission or timeout protections weakened",
+    "ui_bug": "temporary withdrawal incorrectly offered confirmation retry; fixed with action-preserving state"
+  },
+  "cleanup": {
+    "users": 0,
+    "contacts": 0,
+    "deliveries": 0,
+    "unknown_outcomes": 0,
+    "two_durable_deletion_receipts_verified": true
+  },
+  "final_health": {
+    "recorded_at": "2026-09-28T18:58:01.963839+00:00",
+    "gate_allowed": true,
+    "quarantined": false,
+    "journal_version": 9,
+    "digest": "eead4a70e8916e9cd59da48b58cc0f71c76501bef1510eb3e7235929382c2f97",
+    "deleted_subject_denials": [
+      503,
+      503
+    ],
+    "health_problems": [],
+    "worker_versions": {
+      "signalword-dev-monitor": [
+        {
+          "version_id": "ac57442a-4291-43bc-abcf-375975c0ab7f",
+          "percentage": 100
+        }
+      ],
+      "signalword-dev-safety-authority": [
+        {
+          "version_id": "183202c5-f1fb-40cb-9388-e419dc422559",
+          "percentage": 100
+        }
+      ]
+    },
+    "monitor_crons": [
+      "* * * * *"
+    ]
+  },
+  "viewer_deployment": {
+    "id": "dpl_B4mdNxwtHNhJ7e6TnPyiyGJX1rzT",
+    "alias": "https://www.signalword.app",
+    "source": "9ba3692",
+    "backend_origins_explicitly_pinned_to_development": true,
+    "routing_checks_passed": 6,
+    "browser_regression_with_mocked_api_passed": true
+  },
+  "dispatch_version": 10,
+  "verification": {
+    "node_tests": 173,
+    "viewer_tests": 44,
+    "deno_dispatch_typecheck": true,
+    "unsigned_iphoneos_release_build": true,
+    "xcode": "27.0 (27A266a)",
+    "device_installation": false
+  },
+  "limitations": [
+    "One recipient, not the full three-recipient hosted journey",
+    "First recipient burst p95 5008 ms exceeded 5000 ms budget; faster repeats do not erase it",
+    "Native build used no signing or final runtime configuration; not an installation artifact",
+    "Managed restore, human CAPTCHA, complete provider ambiguity proof and final freeze remain pending"
+  ]
+}

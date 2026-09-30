@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 
 select no_plan();
 
@@ -41,8 +42,16 @@ reset role;
 select is((select status from public.trusted_contacts where user_id = '41000000-0000-4000-8000-000000000001'),
   'confirmed', 'contact becomes confirmed');
 set local role anon;
+select is(public.confirm_contact(extensions.digest('confirm-a', 'sha256')), true,
+  'lost confirmation response can be retried without granting consent twice');
+select is(public.confirm_contact(extensions.digest('unknown-confirmation', 'sha256')), false,
+  'unknown capability cannot report consent');
+reset role;
+update public.contact_confirmation_tokens set created_at=now()-interval '1 hour', expires_at=now()-interval '1 minute'
+where token_hash=extensions.digest('confirm-a', 'sha256');
+set local role anon;
 select is(public.confirm_contact(extensions.digest('confirm-a', 'sha256')), false,
-  'confirmation token is single use');
+  'expired confirmation cannot be reused even when contact is confirmed');
 reset role;
 
 set local role service_role;
@@ -75,6 +84,8 @@ select throws_ok($$select public.disable_contact(
   '42501', 'NOT_AUTHORIZED', 'user B cannot disable user A contact');
 
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
+-- Exercise internal state transitions; direct-client denial is tested separately.
+reset role;
 select lives_ok($$
   select * from public.create_or_reuse_alert(
     '41000000-0000-4000-8000-000000000001',
@@ -82,6 +93,7 @@ select lives_ok($$
     'real', 'manual', repeat('v', 43), 'fake', repeat('p', 48), 1, null
   )
 $$, 'confirmed user can create an alert');
+set local role authenticated;
 select is((select count(*) from public.alert_events where user_id = '41000000-0000-4000-8000-000000000001'),
   1::bigint, 'one alert exists');
 
@@ -100,6 +112,11 @@ select is((select accepted from public.append_alert_location(
 )), true, 'current valid location is accepted');
 select is((select count(*) from public.location_samples), 1::bigint, 'only valid location is stored');
 
+-- A resolution notification is needed only after initial submission. Unsent
+-- initial messages are cancelled (covered independently by escalation tests).
+reset role;
+update public.alert_deliveries set status='sent',provider_message_id='lifecycle-submitted' where message_type='initial';
+set local role authenticated;
 select lives_ok($$select * from public.resolve_alert(
   '41000000-0000-4000-8000-000000000001',
   (select id from public.alert_events where user_id = '41000000-0000-4000-8000-000000000001'))$$,
@@ -130,6 +147,8 @@ select is(public.withdraw_contact(extensions.digest('confirm-a-resend', 'sha256'
   'recipient can withdraw with the previously consumed confirmation capability');
 select is(public.withdraw_contact(extensions.digest('confirm-a-resend', 'sha256')), true,
   'recipient withdrawal is idempotent after a lost response');
+select is(public.confirm_contact(extensions.digest('confirm-a-resend', 'sha256')), false,
+  'confirmation retry cannot restore withdrawn consent');
 reset role;
 select is((select status from public.trusted_contacts where user_id = '41000000-0000-4000-8000-000000000001'),
   'disabled', 'withdrawal disables future sends');
@@ -147,8 +166,14 @@ select is(public.finish_alert_delivery(
 select set_config('request.jwt.claim.sub', '41000000-0000-4000-8000-000000000001', true);
 set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);
-select isnt(public.delete_my_account('41000000-0000-4000-8000-000000000001', extensions.digest('saved-deletion-capability', 'sha256')), null,
-  'delete data returns a deletion receipt');
+reset role;
+select isnt(public.prepare_journaled_deletion('41000000-0000-4000-8000-000000000001', extensions.digest('saved-deletion-capability', 'sha256')), null,
+  'deletion preparation returns an operation ID');
+select is(public.find_deletion_receipt(extensions.digest('saved-deletion-capability', 'sha256')), null::uuid, 'preparation must not report deletion complete');
+select public.finish_journaled_deletion();
+select is((select count(*) from auth.users where id='41000000-0000-4000-8000-000000000001'),1::bigint,'un-journaled account is retained for resumption');
+select public.journal_mark_durable(id) from public.safety_journal_outbox;
+select public.finish_journaled_deletion();
 reset role;
 select is((select count(*) from auth.users where id = '41000000-0000-4000-8000-000000000001'),
   0::bigint, 'auth identity is deleted');

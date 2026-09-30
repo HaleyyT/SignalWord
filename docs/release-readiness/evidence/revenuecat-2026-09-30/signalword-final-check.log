@@ -1,0 +1,9 @@
+
+> signalword@0.1.0 check
+> node scripts/verify-repository.mjs && node scripts/verify-contracts.mjs && node scripts/security-audit.mjs
+
+Repository structure and safe configuration examples are valid.
+Shared API contract fixtures are valid.
+Authenticated response contract fixtures are valid.
+Recipient-scoped v2 response fixtures are valid.
+Public viewer security boundaries are valid.

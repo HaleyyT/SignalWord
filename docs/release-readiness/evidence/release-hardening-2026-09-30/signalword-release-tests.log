@@ -1,0 +1,1306 @@
+
+> signalword@0.1.0 test
+> node --test tests/*.test.mjs && npm run test --workspace=@signalword/viewer
+
+TAP version 13
+# Subtest: reports omit private fields and preserve failure status
+ok 1 - reports omit private fields and preserve failure status
+  ---
+  duration_ms: 8.978708
+  type: 'test'
+  ...
+# Subtest: passes require evidence, sequence and safe references
+ok 2 - passes require evidence, sequence and safe references
+  ---
+  duration_ms: 0.883459
+  type: 'test'
+  ...
+# Subtest: a failed request cannot discard successes or leak private response/error values
+ok 3 - a failed request cannot discard successes or leak private response/error values
+  ---
+  duration_ms: 4.453959
+  type: 'test'
+  ...
+# Subtest: bounds the burst before issuing any request
+ok 4 - bounds the burst before issuing any request
+  ---
+  duration_ms: 0.196417
+  type: 'test'
+  ...
+# Subtest: retains only allowlisted numeric phase timings and derives client-edge time
+ok 5 - retains only allowlisted numeric phase timings and derives client-edge time
+  ---
+  duration_ms: 3.911834
+  type: 'test'
+  ...
+# Subtest: timer accepts only defined durations and action fields
+ok 6 - timer accepts only defined durations and action fields
+  ---
+  duration_ms: 0.619541
+  type: 'test'
+  ...
+# Subtest: timer projection removes capabilities and rejects unsupported state
+ok 7 - timer projection removes capabilities and rejects unsupported state
+  ---
+  duration_ms: 0.562708
+  type: 'test'
+  ...
+# Subtest: timer API stores only hashed and encrypted capabilities and uses verified user identity
+ok 8 - timer API stores only hashed and encrypted capabilities and uses verified user identity
+  ---
+  duration_ms: 43.3825
+  type: 'test'
+  ...
+# Subtest: missed check-in content is honest and TEST takes precedence
+ok 9 - missed check-in content is honest and TEST takes precedence
+  ---
+  duration_ms: 0.90375
+  type: 'test'
+  ...
+# Subtest: closed enrollment requires explicit signup_disabled, not an arbitrary failure
+ok 10 - closed enrollment requires explicit signup_disabled, not an arbitrary failure
+  ---
+  duration_ms: 46.520708
+  type: 'test'
+  ...
+# Subtest: expired proof requires a CAPTCHA rejection; ordinary authentication errors are not expiry evidence
+ok 11 - expired proof requires a CAPTCHA rejection; ordinary authentication errors are not expiry evidence
+  ---
+  duration_ms: 1.639042
+  type: 'test'
+  ...
+# Subtest: confirmation proxy rejects malformed capabilities without contacting upstream
+ok 12 - confirmation proxy rejects malformed capabilities without contacting upstream
+  ---
+  duration_ms: 1.139959
+  type: 'test'
+  ...
+# Subtest: confirmation proxy forwards a single POST and exposes only a boolean result
+ok 13 - confirmation proxy forwards a single POST and exposes only a boolean result
+  ---
+  duration_ms: 41.465791
+  type: 'test'
+  ...
+# Subtest: confirmation proxy maps expired and provider failures to safe states
+ok 14 - confirmation proxy maps expired and provider failures to safe states
+  ---
+  duration_ms: 0.42875
+  type: 'test'
+  ...
+# Subtest: withdrawal proxy sends the action header and returns only the withdrawal result
+ok 15 - withdrawal proxy sends the action header and returns only the withdrawal result
+  ---
+  duration_ms: 0.27225
+  type: 'test'
+  ...
+# Subtest: v2 preserves test classification and creates three private capabilities
+ok 16 - v2 preserves test classification and creates three private capabilities
+  ---
+  duration_ms: 30.959
+  type: 'test'
+  ...
+# Subtest: v2 preserves real classification and creates three private capabilities
+ok 17 - v2 preserves real classification and creates three private capabilities
+  ---
+  duration_ms: 0.703625
+  type: 'test'
+  ...
+# Subtest: network requests authenticate before side effects
+ok 18 - network requests authenticate before side effects
+  ---
+  duration_ms: 0.512417
+  type: 'test'
+  ...
+# Subtest: routing rejects malformed primary, policy and unknown fields
+ok 19 - routing rejects malformed primary, policy and unknown fields
+  ---
+  duration_ms: 1.391041
+  type: 'test'
+  ...
+# Subtest: contact network projection removes private database fields
+ok 20 - contact network projection removes private database fields
+  ---
+  duration_ms: 0.415
+  type: 'test'
+  ...
+# Subtest: recipient projection rejects excessive recipients and private fields
+ok 21 - recipient projection rejects excessive recipients and private fields
+  ---
+  duration_ms: 0.247625
+  type: 'test'
+  ...
+# Subtest: network read uses caller JWT while contact consent writes use server credentials
+ok 22 - network read uses caller JWT while contact consent writes use server credentials
+  ---
+  duration_ms: 1.711709
+  type: 'test'
+  ...
+# Subtest: shared creation request fixture passes backend validation
+ok 23 - shared creation request fixture passes backend validation
+  ---
+  duration_ms: 0.855
+  type: 'test'
+  ...
+# Subtest: viewer contract fixture exposes only the public projection
+ok 24 - viewer contract fixture exposes only the public projection
+  ---
+  duration_ms: 1.751125
+  type: 'test'
+  ...
+# Subtest: authority starts quarantined and only a complete matching reconciliation can open it
+ok 25 - authority starts quarantined and only a complete matching reconciliation can open it
+  ---
+  duration_ms: 66.600875
+  type: 'test'
+  ...
+# Subtest: journal outage, restart, duplicate append and lost completion are recoverable
+ok 26 - journal outage, restart, duplicate append and lost completion are recoverable
+  ---
+  duration_ms: 19.740791
+  type: 'test'
+  ...
+# Subtest: deleted identity stays denied after release and a newer journal invalidates release proof
+ok 27 - deleted identity stays denied after release and a newer journal invalidates release proof
+  ---
+  duration_ms: 15.125292
+  type: 'test'
+  ...
+# Subtest: writer cannot release quarantine or leak arbitrary personal fields into journal
+ok 28 - writer cannot release quarantine or leak arbitrary personal fields into journal
+  ---
+  duration_ms: 6.721041
+  type: 'test'
+  ...
+# Subtest: journal read failure and missing archive object prevent releasing quarantine
+ok 29 - journal read failure and missing archive object prevent releasing quarantine
+  ---
+  duration_ms: 9.516917
+  type: 'test'
+  ...
+# Subtest: pre-restore access tokens are denied after quarantine is released
+ok 30 - pre-restore access tokens are denied after quarantine is released
+  ---
+  duration_ms: 1.33325
+  type: 'test'
+  ...
+# Subtest: GET /v1/profile: success contract and unauthenticated denial
+ok 31 - GET /v1/profile: success contract and unauthenticated denial
+  ---
+  duration_ms: 36.340834
+  type: 'test'
+  ...
+# Subtest: PUT /v1/profile: success contract and unauthenticated denial
+ok 32 - PUT /v1/profile: success contract and unauthenticated denial
+  ---
+  duration_ms: 3.51125
+  type: 'test'
+  ...
+# Subtest: PUT /v1/profile: backend-only fields rejected
+ok 33 - PUT /v1/profile: backend-only fields rejected
+  ---
+  duration_ms: 1.465459
+  type: 'test'
+  ...
+# Subtest: GET /v1/alerts/recovery: success contract and unauthenticated denial
+ok 34 - GET /v1/alerts/recovery: success contract and unauthenticated denial
+  ---
+  duration_ms: 5.640292
+  type: 'test'
+  ...
+# Subtest: POST /v1/alerts: success contract and unauthenticated denial
+ok 35 - POST /v1/alerts: success contract and unauthenticated denial
+  ---
+  duration_ms: 7.731583
+  type: 'test'
+  ...
+# Subtest: POST /v1/alerts: backend-only fields rejected
+ok 36 - POST /v1/alerts: backend-only fields rejected
+  ---
+  duration_ms: 0.4325
+  type: 'test'
+  ...
+# Subtest: POST /v2/alerts: success contract and unauthenticated denial
+ok 37 - POST /v2/alerts: success contract and unauthenticated denial
+  ---
+  duration_ms: 1.826834
+  type: 'test'
+  ...
+# Subtest: POST /v2/alerts: backend-only fields rejected
+ok 38 - POST /v2/alerts: backend-only fields rejected
+  ---
+  duration_ms: 0.889792
+  type: 'test'
+  ...
+# Subtest: POST /v1/contacts: success contract and unauthenticated denial
+ok 39 - POST /v1/contacts: success contract and unauthenticated denial
+  ---
+  duration_ms: 14.398083
+  type: 'test'
+  ...
+# Subtest: POST /v1/contacts: backend-only fields rejected
+ok 40 - POST /v1/contacts: backend-only fields rejected
+  ---
+  duration_ms: 1.294125
+  type: 'test'
+  ...
+# Subtest: GET /v1/contact: success contract and unauthenticated denial
+ok 41 - GET /v1/contact: success contract and unauthenticated denial
+  ---
+  duration_ms: 0.51975
+  type: 'test'
+  ...
+# Subtest: DELETE /v1/contacts/00000000-0000-4000-8000-000000000020: success contract and unauthenticated denial
+ok 42 - DELETE /v1/contacts/00000000-0000-4000-8000-000000000020: success contract and unauthenticated denial
+  ---
+  duration_ms: 2.651542
+  type: 'test'
+  ...
+# Subtest: GET /v1/alerts/00000000-0000-4000-8000-000000000020: success contract and unauthenticated denial
+ok 43 - GET /v1/alerts/00000000-0000-4000-8000-000000000020: success contract and unauthenticated denial
+  ---
+  duration_ms: 1.8235
+  type: 'test'
+  ...
+# Subtest: POST /v1/alerts/00000000-0000-4000-8000-000000000020/locations: success contract and unauthenticated denial
+ok 44 - POST /v1/alerts/00000000-0000-4000-8000-000000000020/locations: success contract and unauthenticated denial
+  ---
+  duration_ms: 4.339084
+  type: 'test'
+  ...
+# Subtest: POST /v1/alerts/00000000-0000-4000-8000-000000000020/locations: backend-only fields rejected
+ok 45 - POST /v1/alerts/00000000-0000-4000-8000-000000000020/locations: backend-only fields rejected
+  ---
+  duration_ms: 0.720833
+  type: 'test'
+  ...
+# Subtest: POST /v1/alerts/00000000-0000-4000-8000-000000000020/resolve: success contract and unauthenticated denial
+ok 46 - POST /v1/alerts/00000000-0000-4000-8000-000000000020/resolve: success contract and unauthenticated denial
+  ---
+  duration_ms: 0.999458
+  type: 'test'
+  ...
+# Subtest: DELETE /v1/data: success contract and unauthenticated denial
+ok 47 - DELETE /v1/data: success contract and unauthenticated denial
+  ---
+  duration_ms: 5.355041
+  type: 'test'
+  ...
+# Subtest: GET /v2/contact-network: success contract and unauthenticated denial
+ok 48 - GET /v2/contact-network: success contract and unauthenticated denial
+  ---
+  duration_ms: 0.98975
+  type: 'test'
+  ...
+# Subtest: PUT /v2/contact-network: success contract and unauthenticated denial
+ok 49 - PUT /v2/contact-network: success contract and unauthenticated denial
+  ---
+  duration_ms: 0.481167
+  type: 'test'
+  ...
+# Subtest: PUT /v2/contact-network: backend-only fields rejected
+ok 50 - PUT /v2/contact-network: backend-only fields rejected
+  ---
+  duration_ms: 0.531417
+  type: 'test'
+  ...
+# Subtest: POST /v2/contacts: success contract and unauthenticated denial
+ok 51 - POST /v2/contacts: success contract and unauthenticated denial
+  ---
+  duration_ms: 9.200958
+  type: 'test'
+  ...
+# Subtest: POST /v2/contacts: backend-only fields rejected
+ok 52 - POST /v2/contacts: backend-only fields rejected
+  ---
+  duration_ms: 0.273917
+  type: 'test'
+  ...
+# Subtest: POST /v2/contacts/00000000-0000-4000-8000-000000000020: success contract and unauthenticated denial
+ok 53 - POST /v2/contacts/00000000-0000-4000-8000-000000000020: success contract and unauthenticated denial
+  ---
+  duration_ms: 1.245958
+  type: 'test'
+  ...
+# Subtest: POST /v2/contacts/00000000-0000-4000-8000-000000000020: backend-only fields rejected
+ok 54 - POST /v2/contacts/00000000-0000-4000-8000-000000000020: backend-only fields rejected
+  ---
+  duration_ms: 0.211334
+  type: 'test'
+  ...
+# Subtest: GET /v2/alerts/00000000-0000-4000-8000-000000000020/recipients: success contract and unauthenticated denial
+ok 55 - GET /v2/alerts/00000000-0000-4000-8000-000000000020/recipients: success contract and unauthenticated denial
+  ---
+  duration_ms: 0.38275
+  type: 'test'
+  ...
+# Subtest: GET /v2/check-in: success contract and unauthenticated denial
+ok 56 - GET /v2/check-in: success contract and unauthenticated denial
+  ---
+  duration_ms: 0.441708
+  type: 'test'
+  ...
+# Subtest: POST /v2/check-in: success contract and unauthenticated denial
+ok 57 - POST /v2/check-in: success contract and unauthenticated denial
+  ---
+  duration_ms: 37.021667
+  type: 'test'
+  ...
+# Subtest: POST /v2/check-in: backend-only fields rejected
+ok 58 - POST /v2/check-in: backend-only fields rejected
+  ---
+  duration_ms: 4.485792
+  type: 'test'
+  ...
+# Subtest: freeze rejects incomplete hosted proof and candidate drift
+ok 59 - freeze rejects incomplete hosted proof and candidate drift
+  ---
+  duration_ms: 4.869584
+  type: 'test'
+  ...
+# Subtest: user API rejects a missing bearer token without touching the backend
+ok 60 - user API rejects a missing bearer token without touching the backend
+  ---
+  duration_ms: 49.179875
+  type: 'test'
+  ...
+# Subtest: user API validates payloads and forbids body idempotency keys
+ok 61 - user API validates payloads and forbids body idempotency keys
+  ---
+  duration_ms: 16.706084
+  type: 'test'
+  ...
+# Subtest: user API enforces the body cap when Content-Length is absent
+ok 62 - user API enforces the body cap when Content-Length is absent
+  ---
+  duration_ms: 2.572083
+  type: 'test'
+  ...
+# Subtest: user API returns only the stable public create-alert projection
+ok 63 - user API returns only the stable public create-alert projection
+  ---
+  duration_ms: 1.474708
+  type: 'test'
+  ...
+# Subtest: development v2 alert responses expose numeric phase timing without identifiers
+ok 64 - development v2 alert responses expose numeric phase timing without identifiers
+  ---
+  duration_ms: 4.697958
+  type: 'test'
+  ...
+# Subtest: twenty concurrent identical creates produce one canonical event and outbox row
+ok 65 - twenty concurrent identical creates produce one canonical event and outbox row
+  ---
+  duration_ms: 16.781042
+  type: 'test'
+  ...
+# Subtest: contact setup encrypts server inputs and never returns destination or confirmation token
+ok 66 - contact setup encrypts server inputs and never returns destination or confirmation token
+  ---
+  duration_ms: 3.079666
+  type: 'test'
+  ...
+# Subtest: authenticated lifecycle routes preserve ownership-scoped identifiers
+ok 67 - authenticated lifecycle routes preserve ownership-scoped identifiers
+  ---
+  duration_ms: 4.522667
+  type: 'test'
+  ...
+# Subtest: deletion status settles a lost DELETE response by receipt without auth
+ok 68 - deletion status settles a lost DELETE response by receipt without auth
+  ---
+  duration_ms: 4.89325
+  type: 'test'
+  ...
+# Subtest: location enrichment uses the canonical plural route and preserves ownership
+ok 69 - location enrichment uses the canonical plural route and preserves ownership
+  ---
+  duration_ms: 3.3365
+  type: 'test'
+  ...
+# Subtest: contact setup cannot select another owner through its request body
+ok 70 - contact setup cannot select another owner through its request body
+  ---
+  duration_ms: 0.260167
+  type: 'test'
+  ...
+# Subtest: contact setup fails closed without backend credentials
+ok 71 - contact setup fails closed without backend credentials
+  ---
+  duration_ms: 147.46625
+  type: 'test'
+  ...
+# Subtest: contact setup uses backend credentials and exposes rate limits as bounded retry guidance
+ok 72 - contact setup uses backend credentials and exposes rate limits as bounded retry guidance
+  ---
+  duration_ms: 1.002375
+  type: 'test'
+  ...
+# Subtest: contact confirmation consumes only a valid one-time token and hides token validity
+ok 73 - contact confirmation consumes only a valid one-time token and hides token validity
+  ---
+  duration_ms: 5.314167
+  type: 'test'
+  ...
+# Subtest: recipient withdrawal requires an explicit action and hashes the same capability
+ok 74 - recipient withdrawal requires an explicit action and hashes the same capability
+  ---
+  duration_ms: 2.097
+  type: 'test'
+  ...
+# Subtest: public API hashes the token and returns only the viewer projection
+ok 75 - public API hashes the token and returns only the viewer projection
+  ---
+  duration_ms: 6.406875
+  type: 'test'
+  ...
+# Subtest: invalid and unknown public tokens share the same safe unavailable response
+ok 76 - invalid and unknown public tokens share the same safe unavailable response
+  ---
+  duration_ms: 8.504583
+  type: 'test'
+  ...
+# Subtest: viewer tokens contain 256 random bits encoded as unpadded base64url
+ok 77 - viewer tokens contain 256 random bits encoded as unpadded base64url
+  ---
+  duration_ms: 1.491209
+  type: 'test'
+  ...
+# Subtest: backend gateway uses server credentials and maps the internal RPC result
+ok 78 - backend gateway uses server credentials and maps the internal RPC result
+  ---
+  duration_ms: 0.775208
+  type: 'test'
+  ...
+# Subtest: malformed successful database results fail closed as retryable
+ok 79 - malformed successful database results fail closed as retryable
+  ---
+  duration_ms: 0.400417
+  type: 'test'
+  ...
+# Subtest: delivery payload is AES-GCM encrypted and versioned at rest
+ok 80 - delivery payload is AES-GCM encrypted and versioned at rest
+  ---
+  duration_ms: 3.288709
+  type: 'test'
+  ...
+# Subtest: transactional outbox survives request completion and retries with the same viewer capability
+ok 81 - transactional outbox survives request completion and retries with the same viewer capability
+  ---
+  duration_ms: 0.647791
+  type: 'test'
+  ...
+# Subtest: fake delivery is impossible in production and missing production delivery fails closed
+ok 82 - fake delivery is impossible in production and missing production delivery fails closed
+  ---
+  duration_ms: 0.259292
+  type: 'test'
+  ...
+# Subtest: implausibly old or future location is omitted without blocking the alert
+ok 83 - implausibly old or future location is omitted without blocking the alert
+  ---
+  duration_ms: 0.825625
+  type: 'test'
+  ...
+# Subtest: accepted alerts survive logger and best-effort wakeup failures
+ok 84 - accepted alerts survive logger and best-effort wakeup failures
+  ---
+  duration_ms: 0.927167
+  type: 'test'
+  ...
+# Subtest: contact confirmation survives logging failure
+ok 85 - contact confirmation survives logging failure
+  ---
+  duration_ms: 2.06225
+  type: 'test'
+  ...
+# Subtest: timer and routed alert creation use server authorization; reads retain caller isolation
+ok 86 - timer and routed alert creation use server authorization; reads retain caller isolation
+  ---
+  duration_ms: 32.725959
+  type: 'test'
+  ...
+# Subtest: full envelope preserves 40 samples and duplicate identity without private data
+ok 87 - full envelope preserves 40 samples and duplicate identity without private data
+  ---
+  duration_ms: 54.210208
+  type: 'test'
+  ...
+# Subtest: one sender repeated ten times and missing consent fail before network
+ok 88 - one sender repeated ten times and missing consent fail before network
+  ---
+  duration_ms: 0.390333
+  type: 'test'
+  ...
+# Subtest: server timing parser accepts only declared numeric development phases
+ok 89 - server timing parser accepts only declared numeric development phases
+  ---
+  duration_ms: 0.406625
+  type: 'test'
+  ...
+# Subtest: complete correlated load evidence passes unchanged budgets
+ok 90 - complete correlated load evidence passes unchanged budgets
+  ---
+  duration_ms: 0.994958
+  type: 'test'
+  ...
+# Subtest: failed latency, duplicate delivery, missing callback, or unknown work remains failed
+ok 91 - failed latency, duplicate delivery, missing callback, or unknown work remains failed
+  ---
+  duration_ms: 0.836459
+  type: 'test'
+  ...
+# Subtest: output contains aggregates and assertions but no private extras
+ok 92 - output contains aggregates and assertions but no private extras
+  ---
+  duration_ms: 0.120083
+  type: 'test'
+  ...
+# Subtest: missing provider counts and incomplete provider rows are rejected or failed
+ok 93 - missing provider counts and incomplete provider rows are rejected or failed
+  ---
+  duration_ms: 0.32575
+  type: 'test'
+  ...
+# Subtest: direct evaluator calls reject duplicate, missing, negative, and malformed samples
+ok 94 - direct evaluator calls reject duplicate, missing, negative, and malformed samples
+  ---
+  duration_ms: 0.197459
+  type: 'test'
+  ...
+# Subtest: hosted preflight checks both methods and never needs a real capability
+ok 95 - hosted preflight checks both methods and never needs a real capability
+  ---
+  duration_ms: 64.9935
+  type: 'test'
+  ...
+# Subtest: unavailable status alone does not satisfy the contact response contract
+ok 96 - unavailable status alone does not satisfy the contact response contract
+  ---
+  duration_ms: 6.462
+  type: 'test'
+  ...
+# Subtest: SPA fallthrough and missing privacy headers cannot pass hosted preflight
+ok 97 - SPA fallthrough and missing privacy headers cannot pass hosted preflight
+  ---
+  duration_ms: 1.657709
+  type: 'test'
+  ...
+# Subtest: network errors redact capability-bearing URLs
+ok 98 - network errors redact capability-bearing URLs
+  ---
+  duration_ms: 0.84475
+  type: 'test'
+  ...
+# Subtest: invited challenge uses pinned password login, revokes session, and returns only redacted scalars
+ok 99 - invited challenge uses pinned password login, revokes session, and returns only redacted scalars
+  ---
+  duration_ms: 28.402584
+  type: 'test'
+  ...
+# Subtest: failed challenge never establishes a session or exposes provider error text
+ok 100 - failed challenge never establishes a session or exposes provider error text
+  ---
+  duration_ms: 1.103708
+  type: 'test'
+  ...
+# Subtest: missing session inputs fail before network
+ok 101 - missing session inputs fail before network
+  ---
+  duration_ms: 0.607583
+  type: 'test'
+  ...
+# Subtest: invited OTP request pins development and disables account creation
+ok 102 - invited OTP request pins development and disables account creation
+  ---
+  duration_ms: 23.431583
+  type: 'test'
+  ...
+# Subtest: code verification redacts credentials and revokes accepted session
+ok 103 - code verification redacts credentials and revokes accepted session
+  ---
+  duration_ms: 0.622834
+  type: 'test'
+  ...
+# Subtest: expired replay or deleted-user rejection never becomes acceptance
+ok 104 - expired replay or deleted-user rejection never becomes acceptance
+  ---
+  duration_ms: 3.2985
+  type: 'test'
+  ...
+# Subtest: request diagnostics allowlist codes without leaking provider text
+ok 105 - request diagnostics allowlist codes without leaking provider text
+  ---
+  duration_ms: 2.080208
+  type: 'test'
+  ...
+# Subtest: iOS project contains a real application target and App Group entitlement
+ok 106 - iOS project contains a real application target and App Group entitlement
+  ---
+  duration_ms: 0.836916
+  type: 'test'
+  ...
+# Subtest: iOS location is optional, freshness-bounded, and appended after alert acceptance
+ok 107 - iOS location is optional, freshness-bounded, and appended after alert acceptance
+  ---
+  duration_ms: 0.270458
+  type: 'test'
+  ...
+# Subtest: iOS lifecycle uses refreshable device identity and real authenticated APIs
+ok 108 - iOS lifecycle uses refreshable device identity and real authenticated APIs
+  ---
+  duration_ms: 0.4485
+  type: 'test'
+  ...
+# Subtest: iOS shell preserves honest safety language and a discoverable real action
+ok 109 - iOS shell preserves honest safety language and a discoverable real action
+  ---
+  duration_ms: 0.3075
+  type: 'test'
+  ...
+# Subtest: locked App Intent remains silent and does not open the app
+ok 110 - locked App Intent remains silent and does not open the app
+  ---
+  duration_ms: 0.314875
+  type: 'test'
+  ...
+# Subtest: candidate metadata matches only the owned team and development configuration
+ok 111 - candidate metadata matches only the owned team and development configuration
+  ---
+  duration_ms: 0.810333
+  type: 'test'
+  ...
+# Subtest: unsafe credentials, wrong groups, stale builds and expired profiles block installation
+ok 112 - unsafe credentials, wrong groups, stale builds and expired profiles block installation
+  ---
+  duration_ms: 0.133833
+  type: 'test'
+  ...
+# Subtest: real profile plist dates and certificate data survive decoding
+ok 113 - real profile plist dates and certificate data survive decoding
+  ---
+  duration_ms: 231.453916
+  type: 'test'
+  ...
+# Subtest: both app configurations package the complete client settings plist
+ok 114 - both app configurations package the complete client settings plist
+  ---
+  duration_ms: 47.554375
+  type: 'test'
+  ...
+# Subtest: the signed artifact must declare its launch screen
+ok 115 - the signed artifact must declare its launch screen
+  ---
+  duration_ms: 0.239042
+  type: 'test'
+  ...
+# Subtest: cron SQL success cannot hide an HTTP failure or signup abuse
+ok 116 - cron SQL success cannot hide an HTTP failure or signup abuse
+  ---
+  duration_ms: 4.273208
+  type: 'test'
+  ...
+# Subtest: external heartbeat reports failure without including private diagnostics
+ok 117 - external heartbeat reports failure without including private diagnostics
+  ---
+  duration_ms: 21.38225
+  type: 'test'
+  ...
+# Subtest: operational readiness fails closed for missing configuration, invalid metrics, and stopped schedules
+ok 118 - operational readiness fails closed for missing configuration, invalid metrics, and stopped schedules
+  ---
+  duration_ms: 0.161834
+  type: 'test'
+  ...
+# Subtest: operator notification contains only safe problem codes and handles notification outage
+ok 119 - operator notification contains only safe problem codes and handles notification outage
+  ---
+  duration_ms: 0.3635
+  type: 'test'
+  ...
+# Subtest: a healthy check does not send an operator message
+ok 120 - a healthy check does not send an operator message
+  ---
+  duration_ms: 0.615041
+  type: 'test'
+  ...
+# Subtest: timer metrics detect overdue work, failed escalation and missing sweeps
+ok 121 - timer metrics detect overdue work, failed escalation and missing sweeps
+  ---
+  duration_ms: 0.575042
+  type: 'test'
+  ...
+# Subtest: journal and provider delays remain visible without claiming delivery failed
+ok 122 - journal and provider delays remain visible without claiming delivery failed
+  ---
+  duration_ms: 0.206541
+  type: 'test'
+  ...
+# Subtest: heartbeat rejects redirects without following a capability to another origin
+ok 123 - heartbeat rejects redirects without following a capability to another origin
+  ---
+  duration_ms: 0.415209
+  type: 'test'
+  ...
+# Subtest: alert copy unmistakably separates TEST, REAL, and resolved messages
+ok 124 - alert copy unmistakably separates TEST, REAL, and resolved messages
+  ---
+  duration_ms: 0.753208
+  type: 'test'
+  ...
+# Subtest: resolved rehearsals remain unmistakably TEST in every email format
+ok 125 - resolved rehearsals remain unmistakably TEST in every email format
+  ---
+  duration_ms: 0.108375
+  type: 'test'
+  ...
+# Subtest: contact confirmation copy explains consent, expiry, and limitations
+ok 126 - contact confirmation copy explains consent, expiry, and limitations
+  ---
+  duration_ms: 0.197375
+  type: 'test'
+  ...
+# Subtest: Resend adapter sends an idempotent request without leaking credentials into content
+ok 127 - Resend adapter sends an idempotent request without leaking credentials into content
+  ---
+  duration_ms: 35.345917
+  type: 'test'
+  ...
+# Subtest: Resend adapter quarantines uncertain outcomes and distinguishes explicit rejection
+ok 128 - Resend adapter quarantines uncertain outcomes and distinguishes explicit rejection
+  ---
+  duration_ms: 9.502042
+  type: 'test'
+  ...
+# Subtest: contact encryption round-trips without storing plaintext destination or token
+ok 129 - contact encryption round-trips without storing plaintext destination or token
+  ---
+  duration_ms: 3.038542
+  type: 'test'
+  ...
+# Subtest: workers finalize terminal failures and report a lost lease after provider acceptance
+ok 130 - workers finalize terminal failures and report a lost lease after provider acceptance
+  ---
+  duration_ms: 0.741959
+  type: 'test'
+  ...
+# Subtest: dispatch endpoint fails closed and never invokes work for a bad secret
+ok 131 - dispatch endpoint fails closed and never invokes work for a bad secret
+  ---
+  duration_ms: 1.678083
+  type: 'test'
+  ...
+# Subtest: webhook verifies the raw body before parsing and accepts replay-safe valid events
+ok 132 - webhook verifies the raw body before parsing and accepts replay-safe valid events
+  ---
+  duration_ms: 6.472542
+  type: 'test'
+  ...
+# Subtest: webhook rejects altered bodies and correctly signed stale or future requests before storage
+ok 133 - webhook rejects altered bodies and correctly signed stale or future requests before storage
+  ---
+  duration_ms: 4.443125
+  type: 'test'
+  ...
+# Subtest: webhook cancels oversized streamed bodies without trusting Content-Length
+ok 134 - webhook cancels oversized streamed bodies without trusting Content-Length
+  ---
+  duration_ms: 2.744667
+  type: 'test'
+  ...
+# Subtest: provider correlation contains only the hash of the stable send key
+ok 135 - provider correlation contains only the hash of the stable send key
+  ---
+  duration_ms: 0.724458
+  type: 'test'
+  ...
+# Subtest: signed correlation reaches reconciliation; storage failures request retry
+ok 136 - signed correlation reaches reconciliation; storage failures request retry
+  ---
+  duration_ms: 3.177083
+  type: 'test'
+  ...
+# Subtest: fresh signed replay passes only when provider activity is new and storage is unchanged
+ok 137 - fresh signed replay passes only when provider activity is new and storage is unchanged
+  ---
+  duration_ms: 0.832542
+  type: 'test'
+  ...
+# Subtest: private extras are not copied into replay evidence
+ok 138 - private extras are not copied into replay evidence
+  ---
+  duration_ms: 0.095125
+  type: 'test'
+  ...
+# Subtest: zero or missing correlated baseline counts are rejected
+ok 139 - zero or missing correlated baseline counts are rejected
+  ---
+  duration_ms: 1.021292
+  type: 'test'
+  ...
+# Subtest: a replay request or old event screen cannot stand in for a fresh provider attempt
+ok 140 - a replay request or old event screen cannot stand in for a fresh provider attempt
+  ---
+  duration_ms: 0.238
+  type: 'test'
+  ...
+# Subtest: acknowledgement is explicit, token-scoped and never performed by a GET
+ok 141 - acknowledgement is explicit, token-scoped and never performed by a GET
+  ---
+  duration_ms: 27.838666
+  type: 'test'
+  ...
+# Subtest: acknowledgement proxy forwards explicit intent without user cookies
+ok 142 - acknowledgement proxy forwards explicit intent without user cookies
+  ---
+  duration_ms: 1.3735
+  type: 'test'
+  ...
+# Subtest: failed immediate dispatch does not undo accepted work
+ok 143 - failed immediate dispatch does not undo accepted work
+  ---
+  duration_ms: 1.011875
+  type: 'test'
+  ...
+# Subtest: sender identity is present and escaped in provider content
+ok 144 - sender identity is present and escaped in provider content
+  ---
+  duration_ms: 4.148708
+  type: 'test'
+  ...
+# Subtest: authentication service outage remains retryable instead of rejecting the command
+ok 145 - authentication service outage remains retryable instead of rejecting the command
+  ---
+  duration_ms: 0.5095
+  type: 'test'
+  ...
+# Subtest: development release identity and old clients are mandatory
+ok 146 - development release identity and old clients are mandatory
+  ---
+  duration_ms: 1.786875
+  type: 'test'
+  ...
+# Subtest: preflight reports missing names and service evidence without secret values
+ok 147 - preflight reports missing names and service evidence without secret values
+  ---
+  duration_ms: 0.351542
+  type: 'test'
+  ...
+# Subtest: repository documents the supported environments
+ok 148 - repository documents the supported environments
+  ---
+  duration_ms: 0.624167
+  type: 'test'
+  ...
+# Subtest: dangerous local configuration is ignored
+ok 149 - dangerous local configuration is ignored
+  ---
+  duration_ms: 0.626583
+  type: 'test'
+  ...
+# Subtest: planned application boundaries exist
+ok 150 - planned application boundaries exist
+  ---
+  duration_ms: 0.267459
+  type: 'test'
+  ...
+# Subtest: locked intent is deliberately narrow and silent
+ok 151 - locked intent is deliberately narrow and silent
+  ---
+  duration_ms: 0.409
+  type: 'test'
+  ...
+# Subtest: day-one preflight reports the Xcode gate without masking blockers
+ok 152 - day-one preflight reports the Xcode gate without masking blockers
+  ---
+  duration_ms: 526.089875
+  type: 'test'
+  ...
+# Subtest: release evidence template preserves the required reliability and abuse checks
+ok 153 - release evidence template preserves the required reliability and abuse checks
+  ---
+  duration_ms: 0.581083
+  type: 'test'
+  ...
+# Subtest: Day-7 materials prohibit staged safety claims and retain evidence gates
+ok 154 - Day-7 materials prohibit staged safety claims and retain evidence gates
+  ---
+  duration_ms: 0.69475
+  type: 'test'
+  ...
+# Subtest: release preflight summarizes Supabase health without echoing status credentials
+ok 155 - release preflight summarizes Supabase health without echoing status credentials
+  ---
+  duration_ms: 0.540708
+  type: 'test'
+  ...
+# Subtest: database policy integration tests are committed and exercised in CI
+ok 156 - database policy integration tests are committed and exercised in CI
+  ---
+  duration_ms: 0.709959
+  type: 'test'
+  ...
+# Subtest: database runner keeps the standard path and narrowly handles the Docker Desktop mount failure
+ok 157 - database runner keeps the standard path and narrowly handles the Docker Desktop mount failure
+  ---
+  duration_ms: 0.572
+  type: 'test'
+  ...
+# Subtest: CI type-checks every Edge Function and blocks high-severity runtime dependencies
+ok 158 - CI type-checks every Edge Function and blocks high-severity runtime dependencies
+  ---
+  duration_ms: 0.1905
+  type: 'test'
+  ...
+# Subtest: Day-8 audit fails closed when required production evidence is absent
+ok 159 - Day-8 audit fails closed when required production evidence is absent
+  ---
+  duration_ms: 0.284208
+  type: 'test'
+  ...
+# Subtest: profile validates its response and drops unexpected private fields
+ok 160 - profile validates its response and drops unexpected private fields
+  ---
+  duration_ms: 2.044541
+  type: 'test'
+  ...
+# Subtest: createAlert validates its response and drops unexpected private fields
+ok 161 - createAlert validates its response and drops unexpected private fields
+  ---
+  duration_ms: 0.494333
+  type: 'test'
+  ...
+# Subtest: contact validates its response and drops unexpected private fields
+ok 162 - contact validates its response and drops unexpected private fields
+  ---
+  duration_ms: 0.300542
+  type: 'test'
+  ...
+# Subtest: alertStatus validates its response and drops unexpected private fields
+ok 163 - alertStatus validates its response and drops unexpected private fields
+  ---
+  duration_ms: 0.085291
+  type: 'test'
+  ...
+# Subtest: disableContact validates its response and drops unexpected private fields
+ok 164 - disableContact validates its response and drops unexpected private fields
+  ---
+  duration_ms: 0.110917
+  type: 'test'
+  ...
+# Subtest: appendLocation validates its response and drops unexpected private fields
+ok 165 - appendLocation validates its response and drops unexpected private fields
+  ---
+  duration_ms: 0.0955
+  type: 'test'
+  ...
+# Subtest: resolveAlert validates its response and drops unexpected private fields
+ok 166 - resolveAlert validates its response and drops unexpected private fields
+  ---
+  duration_ms: 0.061292
+  type: 'test'
+  ...
+# Subtest: deleteData validates its response and drops unexpected private fields
+ok 167 - deleteData validates its response and drops unexpected private fields
+  ---
+  duration_ms: 0.041959
+  type: 'test'
+  ...
+# Subtest: recovery rejects a corrupt record instead of presenting incomplete success
+ok 168 - recovery rejects a corrupt record instead of presenting incomplete success
+  ---
+  duration_ms: 0.389
+  type: 'test'
+  ...
+# Subtest: clone replay repeats receipts and never releases or mutates source
+ok 169 - clone replay repeats receipts and never releases or mutates source
+  ---
+  duration_ms: 19.405042
+  type: 'test'
+  ...
+# Subtest: source, wrong organization and invalid migration rejected before queries
+ok 170 - source, wrong organization and invalid migration rejected before queries
+  ---
+  duration_ms: 2.635667
+  type: 'test'
+  ...
+# Subtest: active jobs, pending outbound requests and schema mismatch block replay
+ok 171 - active jobs, pending outbound requests and schema mismatch block replay
+  ---
+  duration_ms: 9.869916
+  type: 'test'
+  ...
+# Subtest: stale or uncovered journal fails closed
+ok 172 - stale or uncovered journal fails closed
+  ---
+  duration_ms: 2.351667
+  type: 'test'
+  ...
+# Subtest: missing receipt and unsafe historical work block success
+ok 173 - missing receipt and unsafe historical work block success
+  ---
+  duration_ms: 2.560667
+  type: 'test'
+  ...
+# Subtest: null or boolean counts cannot masquerade as verified zero
+ok 174 - null or boolean counts cannot masquerade as verified zero
+  ---
+  duration_ms: 13.069375
+  type: 'test'
+  ...
+# Subtest: restore measures inclusive RPO/RTO limits only with all safety evidence
+ok 175 - restore measures inclusive RPO/RTO limits only with all safety evidence
+  ---
+  duration_ms: 0.615291
+  type: 'test'
+  ...
+# Subtest: slow or stale recovery remains failed
+ok 176 - slow or stale recovery remains failed
+  ---
+  duration_ms: 0.065917
+  type: 'test'
+  ...
+# Subtest: invalid target and timestamps are rejected; private extras never reach report
+ok 177 - invalid target and timestamps are rejected; private extras never reach report
+  ---
+  duration_ms: 1.915459
+  type: 'test'
+  ...
+# Subtest: restore release requires an independently verified database receipt
+ok 178 - restore release requires an independently verified database receipt
+  ---
+  duration_ms: 26.722083
+  type: 'test'
+  ...
+# Subtest: restore storage failure never reports successful reopening
+ok 179 - restore storage failure never reports successful reopening
+  ---
+  duration_ms: 2.788625
+  type: 'test'
+  ...
+# Subtest: restore receipt failure never reports successful reopening
+ok 180 - restore receipt failure never reports successful reopening
+  ---
+  duration_ms: 2.968458
+  type: 'test'
+  ...
+# Subtest: restore stale failure never reports successful reopening
+ok 181 - restore stale failure never reports successful reopening
+  ---
+  duration_ms: 1.21975
+  type: 'test'
+  ...
+# Subtest: wrong project and corrupted snapshot fail before replay
+ok 182 - wrong project and corrupted snapshot fail before replay
+  ---
+  duration_ms: 2.498125
+  type: 'test'
+  ...
+# Subtest: restore refuses another authority before sending credentials
+ok 183 - restore refuses another authority before sending credentials
+  ---
+  duration_ms: 0.613334
+  type: 'test'
+  ...
+# Subtest: journal response loss leaves entry pending and a retry completes in order
+ok 184 - journal response loss leaves entry pending and a retry completes in order
+  ---
+  duration_ms: 18.734833
+  type: 'test'
+  ...
+# Subtest: unacknowledged durability and missing configuration fail closed
+ok 185 - unacknowledged durability and missing configuration fail closed
+  ---
+  duration_ms: 0.646333
+  type: 'test'
+  ...
+# Subtest: deletion HTTP result requires both durable flush and completed receipt
+ok 186 - deletion HTTP result requires both durable flush and completed receipt
+  ---
+  duration_ms: 1.303958
+  type: 'test'
+  ...
+# {"type":"monitor_report","backendHealthy":false,"operationsCode":"UNAVAILABLE","heartbeatCode":"UNAVAILABLE"}
+# Subtest: scoped health rejects invalid credentials before database access and supports rotation
+ok 187 - scoped health rejects invalid credentials before database access and supports rotation
+  ---
+  duration_ms: 24.596292
+  type: 'test'
+  ...
+# Subtest: monitor deduplicates incidents, retries failed notifications, and reports recovery
+ok 188 - monitor deduplicates incidents, retries failed notifications, and reports recovery
+  ---
+  duration_ms: 4.4195
+  type: 'test'
+  ...
+# Subtest: Healthchecks separates backend failures from monitor liveness and retries reporting
+ok 189 - Healthchecks separates backend failures from monitor liveness and retries reporting
+  ---
+  duration_ms: 5.668125
+  type: 'test'
+  ...
+# Subtest: scheduled reporting exposes failed HTTP outcomes without private response data
+ok 190 - scheduled reporting exposes failed HTTP outcomes without private response data
+  ---
+  duration_ms: 1.113792
+  type: 'test'
+  ...
+# Subtest: signup challenge sends one bounded token through the native bridge
+ok 191 - signup challenge sends one bounded token through the native bridge
+  ---
+  duration_ms: 2.5095
+  type: 'test'
+  ...
+# Subtest: signup challenge fails closed outside the app or without valid configuration
+ok 192 - signup challenge fails closed outside the app or without valid configuration
+  ---
+  duration_ms: 2.609166
+  type: 'test'
+  ...
+# Subtest: expired challenge offers a retry instead of reusing its old token
+ok 193 - expired challenge offers a retry instead of reusing its old token
+  ---
+  duration_ms: 0.559459
+  type: 'test'
+  ...
+# Subtest: only the isolated onboarding page permits Cloudflare scripts
+ok 194 - only the isolated onboarding page permits Cloudflare scripts
+  ---
+  duration_ms: 0.605709
+  type: 'test'
+  ...
+# Subtest: schema protects each private table with row-level security
+ok 195 - schema protects each private table with row-level security
+  ---
+  duration_ms: 2.074958
+  type: 'test'
+  ...
+# Subtest: schema guarantees one canonical alert for an idempotency key
+ok 196 - schema guarantees one canonical alert for an idempotency key
+  ---
+  duration_ms: 0.778917
+  type: 'test'
+  ...
+# Subtest: schema guarantees that an alert contact belongs to the same user
+ok 197 - schema guarantees that an alert contact belongs to the same user
+  ---
+  duration_ms: 0.291042
+  type: 'test'
+  ...
+# Subtest: schema permits queued deliveries while deduplicating assigned provider IDs
+ok 198 - schema permits queued deliveries while deduplicating assigned provider IDs
+  ---
+  duration_ms: 0.351417
+  type: 'test'
+  ...
+# Subtest: schema persists only hashed expiring confirmation and rate-limit subjects
+ok 199 - schema persists only hashed expiring confirmation and rate-limit subjects
+  ---
+  duration_ms: 0.26125
+  type: 'test'
+  ...
+# Subtest: contact verification traffic is limited by hashed user and destination subjects
+ok 200 - contact verification traffic is limited by hashed user and destination subjects
+  ---
+  duration_ms: 0.116917
+  type: 'test'
+  ...
+# Subtest: schema blocks anonymous direct access to sensitive data
+ok 201 - schema blocks anonymous direct access to sensitive data
+  ---
+  duration_ms: 0.452375
+  type: 'test'
+  ...
+# Subtest: schema has bounded retention for locations, tokens, and delivery diagnostics
+ok 202 - schema has bounded retention for locations, tokens, and delivery diagnostics
+  ---
+  duration_ms: 0.906625
+  type: 'test'
+  ...
+# Subtest: alert creation is transactionally serialized and stores only a viewer-token hash
+ok 203 - alert creation is transactionally serialized and stores only a viewer-token hash
+  ---
+  duration_ms: 1.208625
+  type: 'test'
+  ...
+# Subtest: cooldown is kind-scoped so a rehearsal cannot suppress a real alert
+ok 204 - cooldown is kind-scoped so a rehearsal cannot suppress a real alert
+  ---
+  duration_ms: 0.809125
+  type: 'test'
+  ...
+# Subtest: delivery uses a leased retryable transactional outbox
+ok 205 - delivery uses a leased retryable transactional outbox
+  ---
+  duration_ms: 0.23175
+  type: 'test'
+  ...
+# Subtest: public projection is token-scoped, expiry-aware, and explicitly allowlisted
+ok 206 - public projection is token-scoped, expiry-aware, and explicitly allowlisted
+  ---
+  duration_ms: 0.159875
+  type: 'test'
+  ...
+# Subtest: every deployed system function and authority route has an explicit contract and behavioral suite
+ok 207 - every deployed system function and authority route has an explicit contract and behavioral suite
+  ---
+  duration_ms: 1.1475
+  type: 'test'
+  ...
+# Subtest: public boolean contracts do not disclose backend fields and require explicit actions
+ok 208 - public boolean contracts do not disclose backend fields and require explicit actions
+  ---
+  duration_ms: 16.279417
+  type: 'test'
+  ...
+# Subtest: hosted public URL routes GET to the event function
+ok 209 - hosted public URL routes GET to the event function
+  ---
+  duration_ms: 25.520666
+  type: 'test'
+  ...
+# Subtest: hosted public URL routes POST to the event function
+ok 210 - hosted public URL routes POST to the event function
+  ---
+  duration_ms: 1.108375
+  type: 'test'
+  ...
+# Subtest: same-origin viewer proxy forwards only the opaque token to the configured public function
+ok 211 - same-origin viewer proxy forwards only the opaque token to the configured public function
+  ---
+  duration_ms: 1.562709
+  type: 'test'
+  ...
+# Subtest: same-origin viewer proxy rejects malformed tokens without contacting upstream
+ok 212 - same-origin viewer proxy rejects malformed tokens without contacting upstream
+  ---
+  duration_ms: 0.104666
+  type: 'test'
+  ...
+# Subtest: same-origin viewer proxy preserves bounded retry signals and fails closed
+ok 213 - same-origin viewer proxy preserves bounded retry signals and fails closed
+  ---
+  duration_ms: 0.814792
+  type: 'test'
+  ...
+1..213
+# tests 213
+# suites 0
+# pass 213
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 915.350792
+
+> @signalword/viewer@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.1 /Users/haleytran/.codex/worktrees/release-readiness/SignalWord/apps/viewer
+
+
+ Test Files  5 passed (5)
+      Tests  44 passed (44)
+   Start at  13:03:34
+   Duration  179ms (transform 65%, tests 17%, import 13%, worker 5%)
+

@@ -1,0 +1,23 @@
+{
+  "version": "1.0 (8)",
+  "source": "0326ece1cd5b99e3aea1844e569ac9bb7e88b7d9",
+  "observed_date": "2026-10-01",
+  "uploaded_at_sydney": "02:19",
+  "upload_status": "Complete",
+  "build_status": "Ready to Submit",
+  "internal_group": "SignalWord Internal",
+  "internal_testers": 1,
+  "what_to_test_saved": true,
+  "missing_compliance_warning_observed": false,
+  "url": "https://appstoreconnect.apple.com/teams/f7b5e6dc-616b-47e4-ace2-bac071116633/apps/6817293151/testflight/ios/c2fb65a3-55e2-4083-a516-d792d4b1ce95",
+  "physical_acceptance": {
+    "provenance": "Owner reports on the installed TestFlight 1.0 (8), 1 October 2026; no exact device test time supplied.",
+    "password_captcha_login_same_confirmed_contact_relaunch": "passed",
+    "ocean_and_lavender_selection_relaunch_and_apple_restore": "passed",
+    "small_test_alert_and_early_checkin_regression_on_build8": "not yet reported",
+    "earlier_passed_device_milestones": "retained as historical evidence, not relabelled as Build 8 results"
+  },
+  "public_app_review_submitted": false,
+  "public_release_verified": false,
+  "local_screenshot": "/private/tmp/signalword-build8-testflight-ready.png"
+}

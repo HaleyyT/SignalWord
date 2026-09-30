@@ -1,0 +1,22 @@
+{
+  "/auth/recovery": {
+    "status": 200,
+    "cache_control": "no-store",
+    "csp": "default-src 'none'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://voepalyamwgenceawdvl.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "bytes": 1374
+  },
+  "/auth/recovery.js": {
+    "status": 200,
+    "cache_control": "no-store",
+    "csp": "default-src 'none'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://voepalyamwgenceawdvl.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "bytes": 3846
+  },
+  "/api/auth/config": {
+    "status": 200,
+    "cache_control": "no-store",
+    "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    "backend": "https://voepalyamwgenceawdvl.supabase.co",
+    "public_key_present": true,
+    "site_key_present": true
+  }
+}

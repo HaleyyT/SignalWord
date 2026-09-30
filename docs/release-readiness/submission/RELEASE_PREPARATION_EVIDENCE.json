@@ -1,0 +1,75 @@
+{
+  "sourceCommit": "95477d3030bd09ec0d6177d28b9ed5b4f4326bdc",
+  "app": {
+    "version": "1.0",
+    "build": "2",
+    "bundleId": "com.signalword.app",
+    "appGroup": "group.com.signalword.shared",
+    "minimumIOS": "18.0"
+  },
+  "apiVersions": [
+    1,
+    2
+  ],
+  "environment": "development",
+  "projectRef": "voepalyamwgenceawdvl",
+  "sourceManifestSHA256": "d94a180957a04083c0c4b5676a6014dcd3527e04334457fa04fd5fb7e33ad4e2",
+  "frozen": false,
+  "hostedGates": {
+    "passed": 11,
+    "total": 17,
+    "open": [
+      "H04",
+      "H08",
+      "H10",
+      "H11",
+      "H16",
+      "H17"
+    ]
+  },
+  "checks": {
+    "nodeTests": 178,
+    "viewerTests": 44,
+    "swiftCoreTests": 36,
+    "sdkDisabledFallbackTests": 1,
+    "releaseSimulatorBuild": "PASS",
+    "packagedPrivacyManifest": "PASS",
+    "icon": {
+      "width": 1024,
+      "height": 1024,
+      "alpha": false
+    },
+    "hostedRoutingChecks": 6,
+    "aggregateHealth": "clear",
+    "authorityAllowed": true,
+    "journalVersion": 13,
+    "cleanClone": {
+      "commit": "95477d3030bd09ec0d6177d28b9ed5b4f4326bdc",
+      "npmCi": "PASS",
+      "nodeTests": 178,
+      "viewerTests": 44,
+      "unsignedReleaseSimulatorBuild": "PASS",
+      "gitStatus": "clean"
+    }
+  },
+  "failuresRetained": [
+    "Source archive npm verification failed because Git metadata was absent; fresh clone verification required."
+  ],
+  "notPerformed": [
+    "signed build",
+    "device installation",
+    "Sentry provisioning",
+    "paid backup upgrade",
+    "managed restore",
+    "App Store upload",
+    "public enrollment"
+  ],
+  "logsSHA256": {
+    "workingVerification": "0351ea3a915f7827ff1dd881fc4170a3de629eb91d832555186cf400c9ed8f86",
+    "swift": "da162649c9e390c8fdd33064929b3359ffdf180218a54e4b2503b08396b9b755",
+    "cleanInstall": "b402b74710db70f139419d75ac3c4f5ca1de8584577cf86dd03e1af5ac037cb9",
+    "cleanVerification": "e6d09580d066f576a39b41bd327d3e7c694a6f35e79d6bdc360ad98d65226501",
+    "cleanBuild": "0bf0af74ce2395618e62d16c127ead1f797bc50b59a5cde15722948ab6d66b88",
+    "sourceArchiveFailure": "6a2db0f7b8755ec0e8e97c3e8efa282e8220dd842163b8d6852447ffa4acbc95"
+  }
+}

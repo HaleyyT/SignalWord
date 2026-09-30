@@ -75,6 +75,8 @@ export function parsePublicEvent(value: unknown): PublicEvent {
 
   return {
     kind,
+    ...(value.cause === 'missed_check_in' ? {cause: 'missed_check_in' as const} : {}),
+    ...(isTimestamp(value.checkInDeadline) ? {checkInDeadline: value.checkInDeadline} : {}),
     displayName,
     state,
     triggeredAt,

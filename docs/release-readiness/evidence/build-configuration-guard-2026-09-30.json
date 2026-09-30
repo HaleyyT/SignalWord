@@ -1,0 +1,20 @@
+{
+  "projectRef": "voepalyamwgenceawdvl",
+  "expectedProjectName": "signalword-dev",
+  "configuredReleaseBuild": "PASS",
+  "configuredDebugBuild": "PASS: both build settings and processed Info.plist verified",
+  "blankReleaseBuild": "FAIL as required: missing SIGNALWORD_SUPABASE_URL",
+  "blankDebugBuild": "FAIL as required: missing SIGNALWORD_SUPABASE_URL",
+  "validatorTests": 5,
+  "nodeTests": 218,
+  "viewerTests": 44,
+  "repositoryContractSecurityChecks": "PASS",
+  "testCases": [
+    "missing values in Debug and Release",
+    "localhost/placeholder/wrong-project endpoints",
+    "unresolved/placeholder/private keys",
+    "legacy anon JWT project and role",
+    "processed plist missing or mismatched"
+  ],
+  "limitations": "Opaque publishable-key ownership requires hosted authentication; guard verifies format and exact bundled equality. No network or App Store readiness claim."
+}
