@@ -148,7 +148,8 @@ test('user API returns only the stable public create-alert projection', async ()
   assert.equal(response.headers.get('Server-Timing'), null);
   assert.equal(JSON.stringify(body).includes(TOKEN), false);
   assert.equal(JSON.stringify(logs).includes(TOKEN), false);
-  assert.deepEqual(Object.keys(logs[0]).sort(), ['durationMs', 'method', 'requestId', 'reused', 'route', 'status']);
+  assert.equal(logs[0].operation, 'alert');
+  assert.deepEqual(Object.keys(logs[0]).sort(), ['durationMs', 'method', 'operation', 'requestId', 'reused', 'route', 'status']);
 });
 
 test('development v2 alert responses expose numeric phase timing without identifiers', async () => {
