@@ -15,3 +15,7 @@ RevenueCat correction: Project Settings explicitly displays proje0c77650. Use th
 Owner reports Resend and Supabase upgraded. This does not close hosted H04/H08/H11/H16/H17; no recovery/load/provider evidence is fabricated. Final release approval and a >=95 score are withheld pending hosted and physical acceptance, IAP, privacy/metadata and final submission checks.
 
 Artifacts: /private/tmp/SignalWord-1.0-4-Release.xcarchive; /private/tmp/SignalWord-1.0-4-export/SignalWord.ipa. Logs: /private/tmp/signalword-release-archive.log, signalword-release-export.log, signalword-release-upload.log, signalword-final-reverify.log, signalword-final-core.log, signalword-final-supporter.log, signalword-final-ui.log.
+
+## Apple processing readback
+
+At approximately 19:13 Sydney Apple lists upload Complete and Build 4 Missing Compliance; Groups (0). Owner export declaration requested. Not yet represented as installable. Production and sandbox notification fields both showed the full matching RevenueCat endpoint after saving; no notification delivery claimed. Apple UI did not expose a version selector in those dialogs. Confirm callback format with the actual sandbox event.

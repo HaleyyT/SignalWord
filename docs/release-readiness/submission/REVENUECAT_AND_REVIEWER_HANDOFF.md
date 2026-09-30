@@ -1,3 +1,5 @@
+> Latest: see BUILD4_TESTFLIGHT_HANDOFF.md for clean signed Build 4 upload, current tests and remaining acceptance. Owner reports Supabase/Resend Pro upgrades. Full RevenueCat Project Settings ID is proje0c77650; e0c77650 is the dashboard URL segment.
+
 # RevenueCat and reviewer access — 30 September 2026
 
 Status: PARTIAL IMPLEMENTATION, NOT RELEASE READY. No App Review submission or public release performed.
@@ -15,16 +17,15 @@ Candidate: release-readiness worktree, feat/hosted-restore-compatibility, implem
 - Release simulator build succeeded, version/bundle verified, SignalWordRevenueCatAPIKey matched the verified public key and PurchaseHistory disclosure was bundled. This is compilation/configuration evidence, not an App Store purchase test.
 - Added purchase history for functionality and analytics, without tracking. The app uses an anonymous billing identity and does not attach the safety account or safety data to RevenueCat. Updated privacy-page purpose wording. Final aggregate archive and App Store privacy responses still require verification.
 
-## Apple account blocker (fresh dashboard observation)
+## Apple account prerequisite — cleared by owner screenshot
 
-Free Apps Agreement Active. Paid Apps Agreement Pending User Info. Australia ABN and GST Registration Documents Missing Tax Info. US Certificate of Foreign Status and W-8BEN Active. Banking Processing.
-Owner reports ABN application did not authorise them and asks engineering to continue independently. Do not invent an ABN, alter region, submit tax declarations, or assume the restriction only delays payments. Owner must resolve applicability with Apple/qualified adviser. Paid purchase release is not cleared.
+Owner screenshot dated 30 September 2026, 17:37 Sydney shows Free Apps Agreement, Paid Apps Agreement, bank account, ABN/GST documents, both US tax forms and Digital Services Act compliance all Active. This supersedes the earlier Pending User Info/Missing Tax Info/Processing observation. No tax identifiers or banking details retained here. Apple account prerequisite is cleared; this does not prove product metadata, purchase/restore, final binary or review readiness.
 
 ## Reviewer implementation
 
 Added standard existing-account password sign-in alongside existing email-code sign-in. It uses Supabase /auth/v1/token?grant_type=password and the existing foreground CAPTCHA. No account is created, no OTP bypass or special reviewer entitlement exists, and normal session refresh/deletion protections apply. Password is held only in view/request memory, cleared after submission/backgrounding, never persisted by the app or placed in URLs. Errors do not disclose whether an account exists.
 
-Owner confirmed no dedicated reviewer account exists. Follow REVIEWER_ACCOUNT_OWNER_STEPS.md. Owner must create/set the dedicated review account's password through the normal provider flow; agent must not create credentials through the UI. Use a separate consenting test contact. Never put credentials in Git, public Devpost text, screenshots, or this document. Enter them only in private App Review sign-in information. Verify the hosted provider permits normal password sign-in for this existing account and that CAPTCHA and refresh work on the final installed candidate. Do not expire or delete the account during review; normal short-lived access tokens must still refresh, not become permanent tokens.
+Update: owner created the dedicated reviewer account; its confirmed user record was observed in the matching signalword-dev dashboard (voepalyamwgenceawdvl). No password requested or inspected; actual login remains untested. Follow REVIEWER_ACCOUNT_OWNER_STEPS.md for acceptance. Owner must create/set the dedicated review account's password through the normal provider flow; agent must not create credentials through the UI. Use a separate consenting test contact. Never put credentials in Git, public Devpost text, screenshots, or this document. Enter them only in private App Review sign-in information. Verify the hosted provider permits normal password sign-in for this existing account and that CAPTCHA and refresh work on the final installed candidate. Do not expire or delete the account during review; normal short-lived access tokens must still refresh, not become permanent tokens.
 
 Reviewer instructions after hosted acceptance:
 1. Launch, enter the supplied invited email, select Use an existing password.
@@ -50,3 +51,7 @@ These tests do not prove real reviewer login or real payment. Updated Release si
 8. Devpost public listing, working purchase proof, <=2-minute video, compliant screenshots/icon and legitimate judge access remain required; mapping alone is insufficient.
 
 References: https://supabase.com/docs/reference/swift/auth-signinwithpassword and https://supabase.com/docs/guides/auth/auth-captcha .
+
+## Explicit backend verification follow-up
+
+The earlier compile-only replacement artifact had blank backend settings. Rebuilt Release simulator version 1.0 (4) with /private/tmp/signalword-signing-preparation/Development.xcconfig. Build succeeded and bundled Info.plist confirms https://voepalyamwgenceawdvl.supabase.co and its /functions/v1/user-api endpoint. Dashboard URL independently confirms the new reviewer account belongs to that exact project, named signalword-dev. See reviewer-config-verification.json. This is an unsigned simulator artifact, not an uploaded TestFlight replacement or production approval. Reviewer password/CAPTCHA/hosted login still require acceptance; no credentials were requested.
