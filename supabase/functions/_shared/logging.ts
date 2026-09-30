@@ -2,6 +2,7 @@ export interface SafeLogEvent {
   requestId: string;
   route: "user-api" | "public-event" | "contact-confirm";
   method: string;
+  operation?: "profile" | "contact" | "check-in" | "contact-network" | "alert" | "account-deletion" | "other";
   status: number;
   durationMs: number;
   code?: string;
@@ -19,6 +20,7 @@ export const structuredLogger: SafeLogger = {
     console.info(JSON.stringify({ requestId: event.requestId, route: event.route,
       method: ["GET","POST","PUT","DELETE","PATCH","OPTIONS","HEAD"].includes(event.method) ? event.method : "OTHER", status: event.status, durationMs: event.durationMs,
       ...(event.code === undefined ? {} : { code: event.code }),
+      ...(["profile", "contact", "check-in", "contact-network", "alert", "account-deletion", "other"].includes(event.operation ?? "") ? { operation: event.operation } : {}),
       ...(event.reused === undefined ? {} : { reused: event.reused }),
     }));
   },

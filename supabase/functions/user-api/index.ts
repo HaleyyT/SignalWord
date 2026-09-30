@@ -66,6 +66,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
     const startedAt = dependencies.now();
     const id = requestId(request);
     let status = 500;
+    let operation: "profile" | "contact" | "check-in" | "contact-network" | "alert" | "account-deletion" | "other" = "other";
     let code: string | undefined;
     let reused: boolean | undefined;
     const timings: Record<string, number> = {};
@@ -73,6 +74,12 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
 
     try {
       const path = new URL(request.url).pathname.replace(/\/+$/, "");
+      operation = path.endsWith("/v1/profile") ? "profile"
+        : path.endsWith("/v1/contact") || path.includes("/contacts") ? "contact"
+        : path.includes("/check-in") ? "check-in"
+        : path.endsWith("/contact-network") ? "contact-network"
+        : path.includes("/alerts") ? "alert"
+        : path.endsWith("/v1/data") ? "account-deletion" : "other";
       exposeTimingForRequest = request.method === "POST" && path.endsWith("/v2/alerts");
       const jwt = bearerToken(request);
       const authStartedAt = dependencies.now();
@@ -272,6 +279,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       writeSafely(dependencies.logger, {
         requestId: id,
         route: "user-api",
+        operation,
         method: request.method,
         status,
         durationMs: Math.max(0, dependencies.now() - startedAt),
