@@ -124,6 +124,20 @@ final class SessionLifecycleTests: XCTestCase {
         XCTAssertEqual(store.value?.accessToken, token, "A deliberate new signup must remain usable")
     }
 
+    func testSignOutInvalidatesOldAPIResponsesAndAllowsExistingAccountLogin() async throws {
+        let store = MemoryCredentials(session(expiry: now.addingTimeInterval(600)))
+        let manager = makeManager(store) { self.response($0) }
+        let version = await manager.sessionGeneration()
+        try await manager.deleteLocalSession()
+        do { try await manager.requireGeneration(version); XCTFail("Old account response must be discarded") }
+        catch is CancellationError { }
+        XCTAssertNil(store.value)
+        try await manager.signInWithPassword(email: "another@example.test", password: "fixture-password", captchaToken: "proof")
+        XCTAssertNotNil(store.value)
+        do { try await manager.requireGeneration(version); XCTFail("Re-login must not revive the previous generation") }
+        catch is CancellationError { }
+    }
+
     private func makeManager(_ store: MemoryCredentials,
         transport: @escaping @Sendable (URLRequest) async throws -> (Data, URLResponse)) -> SupabaseSessionManager {
         let now = now

@@ -97,6 +97,12 @@ actor SupabaseSessionManager {
         _ = try await task.value
     }
 
+    func sessionGeneration() -> Int { generation }
+
+    func requireGeneration(_ expected: Int) throws {
+        guard expected == generation else { throw CancellationError() }
+    }
+
     func deleteLocalSession() throws {
         // Invalidate outstanding responses even if their transport ignores cancellation.
         // Otherwise a late refresh/signup could recreate credentials after deletion.

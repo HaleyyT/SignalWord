@@ -46,6 +46,7 @@ struct SignalWordRootView: View {
     @State private var supporter = SupporterComposition.makeModel()
     @State private var selectedTab: SignalTab = .home
     @State private var showDeleteConfirmation = false
+    @State private var showSignOutConfirmation = false
     @State private var showContactEditor = false
 
     var body: some View {
@@ -56,6 +57,7 @@ struct SignalWordRootView: View {
                 SignalWordSetupFlow(model: model)
             }
         }
+        .disabled(model.isSigningOut)
         .environment(network)
         .environment(timer)
         .onChange(of: timer.snapshot?.incidentId) { _, incident in
@@ -81,6 +83,17 @@ struct SignalWordRootView: View {
                 }
                 do { try await Task.sleep(for: .seconds(10)) } catch { return }
             }
+        }
+        .confirmationDialog("Sign out of SignalWord?", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
+            Button("Sign out") {
+                Task {
+                    await model.signOut(statusUpdateInProgress: timer.busy || network.busy)
+                    if !model.hasEnteredDashboard { network.clear(); timer.clear(); selectedTab = .home }
+                }
+            }.accessibilityIdentifier("account.confirmSignOut")
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your account and server data are kept. Sign-out does not cancel alerts or check-in timers. Finish active alerts and timers first. Vocal Shortcuts cannot send alerts while signed out; after switching accounts, they use the signed-in account.")
         }
         .confirmationDialog(
             "Delete all SignalWord data?",
@@ -115,7 +128,8 @@ struct SignalWordRootView: View {
                         model: model,
                         supporter: supporter,
                         openPeople: { selectedTab = .people },
-                        openDeleteConfirmation: { showDeleteConfirmation = true }
+                        openDeleteConfirmation: { showDeleteConfirmation = true },
+                        openSignOutConfirmation: { showSignOutConfirmation = true }
                     )
                 }
             }

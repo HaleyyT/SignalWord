@@ -23,7 +23,7 @@ enum UITestComposition {
             await service.trigger(kind)
         }, lifecycle: .init(
             prepare: { _ in
-                if arguments.contains("--ui-invited-login") { throw SessionError.verificationRequired }
+                if await service.isSignedOut() || arguments.contains("--ui-invited-login") { throw SessionError.verificationRequired }
                 if arguments.contains("--ui-recovery-failure") { throw UserAPIError.invalidResponse }
             }, profile: { name in await service.profile(name) },
             recover: { _ in await service.recover() },
@@ -34,7 +34,11 @@ enum UITestComposition {
             authenticateResolution: { true },
             resolve: { id in try await service.resolve(id) },
             locationAuthorization: { .denied }, requestLocationAccess: { .denied },
-            deleteAccount: { await service.delete() }
+            deleteAccount: { await service.delete() },
+            signOut: {
+                if arguments.contains("--ui-signout-blocked") { throw SessionError.unavailable }
+                await service.signOut()
+            }
         ), preferences: preferences)
     }
 }
@@ -100,6 +104,8 @@ private final class UITestService {
         preferences.set("resolved", forKey: "fixture.state")
         return .init(eventID: id, state: "resolved", resolvedAt: Date())
     }
+    func isSignedOut() -> Bool { preferences.bool(forKey: "fixture.signedOut") }
+    func signOut() { preferences.set(true, forKey: "fixture.signedOut") }
     func delete() { preferences.removePersistentDomain(forName: "SignalWord.UIJourney") }
 }
 #endif

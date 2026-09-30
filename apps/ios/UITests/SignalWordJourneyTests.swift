@@ -52,6 +52,35 @@ final class SignalWordJourneyTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["SignalWord could not restore your protected session. Check the connection and try again."].exists)
     }
 
+    func testSignOutKeepsAccountAndReturnsToSignIn() {
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready"]
+        app.launch()
+        XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
+        app.buttons["navigation.Settings"].tap()
+        tap("account.signOut")
+        tap("account.confirmSignOut")
+        XCTAssertTrue(app.textFields["onboarding.invitedEmail"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Signed out on this iPhone. Your account and server data have not been deleted."].exists)
+        app.terminate()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.textFields["onboarding.invitedEmail"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["navigation.Home"].exists)
+    }
+
+    func testUnsafeSignOutLeavesAccountUsable() {
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-signout-blocked"]
+        app.launch()
+        XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
+        app.buttons["navigation.Settings"].tap()
+        tap("account.signOut")
+        tap("account.confirmSignOut")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Could not sign out safely.")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["navigation.Home"].exists)
+    }
+
     private func launchFresh() {
         continueAfterFailure = false
         app = XCUIApplication()
