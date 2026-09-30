@@ -15,7 +15,12 @@ struct PeopleScreen: View {
                     title: "People",
                     detail: "Choose who receives your alerts. Each person confirms by email."
                 )
-                if model.hasContactDraft && model.contactStatus != "disabled" {
+                if !model.canEditContact {
+                    InlineMessage("Your saved contact is unavailable until account loading succeeds. Retry before making changes.", kind: .attention)
+                    SecondaryButton(title: model.requiresSessionRecovery ? "Sign in again" : "Retry account loading", symbol: "arrow.clockwise") {
+                        Task { if model.requiresSessionRecovery { await model.signInAgain() } else { await model.recover() } }
+                    }
+                } else if model.hasContactDraft && model.contactStatus != "disabled" {
                     recipientCard
                     if model.contactStatus != "confirmed" {
                         SecondaryButton(title: "Check confirmation", symbol: "arrow.clockwise") {

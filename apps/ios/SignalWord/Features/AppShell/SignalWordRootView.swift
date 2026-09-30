@@ -51,7 +51,7 @@ struct SignalWordRootView: View {
 
     var body: some View {
         Group {
-            if model.hasEnteredDashboard {
+            if model.hasEnteredDashboard && !model.needsIdentityVerification {
                 mainTabs
             } else {
                 SignalWordSetupFlow(model: model)
@@ -64,6 +64,7 @@ struct SignalWordRootView: View {
             if incident != nil { Task { await model.recover() } }
         }
         .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear(); timer.clear() } }
+        .accessibilityValue("Appearance: " + supporter.selectedAppearance)
         .tint(supporter.selectedAppearance == "ocean" ? .cyan : supporter.selectedAppearance == "lavender" ? Color(red: 0.76, green: 0.67, blue: 1) : SignalWordColor.link)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
@@ -71,7 +72,9 @@ struct SignalWordRootView: View {
         }
         .task { await model.recover() }
         .task(id: scenePhase) {
-            if scenePhase == .active && model.hasEnteredDashboard && supporter.hasStarted { await supporter.refresh() }
+            // Restore the saved accent on cold launch, before the purchase screen is opened.
+            // Billing identity is independent of the safety account.
+            if scenePhase == .active { await supporter.refresh() }
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }

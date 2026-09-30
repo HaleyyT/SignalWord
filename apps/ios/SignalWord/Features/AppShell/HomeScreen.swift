@@ -107,7 +107,9 @@ struct HomeScreen: View {
 
     @ViewBuilder
     private var primaryAction: some View {
-        if isActiveAlert {
+        if model.requiresSessionRecovery {
+            PrimaryButton(title: "Sign in again", symbol: "person.crop.circle") { Task { await model.signInAgain() } }
+        } else if isActiveAlert {
             HoldConfirmControl(action: .resolveAlert, isEnabled: true, identifier: "alert.resolve") {
                 await model.requestResolution()
             }
@@ -128,7 +130,7 @@ struct HomeScreen: View {
                 .foregroundStyle(SignalWordColor.secondaryText)
                 .frame(maxWidth: .infinity, alignment: .center)
         } else if !model.identityReady {
-            PrimaryButton(title: "Prepare this iPhone", symbol: "arrow.clockwise") {
+            PrimaryButton(title: "Retry account loading", symbol: "arrow.clockwise") {
                 Task { await model.recover() }
             }
             .accessibilityIdentifier("home.prepare")

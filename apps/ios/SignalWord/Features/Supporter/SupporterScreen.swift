@@ -77,7 +77,16 @@ struct SupporterScreen: View {
 #if DEBUG && targetEnvironment(simulator)
 /// A deterministic UI fixture, never compiled into a device or Release build.
 @MainActor private final class PreviewBilling: SupporterService {
-    private var purchased = false
+    private let preferences = UserDefaults(suiteName: "SignalWord.SupporterUITests")!
+    private var purchased: Bool {
+        get { preferences.bool(forKey: "fixture.purchased") }
+        set { preferences.set(newValue, forKey: "fixture.purchased") }
+    }
+    init() {
+        if ProcessInfo.processInfo.arguments.contains("--reset-ui-state") {
+            preferences.removePersistentDomain(forName: "SignalWord.SupporterUITests")
+        }
+    }
     func offer() async throws -> SupporterOffer? { .init(price: "TEST $4.99") }
     func isActive() async throws -> Bool { purchased }
     func purchase() async throws -> SupporterPurchaseResult { purchased = true; return .active }

@@ -1,11 +1,6 @@
 import Foundation
 import Security
 
-enum UserAPIError: Error, Sendable {
-    case unavailable
-    case rejected(statusCode: Int)
-    case invalidResponse
-}
 
 struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
     let baseURL: URL
@@ -75,6 +70,14 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
     func signInWithPassword(email: String, password: String, captchaToken: String) async throws {
         try await sessionManager.signInWithPassword(email: email, password: password, captchaToken: captchaToken)
     }
+
+    func requestRegistrationCode(email: String, captchaToken: String) async throws {
+        try await sessionManager.requestInvitedCode(email: email, captchaToken: captchaToken, createAccount: true)
+    }
+
+    func identityID() async throws -> String? { try await sessionManager.identityID() }
+
+    func beginReauthentication() async throws { try await sessionManager.beginReauthentication() }
 
     func prepareIdentity(captchaToken: String? = nil) async throws {
         _ = try await sessionManager.accessToken(createIfMissing: true, captchaToken: captchaToken)
@@ -209,6 +212,7 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
             try await sessionManager.requireGeneration(generation)
             guard let http = urlResponse as? HTTPURLResponse else { throw UserAPIError.invalidResponse }
             if http.statusCode == 401, attempt == 0 { continue }
+            if http.statusCode == 401 { throw SessionError.sessionExpired }
             guard (200..<300).contains(http.statusCode) else {
                 throw UserAPIError.rejected(statusCode: http.statusCode)
             }

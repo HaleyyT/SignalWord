@@ -66,7 +66,7 @@ final class SessionLifecycleTests: XCTestCase {
             return self.response(request, status: 401)
         }
         do { _ = try await manager.accessToken(createIfMissing: true); XCTFail("Expected rejection") }
-        catch let error as SessionError { XCTAssertEqual(error, .unavailable) }
+        catch let error as SessionError { XCTAssertEqual(error, .sessionExpired) }
         XCTAssertEqual(store.value, initial)
     }
 
@@ -136,6 +136,66 @@ final class SessionLifecycleTests: XCTestCase {
         XCTAssertNotNil(store.value)
         do { try await manager.requireGeneration(version); XCTFail("Re-login must not revive the previous generation") }
         catch is CancellationError { }
+    }
+
+    func testPasswordErrorsAreActionableAndNeverSaveCredentials() async throws {
+        for (code, status, expected) in [("invalid_credentials", 400, SessionError.invalidCredentials),
+            ("captcha_failed", 400, .captchaFailed), ("over_request_rate_limit", 429, .rateLimited),
+            ("unexpected_failure", 503, .unavailable)] {
+            let store = MemoryCredentials()
+            let manager = makeManager(store) { request in
+                (try JSONSerialization.data(withJSONObject: ["error_code": code]),
+                 HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+            }
+            do { try await manager.signInWithPassword(email: "a@example.test", password: "fixture", captchaToken: "proof"); XCTFail("Expected classified rejection") }
+            catch let error as SessionError { XCTAssertEqual(error, expected) }
+            XCTAssertNil(store.value)
+        }
+    }
+
+    func testOnlyExplicitRegistrationMayCreateAnAccount() async throws {
+        for create in [false, true] {
+            let manager = makeManager(MemoryCredentials()) { request in
+                let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+                XCTAssertEqual(body["create_user"] as? Bool, create)
+                XCTAssertNotNil(body["gotrue_meta_security"])
+                return self.response(request)
+            }
+            try await manager.requestInvitedCode(email: "a@example.test", captchaToken: "proof", createAccount: create)
+        }
+    }
+
+    func testRecoveryRejectsAccountSwitchEvenAfterRelaunch() async throws {
+        let owner = "10000000-0000-4000-8000-000000000001"
+        let initial = DeviceCredentialStore.Session(accessToken: "old-access", refreshToken: "old-refresh", expiresAt: now, userID: owner)
+        let store = MemoryCredentials(initial)
+        let first = makeManager(store) { self.response($0) }
+        try await first.beginReauthentication()
+        XCTAssertEqual(store.value?.reauthenticationUserID, owner)
+        let relaunched = makeManager(store) { request in
+            (Data(#"{"access_token":"other","refresh_token":"other-refresh","expires_in":3600,"user":{"id":"20000000-0000-4000-8000-000000000002"}}"#.utf8),
+             HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+        do { try await relaunched.signInWithPassword(email: "other@example.test", password: "fixture", captchaToken: "proof"); XCTFail("Must not switch") }
+        catch let error as SessionError { XCTAssertEqual(error, .differentAccount) }
+        XCTAssertEqual(store.value?.accessToken, "old-access")
+        do { _ = try await relaunched.accessToken(createIfMissing: false); XCTFail("Actions remain suspended") }
+        catch let error as SessionError { XCTAssertEqual(error, .sessionExpired) }
+    }
+
+    func testRecoveryOfSameIdentityClearsConstraintAndPreservesUID() async throws {
+        let owner = "10000000-0000-4000-8000-000000000001"
+        let store = MemoryCredentials(.init(accessToken: "old", refreshToken: "old-refresh", expiresAt: now, userID: owner))
+        let manager = makeManager(store) { request in
+            (Data(#"{"access_token":"renewed","refresh_token":"new-refresh","expires_in":3600,"user":{"id":"10000000-0000-4000-8000-000000000001"}}"#.utf8),
+             HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+        try await manager.beginReauthentication()
+        try await manager.verifyInvitedCode(email: "a@example.test", code: "123456")
+        XCTAssertEqual(store.value?.userID, owner)
+        XCTAssertNil(store.value?.reauthenticationUserID)
+        let token = try await manager.accessToken(createIfMissing: false)
+        XCTAssertEqual(token, "renewed")
     }
 
     private func makeManager(_ store: MemoryCredentials,

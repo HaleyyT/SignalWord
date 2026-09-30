@@ -18,7 +18,7 @@ public enum SignupVerification {
     public enum ValidationError: Error { case invalidToken }
 }
 
-/// Supabase email OTP protocol. No account creation and no credentials in URLs.
+/// Supabase email OTP protocol. Account creation is explicit; credentials never enter URLs.
 public enum InvitedSignIn {
     public static func normalizedEmail(_ email: String) throws -> String {
         let value = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -27,10 +27,11 @@ public enum InvitedSignIn {
         }
         return value
     }
-    public static func requestBody(email: String, captchaToken: String) throws -> Data {
+    public static func requestBody(email: String, captchaToken: String, createAccount: Bool = false) throws -> Data {
         guard SignupVerification.validToken(captchaToken) else { throw SignupVerification.ValidationError.invalidToken }
         return try JSONSerialization.data(withJSONObject: [
-            "email": normalizedEmail(email), "create_user": false,
+            "email": normalizedEmail(email), "create_user": createAccount,
+            "data": ["signalword_client": true],
             "gotrue_meta_security": ["captcha_token": captchaToken]
         ])
     }
