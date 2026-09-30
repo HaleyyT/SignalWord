@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "build": "4",
+  "bundle": "com.signalword.app",
+  "team": "NM65T6PR46",
+  "app_group": [
+    "group.com.signalword.shared"
+  ],
+  "debuggable": false,
+  "device_list": false,
+  "beta_reports": true,
+  "expected_backend": true,
+  "public_key_present": true,
+  "revenuecat_apple_key": true,
+  "privacy_manifest": true,
+  "icon": {
+    "CFBundlePrimaryIcon": {
+      "CFBundleIconFiles": [
+        "AppIcon60x60"
+      ],
+      "CFBundleIconName": "AppIcon"
+    }
+  },
+  "ipa_sha256": "b53b8194dadf972e287c755d3c4868c34a1b10fc835299d49e998633f91d6dcd"
+}
