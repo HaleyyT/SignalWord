@@ -5,7 +5,9 @@ struct SignalWordSetupFlow: View {
     @Bindable var model: AppShellModel
     @State private var showVerification = false
     @State private var usePassword = false
+    @State private var showSignOut = false
     @State private var password = ""
+    @State private var verificationPassword = ""
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -40,7 +42,7 @@ struct SignalWordSetupFlow: View {
                                     .disabled(model.isSigningIn || model.invitedCode.isEmpty)
                                     .accessibilityIdentifier("onboarding.signIn")
                             }
-                            Button(usePassword ? "Verify and sign in" : (model.invitedCodeRequested ? "Request another code" : "Verify and request code")) { showVerification = true }
+                            Button(usePassword ? "Verify and sign in" : (model.invitedCodeRequested ? "Request another code" : "Verify and request code")) { verificationPassword = password; showVerification = true }
                                 .buttonStyle(.borderedProminent)
                                 .accessibilityIdentifier("onboarding.verifyIdentity")
                                 .disabled(model.isSigningIn || model.invitedEmail.isEmpty || (usePassword && password.isEmpty))
@@ -60,6 +62,11 @@ struct SignalWordSetupFlow: View {
                     case .contact: contactSetup
                     case .rehearse: rehearsalSetup
                     }
+                    if model.identityReady {
+                        Button("Sign out") { showSignOut = true }
+                            .disabled(!model.canSignOut)
+                            .accessibilityIdentifier("account.signOut")
+                    }
                 }
                 .frame(maxWidth: 560)
                 .padding(.horizontal, SignalWordSpacing.page)
@@ -75,16 +82,24 @@ struct SignalWordSetupFlow: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background { password = "" }
+            if phase == .background { password = ""; verificationPassword = ""; showVerification = false }
         }
-        .onDisappear { password = "" }
+        .onDisappear { password = ""; if !showVerification { verificationPassword = "" } }
+        .confirmationDialog("Sign out of SignalWord?", isPresented: $showSignOut, titleVisibility: .visible) {
+            Button("Sign out") { Task { await model.signOut() } }
+                .accessibilityIdentifier("account.confirmSignOut")
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your account and server data are kept. Finish active alerts and check-in timers first. Vocal Shortcuts cannot send alerts until you sign in again.")
+        }
         .sheet(isPresented: $showVerification) {
             NavigationStack {
                 if let url = SignalWordConfiguration.verificationURL {
                     SignupVerificationView(url: url) { token in
                         showVerification = false
                         if usePassword {
-                            let submittedPassword = password
+                            let submittedPassword = verificationPassword
+                            verificationPassword = ""
                             password = ""
                             Task { await model.signInWithPassword(password: submittedPassword, captchaToken: token) }
                         } else {
@@ -92,7 +107,7 @@ struct SignalWordSetupFlow: View {
                         }
                     }
                     .navigationTitle("Verify invited sign-in")
-                    .toolbar { Button("Cancel") { showVerification = false } }
+                    .toolbar { Button("Cancel") { verificationPassword = ""; showVerification = false } }
                 }
             }
         }
@@ -182,7 +197,12 @@ struct SignalWordSetupFlow: View {
             if let message = model.contactValidationMessage {
                 Text(message).font(.footnote).foregroundStyle(SignalWordColor.secondaryText)
             }
-            if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
+            if let message = model.contactMessage {
+                InlineMessage(message, kind: .attention)
+                SecondaryButton(title: "Check invitation status", symbol: "arrow.clockwise") {
+                    Task { await model.checkInvitationStatus() }
+                }.disabled(model.isSavingContact)
+            }
             if !model.identityReady {
                 InlineMessage("Prepare this iPhone before sending an invitation. Your entries stay here while the device connects.", kind: .attention)
                 SecondaryButton(title: "Prepare this iPhone", symbol: "arrow.clockwise") { Task { await model.recover() } }

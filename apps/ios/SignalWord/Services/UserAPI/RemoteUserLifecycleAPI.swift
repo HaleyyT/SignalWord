@@ -181,11 +181,14 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
         body: Body?,
         response: Output.Type, query: [URLQueryItem] = [], extraHeaders: [String: String] = [:]
     ) async throws -> Output {
+        let generation = await sessionManager.sessionGeneration()
         for attempt in 0...1 {
+            try await sessionManager.requireGeneration(generation)
             let token = try await sessionManager.accessToken(
                 createIfMissing: false,
                 forceRefresh: attempt == 1
             )
+            try await sessionManager.requireGeneration(generation)
             var components = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
             if !query.isEmpty { components.queryItems = query }
             guard let url = components.url else { throw UserAPIError.invalidResponse }
@@ -203,6 +206,7 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
             let urlResponse: URLResponse
             do { (data, urlResponse) = try await session.data(for: request) }
             catch { throw UserAPIError.unavailable }
+            try await sessionManager.requireGeneration(generation)
             guard let http = urlResponse as? HTTPURLResponse else { throw UserAPIError.invalidResponse }
             if http.statusCode == 401, attempt == 0 { continue }
             guard (200..<300).contains(http.statusCode) else {

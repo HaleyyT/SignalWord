@@ -9,6 +9,7 @@ struct SettingsScreen: View {
     let supporter: SupporterModel
     let openPeople: () -> Void
     let openDeleteConfirmation: () -> Void
+    var openSignOutConfirmation: () -> Void = {}
 
     @State private var showHelp = false
 
@@ -99,6 +100,12 @@ struct SettingsScreen: View {
                         tint: SignalWordColor.action
                     ) { Task { await model.recover() } }
                     .disabled(model.isRecovering)
+                    Divider().overlay(SignalWordColor.separator)
+                    SettingsRow(symbol: "rectangle.portrait.and.arrow.right", title: "Sign out",
+                        detail: "Keep your account and server data", tint: SignalWordColor.link,
+                        action: openSignOutConfirmation)
+                        .disabled(!model.canSignOut)
+                        .accessibilityIdentifier("account.signOut")
                     Divider().overlay(SignalWordColor.separator)
                     Button(action: openDeleteConfirmation) {
                         HStack(spacing: 12) {

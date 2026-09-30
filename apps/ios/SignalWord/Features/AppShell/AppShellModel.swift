@@ -60,6 +60,8 @@ final class AppShellModel {
         var requestInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
         var verifyInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
 
+        var signOut: @Sendable () async throws -> Void = { throw SessionError.configuration }
+
         var signInWithPassword: @Sendable (String, String, String) async throws -> Void = { _, _, _ in throw SessionError.configuration }
 
         static let unconfigured = LifecycleActions(
@@ -246,6 +248,8 @@ final class AppShellModel {
     var invitedCode = ""
     private(set) var invitedCodeRequested = false
     private(set) var isSigningIn = false
+    private(set) var isSigningOut = false
+    var canSignOut: Bool { !isSigningOut && !isSigningIn && !isRecovering && !isSavingContact && !isSubmitting }
 
     func changeInvitedEmail() {
         guard !isSigningIn else { return }
@@ -302,6 +306,9 @@ final class AppShellModel {
     }
 
     func prepare(captchaToken: String? = nil) async {
+        guard !isSigningOut else { return }
+        // Preserve the result of an explicit sign-in attempt until the next attempt.
+        guard !needsIdentityVerification || isSigningIn || deletionBlocksSignIn else { return }
         apply(await lifecycle.locationAuthorization())
         if preferences.bool(forKey: "serverDeletionConfirmed") ||
             preferences.string(forKey: "deletionReceiptToken") != nil {
@@ -341,7 +348,7 @@ final class AppShellModel {
     }
 
     func recover(allowDelayed: Bool = false) async {
-        guard !isRecovering else { return }
+        guard !isRecovering, !isSigningOut else { return }
         isRecovering = true
         defer { isRecovering = false }
         recoveryMessage = nil
@@ -444,6 +451,20 @@ final class AppShellModel {
         }
     }
 
+    func checkInvitationStatus() async {
+        do {
+            let contact = try await lifecycle.getContact()
+            applyContact(contact)
+            if let contact {
+                contactMessage = "Saved contact: \(contact.name). Server status: \(contact.status). Checking status does not send another invitation."
+            } else {
+                contactMessage = "No contact invitation is saved for this account. Your entries are still here."
+            }
+        } catch {
+            contactMessage = "Invitation status could not be checked. Keep your entries and try checking again when connected; do not assume an email was sent."
+        }
+    }
+
     func refreshContact() async {
         do {
             applyContact(try await lifecycle.getContact())
@@ -520,36 +541,64 @@ final class AppShellModel {
         }
     }
 
+    func signOut(statusUpdateInProgress: Bool = false) async {
+        guard !statusUpdateInProgress else {
+            accountMessage = "A status update is still running. Wait for it to finish, then try signing out again."
+            return
+        }
+        guard canSignOut, !deletionBlocksSignIn else { return }
+        isSigningOut = true
+        defer { isSigningOut = false }
+        do {
+            try await lifecycle.signOut()
+            clearAccountViewState()
+            needsIdentityVerification = true
+            accountMessage = "Signed out on this iPhone. Your account and server data have not been deleted."
+        } catch {
+            accountMessage = "Could not sign out safely. Connect to the internet, resolve active alerts, end any check-in timer, and refresh pending changes before trying again. Your account has not been deleted."
+        }
+    }
+
+    private func clearAccountViewState() {
+        identityReady = false
+        hasDelayedCommands = false
+        delayedAlertKind = nil
+        availableAlerts = []
+        resolveMessage = nil
+        shortcutConfigured = false
+        lockedTestReports = []
+        preferences.removeObject(forKey: "lockedTestReports")
+        preferences.removeObject(forKey: "verifiedRehearsals")
+        preferences.removeObject(forKey: "rehearsalContactID")
+        preferences.removeObject(forKey: "rehearsalStartedAt")
+        rehearsalStartedAt = .now
+        selectedAlertStatus = nil
+        deliveryStatus = nil
+        acknowledgedMessage = nil
+        canReportLockedTestForCurrentEvent = false
+        currentAcknowledgedTestID = nil
+        contactName = ""
+        contactEmail = ""
+        contactID = nil
+        displayName = ""
+        hasContactDraft = false
+        contactStatus = "not configured"
+        contactMessage = nil
+        alertState = .idle
+        hasEnteredDashboard = false
+        stage = .understand
+        savedContactName = ""
+        isEditingContactDraft = false
+        invitedEmail = ""
+        invitedCode = ""
+        invitedCodeRequested = false
+        recoveryMessage = nil
+    }
+
     func deleteAccount() async {
         do {
             try await lifecycle.deleteAccount()
-            identityReady = false
-            hasDelayedCommands = false
-            delayedAlertKind = nil
-            availableAlerts = []
-            resolveMessage = nil
-            shortcutConfigured = false
-            lockedTestReports = []
-            preferences.removeObject(forKey: "lockedTestReports")
-            preferences.removeObject(forKey: "verifiedRehearsals")
-            preferences.removeObject(forKey: "rehearsalContactID")
-            preferences.removeObject(forKey: "rehearsalStartedAt")
-            rehearsalStartedAt = .now
-            selectedAlertStatus = nil
-            deliveryStatus = nil
-            acknowledgedMessage = nil
-            canReportLockedTestForCurrentEvent = false
-            currentAcknowledgedTestID = nil
-            contactName = ""
-            contactEmail = ""
-            contactID = nil
-            displayName = ""
-            hasContactDraft = false
-            contactStatus = "not configured"
-            contactMessage = nil
-            alertState = .idle
-            hasEnteredDashboard = false
-            stage = .understand
+            clearAccountViewState()
             accountMessage = "SignalWord data was deleted from the server and this device."
         } catch {
             if preferences.string(forKey: "deletionReceiptToken") != nil { identityReady = false }
