@@ -104,7 +104,9 @@ struct SettingsScreen: View {
                     SettingsRow(symbol: "rectangle.portrait.and.arrow.right", title: "Sign out",
                         detail: "Keep your account and server data", tint: SignalWordColor.link,
                         action: openSignOutConfirmation)
-                        .disabled(!model.canSignOut)
+                        // Opening the dialog is read-only. The confirmed operation
+                        // still waits for recovery and retains its safety guards.
+                        .disabled(model.isSigningIn || model.isSigningOut)
                         .accessibilityIdentifier("account.signOut")
                     Divider().overlay(SignalWordColor.separator)
                     Button(action: openDeleteConfirmation) {

@@ -50,6 +50,9 @@ jobs:
 
   secrets:
     name: Scan committed history for secrets
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -59,6 +62,7 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
 
   database:
     name: Verify migrations and RLS policies
@@ -89,7 +93,8 @@ jobs:
   ios:
     name: Build iOS app and verify trigger core
     runs-on: macos-15
-    timeout-minutes: 30
+    # Includes package tests, builds, simulator startup, and all 23 UI tests.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - name: Prepare offline simulator configuration
@@ -111,12 +116,23 @@ jobs:
           build
 
       - name: Test iOS application journeys
+        id: journeys
         run: bash scripts/test-ios-ui.sh
+      - name: Retain iOS journey results
+        if: always() && steps.journeys.outputs.results != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-journeys
+          path: |
+            ${{ steps.journeys.outputs.results }}/Journey.xcresult
+            ${{ steps.journeys.outputs.results }}/summary.json
+          retention-days: 7
 
   ios-crash-sdk:
     name: Verify optional crash SDK and privacy filter
     runs-on: macos-15
-    timeout-minutes: 25
+    # Release linking, a Debug test build, and the full suite can exceed 35 minutes.
+    timeout-minutes: 45
     env:
       SIGNALWORD_WITH_SENTRY: "1"
     steps:
@@ -132,4 +148,14 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO build
       - name: Verify application journeys with SDK linked
+        id: journeys
         run: bash scripts/test-ios-ui.sh
+      - name: Retain SDK journey results
+        if: always() && steps.journeys.outputs.results != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-crash-sdk-journeys
+          path: |
+            ${{ steps.journeys.outputs.results }}/Journey.xcresult
+            ${{ steps.journeys.outputs.results }}/summary.json
+          retention-days: 7

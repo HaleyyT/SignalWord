@@ -23,14 +23,21 @@ final class SignalWordLayoutTests: XCTestCase {
         let scroll = app.scrollViews.firstMatch
         // AX5 Settings spans more than 24 compact half-page pans.
         for _ in 0..<60 {
-            let top = scroll.frame.minY + 4
-            let bottom = min(scroll.frame.maxY, app.buttons["navigation.Home"].frame.minY) - 4
-            if element.exists && element.isHittable && element.frame.minY >= top && element.frame.maxY <= bottom { return }
-            let upward = !element.exists || element.frame.maxY > bottom
-            let overflow = !element.exists ? scroll.frame.height / 2 : upward ? element.frame.maxY - bottom : top - element.frame.minY
+            let viewport = scroll.frame.intersection(app.frame)
+            let top = viewport.minY + 4
+            let bottom = min(viewport.maxY, app.buttons["navigation.Home"].frame.minY) - 4
+            let bounds = CGRect(x: viewport.minX, y: top, width: viewport.width, height: max(0, bottom - top))
+            let frame = element.exists ? element.frame : .zero
+            let hasFrame = !frame.isEmpty
+            // Resolve hittability only inside the viewport: XCTest can throw
+            // for an offscreen activation point. A zero frame is unknown
+            // geometry, not evidence that the footer is above the viewport.
+            if hasFrame && bounds.contains(frame) && element.isHittable { return }
+            let upward = !hasFrame || frame.maxY > bottom
+            let overflow = !hasFrame ? bounds.height / 2 : upward ? frame.maxY - bottom : top - frame.minY
             // Use the measured overflow near the target. A fixed half-page
             // swipe oscillates past tall accessibility labels in both directions.
-            let distance = min(scroll.frame.height / 2, max(30, overflow + 8))
+            let distance = min(bounds.height / 2, max(30, overflow + 8))
             let start = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: upward ? 0.8 : 0.2))
             start.press(forDuration: 0.02,
                         thenDragTo: start.withOffset(CGVector(dx: 0, dy: upward ? -distance : distance)),

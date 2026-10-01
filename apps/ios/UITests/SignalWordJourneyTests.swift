@@ -53,13 +53,13 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     func testSignOutKeepsAccountAndReturnsToSignIn() {
+        continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready"]
         app.launch()
         XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
         app.buttons["navigation.Settings"].tap()
-        tap("account.signOut")
-        tap("account.confirmSignOut")
+        confirmSignOut()
         XCTAssertTrue(app.textFields["onboarding.invitedEmail"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Signed out on this iPhone. Your account and server data have not been deleted."].exists)
         app.terminate()
@@ -70,13 +70,13 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     func testUnsafeSignOutLeavesAccountUsable() {
+        continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-signout-blocked"]
         app.launch()
         XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
         app.buttons["navigation.Settings"].tap()
-        tap("account.signOut")
-        tap("account.confirmSignOut")
+        confirmSignOut()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Could not sign out safely.")).firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["navigation.Home"].exists)
     }
@@ -89,28 +89,97 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     private func reveal(_ element: XCUIElement, scrollingUp: Bool = true, useMargin: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
-        for _ in 0..<18 {
-            if element.exists && element.isHittable { return }
-            // Drag the scroll margin: a centre-screen swipe can land on the
-            // safety hold control, which intentionally consumes that gesture.
-            if useMargin {
-                app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.8 : 0.2))
-                    .press(forDuration: 0.05, thenDragTo: app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.2 : 0.8)))
-            } else if scrollingUp { app.swipeUp() } else { app.swipeDown() }
+        // The keyboard's prediction strip is also a ScrollView. Target setup
+        // explicitly so typing cannot change which container the test pans.
+        let setupScroll = app.scrollViews["onboarding.scroll"]
+        let isSetup = setupScroll.exists
+        let scroll = isSetup ? setupScroll : app.scrollViews.firstMatch
+        let largestText = app.launchArguments.contains("--ui-testing-largest-text")
+        func visibleBounds() -> CGRect {
+            // Confirmation dialogs belong to a modal surface, not the scroll
+            // view and navigation underneath them.
+            if app.sheets.firstMatch.exists { return app.sheets.firstMatch.frame.intersection(app.frame) }
+            if app.alerts.firstMatch.exists { return app.alerts.firstMatch.frame.intersection(app.frame) }
+            let frame = scroll.exists ? scroll.frame.intersection(app.frame) : app.frame
+            var top = frame.minY + 4
+            var bottom = frame.maxY - 4
+            if app.navigationBars.firstMatch.exists { top = max(top, app.navigationBars.firstMatch.frame.maxY + 4) }
+            if app.buttons["navigation.Home"].exists { bottom = min(bottom, app.buttons["navigation.Home"].frame.minY - 4) }
+            if app.keyboards.firstMatch.exists { bottom = min(bottom, app.keyboards.firstMatch.frame.minY - 4) }
+            return CGRect(x: frame.minX, y: top, width: frame.width, height: max(0, bottom - top))
         }
-        if !element.exists || !element.isHittable {
+        for _ in 0..<(largestText ? 60 : 18) {
+            let bounds = visibleBounds()
+            let frame = element.exists ? element.frame : .zero
+            let hasFrame = !frame.isEmpty
+            // XCTest can throw while resolving an offscreen activation point,
+            // even when SwiftUI exposes a nonempty accessibility frame.
+            if hasFrame && bounds.contains(frame) && element.isHittable { return }
+            // Keep the existing navigation for standard-size journeys. Only
+            // AX5 needs measured pans to reach its tall labels and fields.
+            if !largestText {
+                if useMargin {
+                    scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.8 : 0.2))
+                        .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.2 : 0.8)))
+                } else if scrollingUp { app.swipeUp() } else { app.swipeDown() }
+                continue
+            }
+            let top = bounds.minY
+            let bottom = bounds.maxY
+            // Pan inside the visible scroll area, above the keyboard. At AX5 a
+            // screen-wide swipe can hit the keyboard or overshoot a text field.
+            // SwiftUI can expose an offscreen field with a zero frame. That is
+            // unknown geometry, not evidence that the field is above the form.
+            let upward = hasFrame ? frame.maxY > bottom : scrollingUp
+            let height = bottom - top
+            let overflow = !hasFrame ? height / 2 : upward ? frame.maxY - bottom : top - frame.minY
+            let distance = min(height / 2, max(30, overflow + 8))
+            let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+                // A drag inside a focused text field moves its selection rather
+                // than the form. The setup margin belongs to the scroll view.
+                dx: scroll.frame.minX + scroll.frame.width * ((useMargin || isSetup) ? 0.02 : 0.5),
+                dy: upward ? bottom - height * 0.2 : top + height * 0.2))
+            start.press(forDuration: 0.02,
+                        thenDragTo: start.withOffset(CGVector(dx: 0, dy: upward ? -distance : distance)),
+                        withVelocity: .slow, thenHoldForDuration: 0.15)
+        }
+        let isVisible = element.exists && !element.frame.isEmpty && visibleBounds().contains(element.frame) && element.isHittable
+        if !isVisible {
             let screenshot = XCTAttachment(screenshot: app.screenshot())
             screenshot.lifetime = .keepAlways
             add(screenshot)
             print(app.debugDescription)
         }
-        XCTAssertTrue(element.exists && element.isHittable, "Expected visible control: \(element)", file: file, line: line)
+        XCTAssertTrue(isVisible, "Expected visible control: \(element)", file: file, line: line)
     }
 
     private func tap(_ title: String) {
         let button = app.buttons[title].firstMatch
         reveal(button)
         button.tap()
+    }
+
+    private func confirmSignOut() {
+        let signOut = app.buttons["account.signOut"].firstMatch
+        reveal(signOut)
+        // Tap the visible row rather than a potentially stale accessibility
+        // activation point retained from before the Settings page scrolled.
+        signOut.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        // A native confirmation dialog is not part of the Settings scroll
+        // view. Wait for it and tap directly; a page swipe can dismiss it.
+        let confirm = app.buttons["account.confirmSignOut"].firstMatch
+        let appeared = confirm.waitForExistence(timeout: 5)
+        if !appeared {
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            print(signOut.debugDescription)
+            print(app.debugDescription)
+        }
+        XCTAssertTrue(appeared, "Sign-out confirmation must appear")
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: confirm)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Account refresh must finish before confirming sign-out")
+        confirm.tap()
     }
 
     private func completeContactSetup(waitForRecovery: Bool = false) {
@@ -194,7 +263,19 @@ final class SignalWordJourneyTests: XCTestCase {
         let email = app.textFields["Email"]
         email.tap(); email.typeText("taylor@example.test\n")
         tap("Send invitation")
-        tap("Primary now, others after 2 minutes")
+        // Underlying page controls can enter the accessibility tree while the
+        // invitation sheet and its keyboard are still dismissing.
+        XCTAssertTrue(name.waitForNonExistence(timeout: 5), "Invitation editor must close before changing routing")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Invitation keyboard must dismiss before changing routing")
+        let routing = app.buttons["Primary now, others after 2 minutes"]
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: routing)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Invitation save must finish before changing routing")
+        reveal(routing)
+        routing.tap()
+        // Selection changes only after the service confirms the new snapshot.
+        // Terminating sooner can cancel the change or race a disabled button.
+        let confirmed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true AND isEnabled == true"), object: routing)
+        XCTAssertEqual(XCTWaiter.wait(for: [confirmed], timeout: 5), .completed, "Routing change must be confirmed before relaunch")
         app.terminate()
         app.launchArguments = ["--ui-testing", "--network-ui-testing"]
         app.launch()
@@ -202,7 +283,6 @@ final class SignalWordJourneyTests: XCTestCase {
         let invited = app.staticTexts["Taylor"]
         reveal(invited)
         XCTAssertTrue(invited.exists, "Server contact snapshot should recover on relaunch")
-        let routing = app.buttons["Primary now, others after 2 minutes"]
         reveal(routing)
         XCTAssertTrue(routing.isSelected, "Confirmed policy survives relaunch")
         tap("Withdraw Taylor")
