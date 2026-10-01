@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct PageHeading: View {
+    @Environment(\.signalWordAccent) private var accent
     let eyebrow: String
     let title: String
     let detail: String
@@ -11,14 +12,14 @@ struct PageHeading: View {
             Text(eyebrow)
                 .font(.caption.weight(.bold))
                 .tracking(1.3)
-                .foregroundStyle(SignalWordColor.action)
+                .foregroundStyle(accent.link)
             Text(title)
-                .font(.largeTitle.weight(.semibold))
+                .font(.title.weight(.semibold))
                 .tracking(-0.55)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             Text(detail)
-                .font(.body)
+                .font(.subheadline)
                 .foregroundStyle(SignalWordColor.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -26,6 +27,7 @@ struct PageHeading: View {
 }
 
 struct PrivacyLine: View {
+    @Environment(\.signalWordAccent) private var accent
     let symbol: String
     let title: String
     let detail: String
@@ -33,8 +35,8 @@ struct PrivacyLine: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol)
-                .font(.body.weight(.medium))
-                .foregroundStyle(SignalWordColor.action)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(accent.link)
                 .frame(width: 22, height: 22)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
@@ -105,7 +107,7 @@ struct ReadinessLine: View {
                 .padding(.vertical, 6)
                 .background(state.color.opacity(0.12), in: Capsule())
             Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(SignalWordColor.mutedText)
                 .accessibilityHidden(true)
         }
@@ -125,7 +127,7 @@ struct SettingsRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: symbol)
-                    .font(.body.weight(.medium))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(tint)
                     .frame(width: 24, height: 24)
                     .accessibilityHidden(true)
@@ -136,10 +138,10 @@ struct SettingsRow: View {
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(SignalWordColor.mutedText)
             }
+            .frame(minHeight: 46)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .frame(minHeight: 46)
     }
 }
 
@@ -185,21 +187,17 @@ struct SignalOrb: View {
                 .overlay(Circle().stroke(state.color.opacity(0.35), lineWidth: 1))
             VStack(spacing: 3) {
                 Image(systemName: "waveform")
-                    .font(.title3.weight(.medium))
+                    .font(.system(size: 24, weight: .medium))
                     .foregroundStyle(state.color)
-                Text(state.label)
-                    .font(.caption2.weight(.bold))
-                    .tracking(1.4)
-                    .foregroundStyle(SignalWordColor.secondaryText)
             }
         }
         .frame(width: size, height: size)
-        .accessibilityElement()
-        .accessibilityLabel("SignalWord status: \(state.label.lowercased())")
+        .accessibilityHidden(true)
     }
 }
 
 struct PrimaryButton: View {
+    @Environment(\.signalWordAccent) private var accent
     @Environment(\.isEnabled) private var isEnabled
     let title: String
     let symbol: String
@@ -210,12 +208,14 @@ struct PrimaryButton: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 if isLoading { ProgressView().tint(.white) }
-                Text(title).font(.body.weight(.semibold))
+                Text(title).font(.subheadline.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
                 if !isLoading { Image(systemName: symbol).font(.subheadline.weight(.semibold)) }
             }
-            .frame(maxWidth: .infinity, minHeight: 54)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 50)
             .foregroundStyle(SignalWordColor.canvas)
-            .background(SignalWordColor.action, in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
+            .background(LinearGradient(colors: [accent.link, accent.action], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
             .opacity(isEnabled ? 1 : 0.48)
         }
@@ -233,7 +233,10 @@ struct SecondaryButton: View {
         Button(action: action) {
             Label(title, systemImage: symbol)
                 .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity, minHeight: 50)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, minHeight: 48)
                 .foregroundStyle(SignalWordColor.primaryText)
                 .background(SignalWordColor.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }

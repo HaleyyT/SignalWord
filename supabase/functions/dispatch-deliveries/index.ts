@@ -1,3 +1,4 @@
+import { journalFromEnvironment } from "../_shared/safety-journal.ts";
 import {
   FakeDeliveryAdapter,
   runContactVerificationWorker,
@@ -90,6 +91,10 @@ if (import.meta.main) {
   Deno.serve(createDispatchHandler({
     dispatchSecret,
     async run(workerId) {
+      // Contact revocation is already atomic in Postgres. A journal outage must
+      // not starve other consenting users; the health endpoint reports backlog.
+      // The independent gate still blocks claims during restore quarantine.
+      await journalFromEnvironment().flush(undefined, false).catch(() => undefined);
       let alerts = { claimed: 0, sent: 0, failed: 0, leaseLost: 0 };
       let confirmations = { claimed: 0, sent: 0, failed: 0, leaseLost: 0 };
       const deadline = Date.now() + 20_000;

@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 select no_plan();
 
 insert into auth.users (id) values ('81000000-0000-4000-8000-000000000001');

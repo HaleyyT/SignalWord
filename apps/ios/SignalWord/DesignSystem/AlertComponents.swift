@@ -55,7 +55,7 @@ struct HoldConfirmControl: View {
     var identifier: String? = nil
     let perform: @Sendable () async -> Void
 
-    @GestureState private var isHolding = false
+    @State private var isHolding = false
     @State private var holdStartedAt: Date?
     @State private var showConfirmation = false
     @State private var isRunning = false
@@ -64,9 +64,12 @@ struct HoldConfirmControl: View {
     var body: some View {
         VStack(spacing: 8) {
             holdSurface
-            Button("Review and confirm", action: reviewAction)
-                .font(.subheadline.weight(.semibold))
-                .frame(minHeight: 44)
+            Button(action: reviewAction) {
+                Text("Review and confirm")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
                 .disabled(!isEnabled || isRunning)
                 .accessibilityIdentifier((identifier ?? "alert.hold-confirm") + ".review")
         }
@@ -79,7 +82,7 @@ struct HoldConfirmControl: View {
             Text(action.confirmationDetail)
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { showConfirmation = false }
+            if phase != .active { showConfirmation = false; isHolding = false }
         }
     }
 
@@ -90,7 +93,7 @@ struct HoldConfirmControl: View {
                     ProgressView().tint(.white)
                 } else {
                     Image(systemName: action == .sendRealAlert ? "waveform.path" : "checkmark.circle")
-                        .font(.body.weight(.semibold))
+                        .font(.system(size: 20, weight: .semibold))
                 }
                 Text(isRunning ? "Please wait…" : isHolding ? "Keep holding to confirm…" : action.buttonTitle)
                     .font(.subheadline.weight(.semibold))
@@ -110,21 +113,23 @@ struct HoldConfirmControl: View {
             }
             .frame(maxWidth: 220)
         }
-        .foregroundStyle(SignalWordColor.primaryText)
+        .foregroundStyle(action == .sendRealAlert ? SignalWordColor.attention : SignalWordColor.primaryText)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, minHeight: 58)
         .padding(.horizontal, 14)
-        .background(SignalWordColor.action, in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
+        .background(SignalWordColor.secondarySurface, in: RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: SignalWordRadius.control).stroke(action == .sendRealAlert ? SignalWordColor.attention.opacity(0.6) : SignalWordColor.separator, lineWidth: 1) }
         .contentShape(RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
         .opacity(isEnabled ? 1 : 0.55)
-        // Keep the hold recognizer separate from the ordinary confirmation button.
-        // Competing tap/long-press recognizers can consume or reinterpret release.
-        .gesture(
-            LongPressGesture(minimumDuration: holdDuration, maximumDistance: 18)
-                .updating($isHolding) { pressing, state, _ in state = pressing }
-                .onEnded { completed in
-                    if completed { runAction() }
-                }
-        )
+        .overlay {
+            ScrollCompatibleHoldSurface(
+                duration: holdDuration,
+                enabled: isEnabled && !isRunning && scenePhase == .active,
+                pressing: { isHolding = $0 },
+                confirmed: runAction
+            )
+            .accessibilityHidden(true)
+        }
         .onChange(of: isHolding) { _, holding in
             holdStartedAt = holding ? .now : nil
         }
@@ -145,6 +150,7 @@ struct HoldConfirmControl: View {
 
     private func runAction() {
         guard isEnabled, !isRunning, scenePhase == .active else { return }
+        isHolding = false
         isRunning = true
         Task { @MainActor in
             await perform()
@@ -213,21 +219,33 @@ struct AlertProgressCard: View {
                         if model.isRecovering { ProgressView().controlSize(.small) }
                     }
                     if presentation.showsInitialDelivery {
-                        DeliverySummaryRow(title: "Initial alert email", state: presentation.initialDelivery)
+                        Label(presentation.initialDelivery.title, systemImage: "envelope")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(presentation.initialDelivery == .failed ? SignalWordColor.critical : SignalWordColor.secondaryText)
                     }
                     if let resolution = presentation.resolutionDelivery {
-                        Divider().overlay(SignalWordColor.separator)
-                        DeliverySummaryRow(title: "Resolution email", state: resolution)
+                        Text("Resolution email: \(resolution.title)").font(.subheadline)
+                    }
+                    DisclosureGroup("Delivery details") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            if presentation.showsInitialDelivery {
+                                DeliverySummaryRow(title: "Initial alert email", state: presentation.initialDelivery)
+                            }
+                            if let resolution = presentation.resolutionDelivery {
+                                DeliverySummaryRow(title: "Resolution email", state: resolution)
+                            }
+                        }.padding(.top, 10)
                     }
                     if let message = model.resolveMessage { InlineMessage(message, kind: .attention) }
                     if let message = model.recoveryMessage { InlineMessage(message, kind: .attention) }
-                    HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Button(model.isRecovering ? "Checking…" : model.currentAlertEventID == nil ? "Check saved command" : "Refresh status") {
                             Task {
                                 if model.currentAlertEventID == nil { await model.recover() }
                                 else { await model.refreshActiveAlertStatus() }
                             }
                         }
+                        .frame(minHeight: 44)
                         .disabled(model.isRecovering || presentation.lifecycle == .submitting)
                         .accessibilityHint(model.currentAlertEventID == nil ? "Reconciles this iPhone’s saved command with SignalWord" : "Checks SignalWord state and both delivery reports")
                         if model.hasDelayedCommands {

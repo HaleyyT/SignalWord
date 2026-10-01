@@ -40,10 +40,37 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, '320px layout must not overflow');
   await page.screenshot({ path: process.env.SIGNALWORD_VIEWER_SCREENSHOT ?? `${tmpdir()}/signalword-viewer-ack.png`, fullPage: true });
 
+  const missed = await browser.newPage({viewport:{width:320,height:700}});
+  await missed.route('**/v1/public/events/*', route => route.fulfill({json:{...event,kind:'real',cause:'missed_check_in',checkInDeadline:'2026-09-26T07:59:00Z',guidance:{summary:'Contact Alex directly.'}}}));
+  await missed.goto(`${process.env.SIGNALWORD_VIEWER_TEST_URL ?? 'http://127.0.0.1:4174'}/events/${token}`);
+  await missed.getByRole('heading',{name:'Alex missed a check-in'}).waitFor();
+  await missed.getByText('This does not confirm danger.',{exact:false}).waitFor();
+  assert.equal(await missed.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),true);
+
+  // A withdrawal response can be lost after consent was revoked. Retrying must
+  // repeat withdrawal, never switch the user's choice back to confirmation.
+  const consent = await browser.newPage({ viewport: { width: 320, height: 700 } });
+  const actions = [];
+  await consent.route('**/api/v1/contacts/confirm/*', async route => {
+    const action = route.request().headers()['x-signalword-action'] ?? 'confirm';
+    actions.push(action);
+    await route.fulfill(actions.length === 1
+      ? { status: 503, json: { retryable: true } }
+      : { status: 200, json: { withdrawn: true } });
+  });
+  await consent.goto(`${process.env.SIGNALWORD_VIEWER_TEST_URL ?? 'http://127.0.0.1:4174'}/confirm/${token}`);
+  await consent.getByRole('button', { name: 'Withdraw trusted-contact consent' }).click();
+  await consent.getByRole('heading', { name: 'Withdrawal is not confirmed yet' }).waitFor({ timeout: 3000 });
+  assert.equal(await consent.getByText('No confirmation was recorded.', { exact: false }).count(), 0);
+  await consent.getByRole('button', { name: 'Retry withdrawal' }).click();
+  await consent.getByRole('heading', { name: 'Consent withdrawn' }).waitFor();
+  assert.deepEqual(actions, ['withdraw', 'withdraw']);
+  assert.equal(await consent.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+
   const unavailable = await browser.newPage();
   await unavailable.route('**/v1/public/events/*', route => route.fulfill({ status: 404, json: {} }));
   await unavailable.goto(`${process.env.SIGNALWORD_VIEWER_TEST_URL ?? 'http://127.0.0.1:4174'}/events/${token}`);
   await unavailable.getByRole('heading', { name: 'This alert link is unavailable' }).waitFor();
   assert.equal(await unavailable.getByRole('button', { name: 'Acknowledge this alert' }).count(), 0);
-  console.log('Browser regression passed: explicit acknowledgement, failed POST recovery, revoked link, 320px layout.');
+  console.log('Browser regression passed: explicit acknowledgement, failed POST recovery, revoked link, missed-check-in guidance, 320px layout.');
 } finally { await browser?.close(); await server?.close(); }

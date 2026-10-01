@@ -1,12 +1,7 @@
 import CoreLocation
 import Foundation
 
-enum DeviceLocationAuthorization: Sendable {
-    case notRequested
-    case approximate
-    case precise
-    case denied
-}
+
 
 /// Owns Core Location on the main actor. It exposes an immediate cached sample
 /// for the critical alert request and a best-effort fresh sample for a later

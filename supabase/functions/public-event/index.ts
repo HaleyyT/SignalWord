@@ -1,5 +1,5 @@
 import { ApiError, asApiError, errorResponse, jsonResponse, requestId } from "../_shared/http.ts";
-import { structuredLogger, type SafeLogger } from "../_shared/logging.ts";
+import { structuredLogger, writeSafely, type SafeLogger } from "../_shared/logging.ts";
 import { parsePublicProjection } from "../_shared/public-projection.ts";
 import { createBackendGateway, type BackendGateway } from "../_shared/supabase.ts";
 import { sha256Hex } from "../_shared/tokens.ts";
@@ -54,7 +54,7 @@ export function createPublicEventHandler(dependencies: PublicEventDependencies) 
       code = error.code;
       return errorResponse(error, id, { ...SECURITY_HEADERS, "X-Request-ID": id });
     } finally {
-      dependencies.logger.write({
+      writeSafely(dependencies.logger, {
         requestId: id,
         route: "public-event",
         method: request.method,
