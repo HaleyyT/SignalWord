@@ -162,9 +162,6 @@ final class SignalWordJourneyTests: XCTestCase {
     private func confirmSignOut() {
         let signOut = app.buttons["account.signOut"].firstMatch
         reveal(signOut)
-        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: signOut)
-        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Account refresh must finish before signing out")
-        reveal(signOut)
         // Tap the visible row rather than a potentially stale accessibility
         // activation point retained from before the Settings page scrolled.
         signOut.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
@@ -180,6 +177,8 @@ final class SignalWordJourneyTests: XCTestCase {
             print(app.debugDescription)
         }
         XCTAssertTrue(appeared, "Sign-out confirmation must appear")
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: confirm)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Account refresh must finish before confirming sign-out")
         confirm.tap()
     }
 

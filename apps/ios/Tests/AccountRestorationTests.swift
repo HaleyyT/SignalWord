@@ -12,7 +12,7 @@ import XCTest
             disableContact: { _ in false }, getAlertStatus: { _ in throw SessionError.configuration },
             authenticateResolution: { false }, resolve: { _ in throw SessionError.configuration },
             locationAuthorization: { .denied }, requestLocationAccess: { .denied }, deleteAccount: {},
-            identityID: { await state.identity }, beginReauthentication: { await state.reauthenticate() }, signOut: { await state.signOut() },
+            identityID: { await state.identity }, beginReauthentication: { await state.reauthenticate() }, signOut: { try await state.signOut() },
             signInWithPassword: { _, _, _ in await state.signIn() }
         ), preferences: defaults)
     }
@@ -61,6 +61,56 @@ import XCTest
         XCTAssertFalse(app.canEditContact); XCTAssertEqual(app.accountLoadState, .unavailable)
     }
 
+    func testInitialContactReadKeepsEditingUnavailableUntilConfirmed() async {
+        let state = AccountFixture(); let app = model(state)
+        await state.pauseContactRead()
+        let loading = Task { await app.prepare() }
+        await state.waitForPausedContactRead()
+        XCTAssertEqual(app.accountLoadState, .loading)
+        XCTAssertFalse(app.identityReady); XCTAssertFalse(app.canEditContact)
+        await state.resumeContactRead()
+        await loading.value
+        XCTAssertEqual(app.accountLoadState, .available)
+        XCTAssertTrue(app.identityReady); XCTAssertTrue(app.canEditContact)
+    }
+
+    func testConfirmedContactStaysAvailableDuringRefreshButNotAfterFailure() async {
+        let state = AccountFixture(); let app = model(state)
+        await app.prepare()
+        await state.pauseContactRead()
+        let refresh = Task { await app.prepare() }
+        await state.waitForPausedContactRead()
+        XCTAssertEqual(app.accountLoadState, .available, "A pending background read must not replace confirmed content")
+        XCTAssertTrue(app.identityReady); XCTAssertTrue(app.canEditContact)
+        await state.failContactRead(true)
+        await state.resumeContactRead()
+        await refresh.value
+        XCTAssertEqual(app.accountLoadState, .unavailable)
+        XCTAssertFalse(app.identityReady); XCTAssertFalse(app.canEditContact)
+        XCTAssertEqual(app.contactStatus, "confirmed"); XCTAssertTrue(app.hasContactDraft)
+    }
+
+    func testHealthyRefreshPreservesExplicitSignOutFailure() async {
+        let state = AccountFixture(); let app = model(state)
+        await app.prepare(); await state.failSignOut(true); await app.signOut()
+        let warning = app.accountMessage
+        XCTAssertTrue(warning?.hasPrefix("Could not sign out safely.") == true)
+        await app.prepare()
+        XCTAssertEqual(app.accountMessage, warning, "Background reads must not erase explicit account-action feedback")
+        XCTAssertTrue(app.identityReady); XCTAssertTrue(app.hasEnteredDashboard)
+    }
+
+    func testReauthenticationClearsOldAccountFeedbackAfterConfirmedLoad() async {
+        let state = AccountFixture(); let app = model(state)
+        await app.prepare(); await app.signInAgain()
+        XCTAssertFalse(app.identityReady)
+        XCTAssertEqual(app.accountMessage, SessionError.sessionExpired.message)
+        app.invitedEmail = "fixture@example.test"
+        await app.signInWithPassword(password: "fixture", captchaToken: "proof")
+        XCTAssertTrue(app.identityReady); XCTAssertTrue(app.canEditContact)
+        XCTAssertNil(app.accountMessage)
+    }
+
     func testExpiryDuringAlertRecoveryOffersSignInWithoutDiscardingContact() async {
         let state = AccountFixture(); let app = model(state)
         await app.prepare(); await state.expireRecovery(); await app.recover()
@@ -85,6 +135,11 @@ import XCTest
 
 private actor AccountFixture {
     var signedOut = false; var expired = false; var failedRead = false; var recoveryExpired = false
+    private var signOutFailed = false
+    private var contactReadPaused = false
+    private var contactReadStarted = false
+    private var startedContinuation: CheckedContinuation<Void, Never>?
+    private var readContinuation: CheckedContinuation<Void, Never>?
     var identity = "20000000-0000-4000-8000-000000000001"
     func switchIdentity(_ value: String) { identity = value }
     func expireRecovery() { recoveryExpired = true }
@@ -92,7 +147,11 @@ private actor AccountFixture {
         if recoveryExpired { throw SessionError.sessionExpired }
         return .init(alerts: [], needsConfirmation: false, pending: false, pendingKind: nil)
     }
-    func signOut() { signedOut = true }
+    func failSignOut(_ value: Bool) { signOutFailed = value }
+    func signOut() throws {
+        if signOutFailed { throw SessionError.unavailable }
+        signedOut = true
+    }
     func signIn() { signedOut = false; expired = false }
     func expire() { expired = true }
     func reauthenticate() { signedOut = true; expired = false }
@@ -101,7 +160,21 @@ private actor AccountFixture {
         if signedOut { throw SessionError.verificationRequired }
         if expired { throw SessionError.sessionExpired }
     }
-    func contact() throws -> TrustedContactProjection? {
+    func pauseContactRead() { contactReadPaused = true; contactReadStarted = false }
+    func waitForPausedContactRead() async {
+        if contactReadStarted { return }
+        await withCheckedContinuation { startedContinuation = $0 }
+    }
+    func resumeContactRead() {
+        contactReadPaused = false
+        readContinuation?.resume(); readContinuation = nil
+    }
+    func contact() async throws -> TrustedContactProjection? {
+        if contactReadPaused {
+            contactReadStarted = true
+            startedContinuation?.resume(); startedContinuation = nil
+            await withCheckedContinuation { readContinuation = $0 }
+        }
         if failedRead { throw UserAPIError.unavailable }
         return .init(contactID: UUID(uuidString: "10000000-0000-4000-8000-000000000001")!, name: "Trusted person", status: "confirmed", confirmationExpiresAt: nil)
     }
