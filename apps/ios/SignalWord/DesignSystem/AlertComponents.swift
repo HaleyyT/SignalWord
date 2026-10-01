@@ -86,33 +86,51 @@ struct HoldConfirmControl: View {
         }
     }
 
-    private var holdSurface: some View {
-        VStack(spacing: 9) {
-            HStack(spacing: 10) {
-                if isRunning {
-                    ProgressView().tint(.white)
-                } else {
-                    Image(systemName: action == .sendRealAlert ? "waveform.path" : "checkmark.circle")
-                        .font(.system(size: 20, weight: .semibold))
-                }
-                Text(isRunning ? "Please wait…" : isHolding ? "Keep holding to confirm…" : action.buttonTitle)
-                    .font(.subheadline.weight(.semibold))
-                    .multilineTextAlignment(.center)
+    private var holdStatus: String {
+        if isRunning { return "Please wait…" }
+        if isHolding { return "Keep holding to confirm…" }
+        return action.buttonTitle
+    }
+
+    private var holdLabel: some View {
+        HStack(spacing: 10) {
+            if isRunning {
+                ProgressView().tint(.white)
+            } else {
+                Image(systemName: action == .sendRealAlert ? "waveform.path" : "checkmark.circle")
+                    .font(.system(size: 20, weight: .semibold))
             }
-            TimelineView(.animation(minimumInterval: 0.04, paused: !isHolding)) { timeline in
-                let elapsed = timeline.date.timeIntervalSince(holdStartedAt ?? timeline.date)
-                let progress = isHolding ? min(1, max(0, elapsed / holdDuration)) : 0
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.white.opacity(0.20))
-                        Capsule().fill(.white).frame(width: geometry.size.width * progress)
-                    }
-                }
-                .frame(height: 3)
-                .accessibilityHidden(true)
-            }
-            .frame(maxWidth: 220)
+            Text(holdStatus)
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
         }
+    }
+
+    private var holdProgress: some View {
+        TimelineView(.animation(minimumInterval: 0.04, paused: !isHolding)) { timeline in
+            let elapsed = timeline.date.timeIntervalSince(holdStartedAt ?? timeline.date)
+            let progress: Double = isHolding ? min(1, max(0, elapsed / holdDuration)) : 0
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.20))
+                    Capsule().fill(.white).frame(width: geometry.size.width * progress)
+                }
+            }
+            .frame(height: 3)
+            .accessibilityHidden(true)
+        }
+        .frame(maxWidth: 220)
+    }
+
+    private var holdContents: some View {
+        VStack(spacing: 9) {
+            holdLabel
+            holdProgress
+        }
+    }
+
+    private var holdSurface: some View {
+        holdContents
         .foregroundStyle(action == .sendRealAlert ? SignalWordColor.attention : SignalWordColor.primaryText)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, minHeight: 58)
