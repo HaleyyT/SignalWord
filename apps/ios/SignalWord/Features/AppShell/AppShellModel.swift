@@ -365,8 +365,11 @@ final class AppShellModel {
             return
         }
         guard backendConfigured else { return }
+        let needsAccountLoad = !identityReady || accountLoadState != .available
         do {
-            accountLoadState = .loading
+            // Keep a confirmed snapshot visible during background reads. Replacing
+            // it with loading content moves controls and interrupts open dialogs.
+            if needsAccountLoad { accountLoadState = .loading }
             try await lifecycle.prepare(captchaToken)
             let profileName = displayName.isEmpty ? try await lifecycle.profile(nil) : displayName
             let contact = try await lifecycle.getContact()
@@ -380,8 +383,9 @@ final class AppShellModel {
             identityReady = true
             // A returning configured account does not need to reinvite its recipient.
             if contact != nil && stage == .understand { hasEnteredDashboard = true }
-            // Clear a previous preparation error only after every required read succeeds.
-            accountMessage = nil
+            // Clear preparation failures after a confirmed retry, while retaining
+            // feedback from explicit account actions during a healthy refresh.
+            if needsAccountLoad { accountMessage = nil }
             needsIdentityVerification = false
         } catch is CancellationError {
             // Scene changes cancel foreground recovery; cancellation is not an auth failure.
