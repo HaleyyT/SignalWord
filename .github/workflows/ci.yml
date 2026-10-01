@@ -131,8 +131,8 @@ jobs:
   ios-crash-sdk:
     name: Verify optional crash SDK and privacy filter
     runs-on: macos-15
-    # SDK linking plus the full UI suite needs the same budget as the iOS job.
-    timeout-minutes: 35
+    # Release linking, a Debug test build, and the full suite can exceed 35 minutes.
+    timeout-minutes: 45
     env:
       SIGNALWORD_WITH_SENTRY: "1"
     steps:
