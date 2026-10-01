@@ -93,7 +93,8 @@ jobs:
   ios:
     name: Build iOS app and verify trigger core
     runs-on: macos-15
-    timeout-minutes: 30
+    # Includes package tests, builds, simulator startup, and all 23 UI tests.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - name: Prepare offline simulator configuration
@@ -130,7 +131,8 @@ jobs:
   ios-crash-sdk:
     name: Verify optional crash SDK and privacy filter
     runs-on: macos-15
-    timeout-minutes: 25
+    # SDK linking plus the full UI suite needs the same budget as the iOS job.
+    timeout-minutes: 35
     env:
       SIGNALWORD_WITH_SENTRY: "1"
     steps:
