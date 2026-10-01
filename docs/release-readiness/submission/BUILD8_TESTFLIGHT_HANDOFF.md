@@ -1,6 +1,12 @@
 # Build 8 final candidate and acceptance handoff — 1 October 2026
 
-## Latest Apple status — 04:16 Sydney, 1 October 2026
+## Latest Apple status — 15:00 Sydney, 1 October 2026
+
+The owner's App Store Connect screenshots show **Build 8 rejected under Guideline 2.1: Information Needed — New App Submission**. Apple requests a physical-device demonstration and seven explanatory answers because the developer account has limited review history. The message does not identify a specific crash or require a green TestFlight status. The Supporter IAP remains Ready for Review.
+
+The [response packet](apple-2-1-build8/README.md) is prepared against the submitted Build 8 implementation. Actual physical-device footage is still required before sending it. No response or resubmission is claimed by this preparation.
+
+## Historical submission receipt — 04:16 Sydney, 1 October 2026
 
 **SUBMITTED: Waiting for Review.** Apple independently shows two submitted items: **iOS App 1.0 (8)** and **SignalWord Supporter Appearance**, both Waiting for Review. Submission ID `871aa417-f89f-48d8-b7ee-5bb67d86c2f8`. The owner provided the required IAP screenshot and confirmed submission; the browser readback verifies receipt. App download pricing is free. Automatic release was saved before submission.
 

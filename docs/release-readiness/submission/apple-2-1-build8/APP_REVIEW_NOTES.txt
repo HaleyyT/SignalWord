@@ -1,0 +1,32 @@
+SignalWord 1.0 (8). The physical-iPhone recording and expanded answers are supplied in this submission's App Review conversation.
+
+PURPOSE
+An iPhone utility for private, consenting-contact alerts and server-managed check-ins. No medical care, emergency dispatch, rescue service or delivery/help guarantee. Internet and working delivery services are required.
+
+ACCESS
+Use review@signalword.app and the password in the private sign-in fields. Existing-account route > Use an existing password > Verify and sign in; complete CAPTCHA. No Google login or access to our inbox is required. Create account uses CAPTCHA and an emailed code. Settings has Sign out and Delete account and data; use a disposable account for deletion.
+
+CONTACT AND TEST
+People shows the confirmed contact. To inspect receipt, add/replace a contact with an inbox you control and confirm its consent email in the browser. Recipients need email/browser, not an app/account. Our existing recipient inbox is not accessible to you. New invitations reset consent and TEST evidence.
+
+With no active alert, tap Send TEST alert once. In the recipient email, acknowledge the private TEST link. Return > Refresh status. Acknowledgement is separate from resolution and does not mean help is coming. Hold to resolve this alert, or use Review and confirm. The resolution email needs no confirmation.
+
+Home > Safety check-in > Start 15-minute check-in. Wait for Active — confirmed by server, then Check in now > Refresh timer status. Verify Checked in — confirmed by server. Missing a deadline may create a REAL alert after grace/scheduling, even with the app closed; ending a timer does not retract an existing alert.
+
+OPTIONAL VOICE/LOCATION
+Save SignalWord's Send TEST Alert action in Apple Shortcuts. Settings > Accessibility > Vocal Shortcuts assigns a practice phrase. Trigger Alert is REAL; do not use it for rehearsal. iOS handles recognition; SignalWord does not continuously listen/collect the phrase. Locked/background operation is best effort. Location is an optional snapshot; denial does not prevent alerts.
+
+PRIVATE CONTENT
+No public feed, open chat or public content catalogue. People > Withdraw this contact and the recipient confirmation page's Withdraw trusted-contact consent stop future/unclaimed sends. Already submitted emails cannot be recalled. Abuse concerns: support@signalword.app; no in-app report feature is claimed.
+
+SERVICES
+Supabase: auth/database/functions. Resend: transactional email. Cloudflare: CAPTCHA, domain/DNS and mailbox routing. Vercel: public/recipient/auth web pages and API routing. RevenueCat + Apple StoreKit: purchase entitlement/restoration. Apple frameworks: Shortcuts/Vocal Shortcuts, location, secure storage, device authentication and reminders. Recipient Open in a map opens external OpenStreetMap; no embedded map tiles/media catalogue. No generative AI/danger-detection service. Sentry collection is disabled in Build 8.
+
+REGIONS/REGULATED SERVICES
+No app-defined regional core-feature variants; English interface. Store price/currency/tax/availability and Apple voice-feature availability can vary. No medical diagnosis/treatment, financial, gambling, professional rescue or emergency-dispatch service.
+
+PURCHASE
+Free app and safety functions. Settings > Supporter appearance > Unlock appearance (localized Apple price). com.signalword.supporter.appearance is one non-consumable purchase unlocking BOTH Ocean/Lavender accents and a supporter card, not a subscription. Already-owned purchases show choices instead of a buy button. Restore purchases and Refresh purchase status are here. No safety priority/delivery benefit or reviewer bypass. The IAP accompanies this submission.
+
+Support: https://www.signalword.app/support
+Privacy: https://www.signalword.app/privacy

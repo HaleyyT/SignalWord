@@ -1,0 +1,64 @@
+Hello App Review Team,
+
+Thank you for reviewing SignalWord. Below is the information requested under Guideline 2.1 for version 1.0 (8), submission 871aa417-f89f-48d8-b7ee-5bb67d86c2f8.
+
+1. Physical-device demonstration
+
+Please see the physical-iPhone screen recording provided with this response. It demonstrates the submitted Build 8, beginning with launching the app. It covers account creation, password login, trusted-contact consent, a labelled TEST alert and recipient acknowledgement, explicit resolution, a check-in completed before its deadline, the optional Supporter appearance features and purchase restoration, and deletion of a separate demonstration account. The dedicated reviewer account is retained for your review.
+
+2. Purpose and intended audience
+
+SignalWord is an iPhone utility for people who want to keep a person they trust informed. A signed-in user can send an alert to a consenting trusted contact by a tap or an Apple Shortcut. Apple Vocal Shortcuts can run a configured Shortcut using a private phrase. Users can also start a server-managed check-in timer; a missed check-in can create a REAL alert after the grace period and scheduling run.
+
+The value is a prepared, consent-based contact workflow with separate delivery, acknowledgement and resolution states. It is not an emergency-dispatch or medical service, does not contact police or emergency services, and does not guarantee delivery, rescue or assistance. Internet access and functioning delivery services are required.
+
+3. Access and review instructions
+
+Reviewer app account: review@signalword.app. Its current password is supplied separately in App Review Information's private sign-in fields. This is a SignalWord account, not an Apple ID or Google login. No administrator account or third-party developer dashboard access is required.
+
+Open SignalWord, choose the existing-account sign-in route, select "Use an existing password", enter the supplied credentials, tap "Verify and sign in", and complete the normal CAPTCHA. The account has an existing confirmed trusted contact. Email-code login is an alternative, but your supplied password does not require access to the owner's email inbox.
+
+For independent recipient-side testing, use People to configure a recipient email address you control. Open its confirmation email and explicitly confirm consent in the browser. The recipient does not need a SignalWord installation or account, or a Google account. The existing contact's mailbox is controlled by the developer; we do not assume you have access to it. Adding or replacing a contact requires fresh consent and resets that contact's previous rehearsal evidence.
+
+With a confirmed contact and no active alert, tap "Send TEST alert" once. In the recipient inbox, open the matching TEST email and acknowledge its private link. In SignalWord, use "Refresh status" to inspect acknowledgement. Acknowledgement does not resolve the alert or imply help is coming. Use "Hold to resolve this alert" or the "Review and confirm" alternative to resolve it. The resolution email is informational and requires no confirmation.
+
+For the timer, open Home > Safety check-in, start the 15-minute option, wait for "Active — confirmed by server", then tap "Check in now" and refresh to verify "Checked in — confirmed by server". This demonstrates the normal workflow without deliberately creating a missed-deadline REAL alert. Closing the app does not cancel a timer; an existing alert must be resolved separately.
+
+Voice setup is optional. In Apple's Shortcuts app, add SignalWord's "Send TEST Alert" action and save it as a shortcut. In iPhone Settings > Accessibility > Vocal Shortcuts, assign a practice phrase to that saved shortcut. This runs a labelled TEST. "Trigger Alert" is a separate REAL action and should not be used for a rehearsal. SignalWord does not continuously listen or collect the private phrase; iOS manages recognition. Locked/background behavior depends on device state, permissions and connectivity.
+
+Location is an optional snapshot, not continuous tracking. Alerts can be used without granting location permission. Sign-out is in Settings and preserves server data; finish active alerts and timers before signing out. Settings > "Delete account and data" starts the in-app deletion flow. Use a separately created demonstration account to inspect deletion so the supplied reviewer account remains available.
+
+There is no public feed, user search, open chat or public content-sharing catalogue. User-provided names, contact addresses and optional location are used in the private consenting-contact workflow. People > "Withdraw this contact" stops future and unclaimed sends for that contact. A recipient can also use "Withdraw trusted-contact consent" on the confirmation web page. Already submitted emails cannot be recalled. Unexpected or abusive messages can be reported to support@signalword.app; this is a support route, not an in-app content-reporting feature.
+
+4. External services and platforms
+
+- Supabase: email authentication, database and server-side functions for profiles, contacts, alerts, check-in state and recipient-link operations.
+- Resend: transactional authentication, contact-confirmation, alert and resolution emails.
+- Cloudflare Turnstile: normal account-verification CAPTCHA. Cloudflare also provides domain/DNS and routing for the developer's support/reviewer email aliases.
+- Vercel: hosting for the public support/privacy pages, account-verification/recovery pages and recipient web interface/API routing.
+- RevenueCat: the optional Supporter purchase entitlement, purchase status and restoration integration with Apple's store. Safety-account identity, contacts, alert details and location are not used as RevenueCat customer identity.
+- Apple frameworks and App Store services: StoreKit purchases; Shortcuts/App Intents and Vocal Shortcuts; optional location, device authentication, secure session storage and local reminders.
+- OpenStreetMap: an optional "Open in a map" link from the recipient web viewer opens the external OpenStreetMap website. The iPhone app does not embed map tiles or a third-party media catalogue.
+
+SignalWord does not use a generative-AI service or an external AI danger-detection service. The submitted Build 8 does not enable Sentry crash-reporting collection.
+
+5. Regional behavior
+
+SignalWord has no app-defined country-specific versions of its core contact, alert, check-in or appearance features. Its interface is in English. The same consent and account requirements apply throughout its available storefronts. Store availability, localized purchase price/currency/tax, email connectivity, and availability of Apple's voice features by OS/language may vary. Manual in-app operation does not require configuring a voice shortcut. SignalWord does not dispatch to any regional emergency number.
+
+6. Regulated services and third-party material
+
+SignalWord provides private contact notifications and check-ins. It does not provide medical diagnosis/treatment, regulated financial services, gambling, emergency dispatch or professional rescue services. It does not embed a third-party articles, music, video or map-tile catalogue. The optional external OpenStreetMap link described above does not redistribute map tiles within the iPhone app.
+
+7. In-App Purchase
+
+The app is free to download and its safety features are free. "SignalWord Supporter Appearance", product com.signalword.supporter.appearance, is one optional non-consumable, one-time purchase. It unlocks both Ocean and Lavender colour accents and the supporter card. These are not separate purchases and there is no subscription. Purchasing does not change alert priority, delivery or access to help.
+
+Open Settings > "Supporter appearance". For an account without the store entitlement, "Unlock appearance" displays the localized Apple price and starts Apple's purchase sheet. Once unlocked, select Standard, Ocean or Lavender. "Restore purchases" and "Refresh purchase status" are on the same screen. An already-owned non-consumable may show the unlocked choices instead of another purchase button. The entitlement uses the store account; deleting a SignalWord safety account does not refund the store purchase.
+
+The first Supporter In-App Purchase is included with this app submission. Purchases and restoration use the ordinary store/RevenueCat flow, with no special reviewer unlock.
+
+Support: https://www.signalword.app/support
+Privacy: https://www.signalword.app/privacy
+
+Thank you for your review. Please let us know if any additional access or clarification would help.
