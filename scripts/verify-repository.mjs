@@ -6,7 +6,6 @@ const requiredPaths = [
   'supabase/migrations',
   'supabase/functions',
   'supabase/tests',
-  'docs/README.md',
   '.env.example',
 ];
 

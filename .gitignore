@@ -38,3 +38,6 @@ supabase/.env
 
 # Local Vercel project link and deployment cache
 .vercel/
+
+# Private local planning and release documents
+/docs/
