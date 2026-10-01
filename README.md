@@ -6,6 +6,15 @@ Need help to alert your people in difficult cases? SignalWord helps you reach th
 
 It is not an emergency-dispatch service, does not run an app-owned always-on microphone, does not receive the private phrase or ambient audio, and must not claim delivery or live location without evidence.
 
+## Judge guide
+
+- **Product:** private alerts and server-managed check-ins for consenting trusted contacts.
+- **Platform:** native SwiftUI iPhone app; recipients use an email link and browser.
+- **RevenueCat:** one optional non-consumable purchase, `com.signalword.supporter.appearance`, unlocks both Ocean and Lavender accents and a supporter card. Purchase, restoration and entitlement refresh are separate from safety actions.
+- **Evaluation:** follow [the reproducible setup and TEST walkthrough](JUDGE_GUIDE.md). Use synthetic contacts and an inbox you control.
+- **Website:** [signalword.app](https://www.signalword.app). A homepage is not a substitute for the native app demo.
+- **Availability:** Apple review is pending. Next Gen eligibility requires a public licensed repository and an accessible demo video; other award eligibility depends on the official store requirements or written organizer permission.
+
 ## Repository layout
 
 ```text
@@ -22,11 +31,11 @@ tests/             fast repository automation tests
 
 ## Current release
 
-Version **1.0 (8)** and the optional **SignalWord Supporter Appearance** purchase were submitted together to Apple on **1 October 2026 at 04:16 Sydney time**. Both were independently verified as **Waiting for Review**. This is submission receipt, not Apple approval or a public App Store release.
+Version **1.0 (8)** and the optional **SignalWord Supporter Appearance** purchase were submitted together to Apple on **1 October 2026 at 04:16 Sydney time**. After Apple requested additional information under Guideline 2.1, the same Build 8 was resubmitted on **2 October 2026 at 01:33 Sydney time**. Owner-provided screenshots captured at 02:04–02:06 show both items **Waiting for Review**. This is submission evidence, not Apple approval or a public App Store release.
 
 The app is configured for free download. All safety features remain free; one non-consumable Supporter purchase unlocks both Ocean and Lavender accent colours. RevenueCat manages the optional purchase and restoration.
 
-The submitted binary was built from commit `0326ece1cd5b99e3aea1844e569ac9bb7e88b7d9`. Later repository updates may improve the website and documentation without changing the binary Apple is reviewing. Release evidence and operational gates are retained privately by the maintainer.
+The submitted native binary is unchanged by this repository preparation. Later repository updates may improve the website and documentation without changing the binary Apple is reviewing. Release evidence and operational gates are retained privately by the maintainer.
 
 ## Implementation and verification
 

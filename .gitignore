@@ -42,3 +42,7 @@ supabase/.env
 # Private local planning and release documents
 /docs/
 /draft/
+
+# Private submission preparation
+/.devpost-hackathon-state.json
+/devpost-submission.md
