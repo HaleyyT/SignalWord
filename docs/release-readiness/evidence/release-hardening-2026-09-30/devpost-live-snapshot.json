@@ -1,0 +1,416 @@
+{
+  "devpost": {
+    "id": 1449148,
+    "name": "SignalWord",
+    "tagline": "A safety app designed to turn a discreet spoken phrase into a coordinated alert, sharing timely context and location with trusted contacts when opening your phone isn’t practical.",
+    "description": "A safety signal you can rehearse before you need it\n\nIn a stressful or coercive situation, visibly unlocking a phone, finding an app, and pressing an emergency button may be difficult—or may make the situation worse. We wanted to explore a calmer question:\n\nWhat if a phrase known only to you could start a safety workflow you had already prepared and practised?\n\nThat idea became SignalWord, a privacy-first iOS safety coordination app designed around trusted contacts, explicit consent, honest delivery states, and rehearsable TEST alerts.\n\nSignalWord is not a replacement for emergency services, does not automatically contact police, and does not run its own hidden, always-listening microphone. Instead, it integrates with Apple's system-level Vocal Shortcuts and App Intents. The user trains a personal phrase in iOS, and Apple invokes SignalWord's narrow alert action when that phrase is recognized.\n\nWhat SignalWord does\n\nSignalWord helps a user prepare a small trusted-contact safety network and practise how it behaves before relying on it.\n\n\nDiscreet system-level activation: Apple Vocal Shortcuts can invoke SignalWord's TEST or REAL App Intent without SignalWord recording or storing ambient speech.\nClear TEST and REAL separation: rehearsal alerts are unmistakably labelled so contacts are not frightened by a practice run.\nConsent-first trusted contacts: contacts must confirm participation and can withdraw later.\nCoordinated alert delivery: accepted alerts enter a durable delivery workflow rather than depending on one fragile network request.\nOptional location context: SignalWord shares a time-stamped location snapshot when one is safely available; it does not pretend that a stale or unavailable location is live tracking.\nSecure recipient experience: each recipient receives an expiring, capability-scoped link that reveals only the information needed for that alert.\nAcknowledgement and resolution: recipients can explicitly acknowledge an alert, while the sender can recover interrupted state and resolve the incident. Acknowledgement is never described as proof that help is coming.\nCheck-in timers: a user can start, extend, complete, or cancel a server-owned timer. An agreed missed check-in can create a clearly labelled incident.\nOptional supporter appearance: a one-time RevenueCat-powered purchase unlocks cosmetic Ocean and Lavender accents. All safety functionality remains free.\n\n\nWhy this matters\n\nMany safety products focus only on the moment of crisis. SignalWord also focuses on preparation, consent, rehearsal, and recovery.\n\nA safety workflow is only useful when everyone understands it. TEST mode lets a user and their contacts learn what messages look like, how acknowledgement works, what happens when delivery is delayed, and how an incident is resolved. Consent and withdrawal are treated as product features—not legal text hidden at the bottom of a screen.\n\nWe also designed SignalWord to communicate uncertainty honestly. “Saved,” “accepted by the server,” “accepted by the delivery provider,” “delivered,” and “acknowledged” are different states. The interface and backend preserve those distinctions rather than turning every intermediate step into a reassuring but inaccurate green checkmark.\n\nHow we built it\n\nThe iOS app is built with SwiftUI, App Intents, and Apple's Vocal Shortcuts. Authentication and the alert APIs run on Supabase Edge Functions, with PostgreSQL and row-level security protecting private account, contact, alert, and delivery data.\n\nAlert creation uses idempotency and transactional database operations so retries do not create duplicate incidents. A durable transactional outbox separates alert acceptance from provider delivery. Sensitive provider payloads are encrypted at rest, and signed callbacks reconcile provider state without trusting unsigned requests.\n\nTrusted contacts use a responsive React + TypeScript viewer deployed at signalword.app. Recipient links use high-entropy, expiring capabilities; the database stores hashes rather than plaintext viewer tokens. Explicit POST actions are required for acknowledgement and withdrawal so simply opening a link cannot change incident state.\n\nCloudflare Turnstile protects onboarding, Resend provides the current email delivery path, and the system includes scoped monitoring and guarded recovery workflows. RevenueCat Purchases SDK 5.91.0 powers the optional supporter appearance without attaching SignalWord account, contact, phrase, location, or alert data to the billing identity.\n\nChallenges we faced\n\nThe hardest part was not drawing the emergency button—it was preserving trustworthy behavior across partial failure.\n\nWe had to design and test what happens when:\n\n\nthe app loses connectivity after sending a command but before receiving the response;\ntwo identical commands arrive concurrently;\na provider accepts a message but its response is uncertain;\ncallbacks arrive twice or out of order;\na recipient withdraws while delivery work is already queued;\nthe sender closes the app and returns later;\ndeletion or restore work is interrupted;\nlocation is unavailable, stale, or implausible;\nbilling is unavailable while a safety action is needed.\n\n\nThose scenarios led us to idempotent commands, durable local recovery, database serialization, delivery leases, signed callback reconciliation, bounded token lifetimes, explicit consent states, and fail-closed recovery authority.\n\nWe also learned that an app cannot honestly imitate “Hey Siri” with an indefinite background microphone. The safer iOS-native approach is to use Apple Vocal Shortcuts to invoke a narrow App Intent while keeping phrase recognition under system control.\n\nAccomplishments we are proud of\n\n\nWe built an end-to-end iOS, API, database, delivery, and recipient-viewer system rather than a clickable mock-up.\nTEST, REAL, acknowledgement, delivery, and resolution states remain semantically distinct across the full workflow.\nSafety actions remain independent of RevenueCat availability and are never paywalled.\nRecipient capabilities are expiring and scoped; private tokens and delivery payloads are not stored in plaintext.\nThe system has deterministic contract, concurrency, privacy, recovery, browser, Swift, simulator, and provider-behavior tests.\nThe hosted development environment has completed multi-recipient routing, acknowledgement, withdrawal, resolution, deletion, and account-isolation checks. Remaining release gates are documented rather than hidden.\n\n\nWhat we learned\n\nFor safety software, correctness includes the language shown to users. “Alert created” is not the same as “contact notified,” and “contact acknowledged” is not the same as “assistance is on the way.” Reliability engineering and UX writing have to share the same state model.\n\nWe also learned to treat privacy as architecture. SignalWord avoids receiving the user's private spoken phrase, keeps billing identity separate from safety identity, hashes capability tokens, encrypts delivery payloads, minimizes recipient projections, and uses short retention windows for sensitive operational data.\n\nWhat's next\n\nOur immediate work is to complete the frozen physical-device candidate, prove the locked-device Vocal Shortcut flow on the supported iPhone, finish the final RevenueCat provider transaction and restoration evidence, and complete the remaining hosted recovery and load gates.\n\nLonger term, we want to conduct structured usability studies with consenting safety advocates and trusted-contact pairs, add carefully verified delivery channels, improve international accessibility and localization, and explore emergency-service partnerships only where legal, operational, and technical guarantees can be made honestly.\n\nSignalWord's goal is deliberately focused: make it easier to prepare and send a clear signal to people you trust, without pretending that software can guarantee rescue.\n\nProblem\n\nPeople may be unable to visibly unlock a phone and navigate an interface during a coercive, unsafe, or highly stressful moment. Existing emergency interactions may also be difficult to rehearse, may hide delivery uncertainty, or may involve contacts who have never consented to the workflow.\n\nSolution\n\nSignalWord combines an Apple-managed spoken trigger, confirmed trusted contacts, TEST/REAL separation, secure recipient links, optional location context, acknowledgement, escalation, timers, interruption recovery, and honest delivery status in one rehearsable iOS safety workflow.\n\nWhy This Matters\n\nSignalWord is designed to reduce friction without creating false guarantees. It helps a user and trusted contacts prepare together, understand limitations, and distinguish an accepted command from actual delivery or response.\n\nHow We Used AI\n\nSignalWord does not use generative AI or an opaque danger classifier at runtime. The user's explicit action remains authoritative. Apple controls Vocal Shortcut phrase recognition on-device; SignalWord receives only the invoked App Intent, not ambient audio or a recording of the private phrase.\n\nAI-assisted engineering was used during development to challenge assumptions, enumerate failure modes, review security boundaries, generate test cases, inspect regressions, and improve documentation. No AI-generated result is trusted as release evidence without an executable test, hosted observation, or human review.\n",
+    "video_url": null,
+    "state": "submission_draft",
+    "slug": "signalword",
+    "url": "https://devpost.com/software/signalword",
+    "published_at": null,
+    "created_at": "2026-09-28T09:12:04.977-04:00",
+    "updated_at": "2026-09-29T13:41:42.058-04:00",
+    "membership": "author",
+    "hackathons": [
+      {
+        "name": "RevenueCat Shipaton 2026",
+        "slug": "revenuecat-shipaton-2026",
+        "url": "https://revenuecat-shipaton-2026.devpost.com/",
+        "website_url": "https://www.signalword.app",
+        "submitted_at": null
+      }
+    ]
+  },
+  "requirements": {
+    "hackathon": {
+      "id": 29969,
+      "slug": "revenuecat-shipaton-2026",
+      "title": "RevenueCat Shipaton 2026"
+    },
+    "data": {
+      "description_html": "<h4>WHAT TO BUILD</h4>\n<p>Entrants must create a working software application that uses the RevenueCat SDK to power at least one in-app or web purchase (each a \"Project\"). Apps must be built for iOS, iPadOS, macOS, or Android. The first public version of your app must be released between <strong>August 1 and September 30, 2026</strong>.</p>\n<p><strong>Students competing for the Next Gen Award</strong> follow a different, lower-friction path: submit a video and source code instead of a published store listing. No paid Apple or Google developer account required.<br><br>Students under the age of majority where they reside may enter the Next Gen Award (minimum age 13) with parent or guardian consent. See Section 3 of the official rules.</p>\n<h4>What to submit on Devpost</h4>\n<p>Every submission must include:</p>\n<ul>\n<li>A <strong>text description</strong> of your app's features and functionality.</li>\n<li>A <strong>demo video</strong> of your project. The video:\n<ul>\n<li>Should show the app running on the device it was built for.</li>\n<li>Must be no longer than 2 minutes of essential footage — <strong>judges are not required to watch beyond two minutes.</strong></li>\n<li>Must be uploaded to and publicly visible on YouTube or Vimeo, with the link provided on this form.</li>\n<li>Must not include third-party trademarks or copyrighted music/material unless you have permission to use it.</li>\n</ul>\n</li>\n<li>A <strong>URL to your fully published app</strong> on the App Store or Google Play or Samsung Galaxy Store.</li>\n<li>A <strong>1024×1024 app icon</strong>.</li>\n<li>At least <strong>one screenshot</strong> of the app at <strong>1179px × 2556px</strong> with <strong>no device frame</strong>.</li>\n<li>Either a <strong>free trial</strong> in your app, <strong>or</strong> a <strong>promo code</strong> so judges can unlock the in-app purchase and test all premium features.</li>\n</ul>",
+      "description_text": "WHAT TO BUILD\nEntrants must create a working software application that uses the RevenueCat SDK to power at least one in-app or web purchase (each a \"Project\"). Apps must be built for iOS, iPadOS, macOS, or Android. The first public version of your app must be released between August 1 and September 30, 2026.\nStudents competing for the Next Gen Award follow a different, lower-friction path: submit a video and source code instead of a published store listing. No paid Apple or Google developer account required.Students under the age of majority where they reside may enter the Next Gen Award (minimum age 13) with parent or guardian consent. See Section 3 of the official rules.\nWhat to submit on Devpost\nEvery submission must include:\n\nA text description of your app's features and functionality.\nA demo video of your project. The video:\n\nShould show the app running on the device it was built for.\nMust be no longer than 2 minutes of essential footage — judges are not required to watch beyond two minutes.\nMust be uploaded to and publicly visible on YouTube or Vimeo, with the link provided on this form.\nMust not include third-party trademarks or copyrighted music/material unless you have permission to use it.\n\n\nA URL to your fully published app on the App Store or Google Play or Samsung Galaxy Store.\nA 1024×1024 app icon.\nAt least one screenshot of the app at 1179px × 2556px with no device frame.\nEither a free trial in your app, or a promo code so judges can unlock the in-app purchase and test all premium features.",
+      "fields": [
+        {
+          "id": 27378,
+          "label": "Includes App Icon",
+          "type": "checkbox",
+          "type_raw": "SubmissionFieldCheckBox",
+          "required": true,
+          "description": "Did you attach a 1024 x 1024 uncropped image of your app icon?",
+          "position": 0
+        },
+        {
+          "id": 27379,
+          "label": "Includes screenshot",
+          "type": "checkbox",
+          "type_raw": "SubmissionFieldCheckBox",
+          "required": true,
+          "description": "Did you attach a screenshot of your app WITHOUT device frames?",
+          "position": 1
+        },
+        {
+          "id": 27380,
+          "label": "First Version Date Confirmation",
+          "type": "checkbox",
+          "type_raw": "SubmissionFieldCheckBox",
+          "required": false,
+          "description": "Was the first version of your app released on the App Store, Google Play Store, or Samsung Galaxy Store between August 1 and September 30, 2026?",
+          "position": 2
+        },
+        {
+          "id": 27381,
+          "label": "Is Staff or Sponsor",
+          "type": "checkbox",
+          "type_raw": "SubmissionFieldCheckBox",
+          "required": false,
+          "description": "Are you an employee of RevenueCat or a Shipaton Sponsor?",
+          "position": 3
+        },
+        {
+          "id": 27382,
+          "label": "What type of app did you build? (select all that apply)",
+          "type": "dropdown",
+          "type_raw": "SubmissionFieldAdvancedDropdown",
+          "required": true,
+          "description": "",
+          "position": 4,
+          "options": [
+            "iOS (iPhone and/or iPad)",
+            "Android",
+            "Mac"
+          ],
+          "multiple": true
+        },
+        {
+          "id": 27383,
+          "label": "URL to your published iOS or Mac app on Apple's App Store:",
+          "type": "text",
+          "type_raw": "SubmissionFieldUrl",
+          "required": false,
+          "description": "",
+          "position": 5
+        },
+        {
+          "id": 27384,
+          "label": "URL to your published Android app on the Google Play Store:",
+          "type": "text",
+          "type_raw": "SubmissionFieldUrl",
+          "required": false,
+          "description": "",
+          "position": 6
+        },
+        {
+          "id": 28117,
+          "label": "URL to your published app on the Samsung Galaxy Store",
+          "type": "text",
+          "type_raw": "SubmissionFieldText",
+          "required": false,
+          "description": "Provide the public URL to the app’s Galaxy Store listing. Leave blank if the app is not published on the Samsung Galaxy Store.",
+          "position": 7
+        },
+        {
+          "id": 27793,
+          "label": "(Next Gen Only) URL to your code repository",
+          "type": "text",
+          "type_raw": "SubmissionFieldUrl",
+          "required": false,
+          "description": "If you're targeting the Next Gen award, provide a link to public repository where your code is hosted.",
+          "position": 8
+        },
+        {
+          "id": 27792,
+          "label": "(Next Gen Only) Student/academic email address",
+          "type": "text",
+          "type_raw": "SubmissionFieldEmail",
+          "required": false,
+          "description": "If you're targeting the Next Gen award, provide your student email for validating student status",
+          "position": 9
+        },
+        {
+          "id": 28375,
+          "label": "Minor entrant consent confirmed",
+          "type": "checkbox",
+          "type_raw": "SubmissionFieldCheckBox",
+          "required": false,
+          "description": "(Next Gen Only ) I confirm that either this submission does not include a Minor Entrant, or, if it does, this is a Next Gen submission and a parent or legal guardian has completed the consent form at: https://forms.gle/i7pUyFT2y7LE9qGK9",
+          "position": 10
+        },
+        {
+          "id": 28118,
+          "label": "RevenueCat project ID",
+          "type": "text",
+          "type_raw": "SubmissionFieldText",
+          "required": true,
+          "description": "Enter the project ID from the Project Settings page in your RevenueCat dashboard.",
+          "position": 11
+        },
+        {
+          "id": 28135,
+          "label": "If you have a promo code for unlocking premium features please include that here.",
+          "type": "text",
+          "type_raw": "SubmissionFieldText",
+          "required": false,
+          "description": "Note: Judges are not required to use these for every app, so make sure you demo your premium features in the first 3 minutes of your video.",
+          "position": 12
+        },
+        {
+          "id": 27387,
+          "label": "For Grand Prize Award: Include a description outlining what the developer has done since launch to grow their app and any relevant numbers (downloads/revenue/etc) that show growth since launch",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "For the Grand Prize, describe how you grew your app after launch and share the results.",
+          "position": 13
+        },
+        {
+          "id": 27390,
+          "label": "For the Build in Public Award: how did building in public improve your app or development process?",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Describe feedback, ideas, motivation, accountability, lessons, or other benefits you gained by sharing your progress publicly.",
+          "position": 14
+        },
+        {
+          "id": 28119,
+          "label": "For the Build in Public Award, provide links to the public content documenting your progress",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Include links to public content documenting your progress during Shipaton. Leave blank if you are not entering the Build in Public Award.",
+          "position": 15
+        },
+        {
+          "id": 27388,
+          "label": "For the HAMM Award: Include a description of the app's monetization model with an explanation of why that model was chosen.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Explain how the app makes money, how its paywall and pricing are structured, why you chose that model, and any available conversion or revenue results. Leave blank if you are not entering the HAMM Award.",
+          "position": 16
+        },
+        {
+          "id": 27389,
+          "label": "For the RevenueCat Peace Prize: Include a description of how the app was designed to benefit individuals, the community, or society at large.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "If you do not wish to be eligible for the RevenueCat Peace Prize please leave blank",
+          "position": 17
+        },
+        {
+          "id": 27391,
+          "label": "For the RevenueCat Design Award, describe your app’s distinctive design elements",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Guide the judges toward the visual design, interaction design, animations, or other details they should evaluate. Leave blank if you are not entering the RevenueCat Design Award.",
+          "position": 18
+        },
+        {
+          "id": 27795,
+          "label": "For the Catvertising Award, describe how your app uses RevenueCat Ads",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Explain the ad placements, their integration into the product experience, and how ads work with the rest of your monetization strategy. Leave blank if you are not entering the Catvertising Award.",
+          "position": 19
+        },
+        {
+          "id": 27794,
+          "label": "For the Best Game Award, describe your game",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Cover its gameplay, art direction, and how the monetization model fits the game and its genre. Leave blank if you are not entering the Best Game Award.",
+          "position": 20
+        },
+        {
+          "id": 27943,
+          "label": "Which Influencer Award category are you entering?",
+          "type": "dropdown",
+          "type_raw": "SubmissionFieldAdvancedDropdown",
+          "required": false,
+          "description": "An app may enter only one Influencer Award category. The same app may also enter any eligible non-influencer award categories.",
+          "position": 21,
+          "options": [
+            "Productivity — Christopher Lawley",
+            "Nutrition & Healthy Eating — Abbey’s Kitchen",
+            "Yoga & Fitness — Simone Sharice",
+            "Career Coaching — Leadership Heather",
+            "Gaming — Mr Lewis Blogs Gaming"
+          ],
+          "multiple": false
+        },
+        {
+          "id": 27944,
+          "label": "For Influencer Award: Include a description outlining how your app is targeting the influencer award category and how it matches what the influencer is looking for.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "If you do not wish to be eligible for the Influencer Award please leave blank",
+          "position": 22
+        },
+        {
+          "id": 28121,
+          "label": "For the Ship Kotlin Everywhere Award, describe how you used Kotlin Multiplatform or Compose Multiplatform to build a polished cross-platform app.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Explain what is shared across iOS and Android. Include links to any public build content and, if applicable, Kotlin libraries, pull requests, open-source components, documentation, samples, or tooling you contributed.",
+          "position": 23
+        },
+        {
+          "id": 28124,
+          "label": "For the Most Viral App Award, provide the email address associated with your Noise account.",
+          "type": "text",
+          "type_raw": "SubmissionFieldEmail",
+          "required": false,
+          "description": "Enter the email address used for the Noise account connected to this submission.",
+          "position": 24
+        },
+        {
+          "id": 28123,
+          "label": "For the Most Viral App Award, describe how you used Noise to attract attention and convert that attention into app downloads.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Include links to relevant creatives or posts. Explain their reach or virality, how easily the formats can be replicated at scale, and how effectively they communicate the app’s value to potential users.",
+          "position": 25
+        },
+        {
+          "id": 28125,
+          "label": "For the Best App for Galaxy Award, describe how you optimized your app and Galaxy Store listing for the Samsung Galaxy ecosystem.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Cover relevant Samsung features, such as foldable support, multi-window, or device-specific hardware, as well as the quality of your Galaxy Store metadata and assets. Mention if the app is exclusive to the Galaxy Store.",
+          "position": 26
+        },
+        {
+          "id": 28126,
+          "label": "For the Idea to Income Award, provide your Replit preview URL and Replit username.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Include both the public preview URL and the username associated with the submitted project.",
+          "position": 27
+        },
+        {
+          "id": 28127,
+          "label": "For the Idea to Income Award, describe how Replit helped you turn your idea into a live, monetized app with growing momentum.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Explain how you used Replit, Replit Agent, and the RevenueCat integration. Include week-over-week revenue or transaction growth, paying-user traction, product quality, community engagement, and links to three public posts from different stages of your build journey.",
+          "position": 28
+        },
+        {
+          "id": 28128,
+          "label": "For the Keep Them Coming Back Award, provide your OneSignal App ID.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Enter the App ID for the OneSignal project integrated into your submitted app.",
+          "position": 29
+        },
+        {
+          "id": 28129,
+          "label": "For the Keep Them Coming Back Award, describe how you used OneSignal to bring users back to your app.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Describe at least one deployed campaign and how it was created using the OneSignal API, MCP, or dashboard. Explain the integration’s reliability, value to users, engagement results, and any creative use of features such as Journeys, segmentation, or in-app messaging.",
+          "position": 30
+        },
+        {
+          "id": 28130,
+          "label": "For The Growth Loop Award, describe the growth loop you created and tested using Layers.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Confirm that the Layers SDK is installed. Identify the audience and growth hypothesis, message, channel or product surface, experiment, intended outcome, measurable SDK signal or early response, what you learned, and what you would try next. A few sentences for each part are sufficient.",
+          "position": 31
+        },
+        {
+          "id": 28132,
+          "label": "For the Funnel Vision Award, provide your live RevenueCat Funnel URL.",
+          "type": "text",
+          "type_raw": "SubmissionFieldUrl",
+          "required": false,
+          "description": "Provide the public URL to the working web-to-app funnel using Stripe as the checkout provider.",
+          "position": 32
+        },
+        {
+          "id": 28134,
+          "label": "For the Funnel Vision Award, provide your Stripe Project ID.",
+          "type": "text",
+          "type_raw": "SubmissionFieldText",
+          "required": false,
+          "description": "Enter the Stripe Project ID used by the live funnel.",
+          "position": 33
+        },
+        {
+          "id": 28133,
+          "label": "For the Funnel Vision Award, describe the design and performance of your web-to-app funnel.",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "Explain the experience from the initial visit or advertisement through Stripe checkout and app download. Include total web payment volume, conversion results, and any design decisions or experiments that improved performance.",
+          "position": 34
+        },
+        {
+          "id": 27392,
+          "label": "Do you have any additional notes for the judges?",
+          "type": "textarea",
+          "type_raw": "SubmissionFieldTextArea",
+          "required": false,
+          "description": "",
+          "position": 35
+        },
+        {
+          "id": 27791,
+          "label": "Opt-in in for Growth fund",
+          "type": "checkbox",
+          "type_raw": "SubmissionFieldCheckBox",
+          "required": false,
+          "description": "Are you interested in RevenueCat Growth Fund and having your app considered for it?",
+          "position": 36
+        }
+      ],
+      "deliverables": {
+        "submission_object": "submission",
+        "video_required": true,
+        "website_required": false,
+        "zip_file_required": false
+      }
+    },
+    "data_completeness": "complete",
+    "fetched_at": "2026-09-30T02:39:24Z"
+  },
+  "dates": {
+    "hackathon": {
+      "id": 29969,
+      "slug": "revenuecat-shipaton-2026",
+      "title": "RevenueCat Shipaton 2026"
+    },
+    "data": {
+      "time_zone": "Pacific Time (US & Canada)",
+      "dates": {
+        "submissions_start_at": "2026-07-31T15:00:00Z",
+        "submissions_end_at": "2026-10-01T06:45:00Z",
+        "judging_starts_at": null,
+        "judging_ends_at": null,
+        "public_voting_starts_at": null,
+        "public_voting_ends_at": null,
+        "winners_announced_at": "2026-10-21T16:00:00Z",
+        "published_at": "2026-05-15T17:56:07Z"
+      },
+      "current_phase": "submissions_open"
+    },
+    "data_completeness": "complete",
+    "fetched_at": "2026-09-30T02:39:23Z"
+  }
+}

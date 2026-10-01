@@ -1,0 +1,42 @@
+{
+  "source": "0326ece1cd5b99e3aea1844e569ac9bb7e88b7d9",
+  "version": "1.0 (8)",
+  "project_ref": "voepalyamwgenceawdvl",
+  "checks": {
+    "version": true,
+    "bundle_id": true,
+    "backend": true,
+    "user_api": true,
+    "public_key_project_role": true,
+    "revenuecat_apple_key": true,
+    "captcha_configured": true,
+    "distribution": true,
+    "team": true,
+    "app_group": true,
+    "icon": true,
+    "privacy_manifest": true,
+    "reviewer_email_not_embedded": true,
+    "reviewer_password_not_embedded": true,
+    "matching_dsym": true,
+    "all_audited_privacy_types_bundled": true,
+    "privacy_tracking_disabled": true,
+    "no_audio_permissions": true,
+    "crash_reporting_disabled": true
+  },
+  "ipa_sha256": "797d2f58560a0e92912bdece6b0e7542bd99ab0e6cd0b5906b954cfe160c297c",
+  "binary_uuid": "A1198288-69C1-3DAC-AF26-E7175EBA1968",
+  "privacy_types": [
+    "CoarseLocation",
+    "Contacts",
+    "EmailAddress",
+    "Name",
+    "OtherDiagnosticData",
+    "OtherUserContent",
+    "PreciseLocation",
+    "ProductInteraction",
+    "PurchaseHistory",
+    "UserID"
+  ],
+  "uploaded_export_path": "/private/tmp/SignalWord-1.0-8-upload-export/SignalWord.ipa",
+  "archive_content_sha256": "2541a34c2e186200029fa73a656f1191e452b21580202c5995987cc1df66c9ba"
+}

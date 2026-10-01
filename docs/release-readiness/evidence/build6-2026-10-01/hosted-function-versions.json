@@ -1,0 +1,44 @@
+[
+  {
+    "slug": "user-api",
+    "version": 13,
+    "status": "ACTIVE",
+    "verify_jwt": true
+  },
+  {
+    "slug": "public-event",
+    "version": 9,
+    "status": "ACTIVE",
+    "verify_jwt": false
+  },
+  {
+    "slug": "contact-confirm",
+    "version": 9,
+    "status": "ACTIVE",
+    "verify_jwt": false
+  },
+  {
+    "slug": "deletion-status",
+    "version": 9,
+    "status": "ACTIVE",
+    "verify_jwt": false
+  },
+  {
+    "slug": "dispatch-deliveries",
+    "version": 10,
+    "status": "ACTIVE",
+    "verify_jwt": false
+  },
+  {
+    "slug": "resend-webhook",
+    "version": 10,
+    "status": "ACTIVE",
+    "verify_jwt": false
+  },
+  {
+    "slug": "operational-health",
+    "version": 4,
+    "status": "ACTIVE",
+    "verify_jwt": false
+  }
+]

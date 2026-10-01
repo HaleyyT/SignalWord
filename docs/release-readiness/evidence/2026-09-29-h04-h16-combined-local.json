@@ -1,0 +1,44 @@
+{
+  "recordedAt": "2026-09-29T11:10:54.501449+00:00",
+  "sourceCommit": "34a01290a89bfe15466014a601f4fb93d6dee332",
+  "environment": "local",
+  "nodePassed": 210,
+  "viewerPassed": 44,
+  "denoFunctionsPassed": 7,
+  "integrationPassed": true,
+  "contactRacesPassed": true,
+  "timerRacesPassed": true,
+  "hostedGatesPassed": 12,
+  "hostedGatesTotal": 17,
+  "manifestFrozen": false,
+  "logs": [
+    {
+      "path": "/private/tmp/h04-h16-combined-check.log",
+      "sha256": "d18cb82ce28fa77af9f6273319d0383cf5ba325697a4b09ef4f701e5a8fea8a4"
+    },
+    {
+      "path": "/private/tmp/h04-h16-combined-tests.log",
+      "sha256": "52fc4e33b4eb40c7583ba632c84d3071da5e08e658edd46f619a3b98aa7dab54"
+    },
+    {
+      "path": "/private/tmp/h04-h16-deno.log",
+      "sha256": "402002c83acb5488dd186b5d57ff35971c89e6999b677eaa933164ef51e648d7"
+    },
+    {
+      "path": "/private/tmp/h04-h16-combined-integration.log",
+      "sha256": "12ad81619260ad6bfba0fa019935485cc75fb71fa3db6dbce77d09063d866f2f"
+    },
+    {
+      "path": "/private/tmp/h04-h16-contact-races.log",
+      "sha256": "200f3af5a1e28ee0655fd6700480e60c3f3ef3d1c99b2331f55c9481ce548fce"
+    },
+    {
+      "path": "/private/tmp/h04-h16-timer-races.log",
+      "sha256": "31f39443d7946ec25243634db3b80006507cf20e2e49565920d9a5f34c124687"
+    },
+    {
+      "path": "/private/tmp/h04-passwordless-fixture-browser.log",
+      "sha256": "6c9a935909dc95cd7d32120194eeac1d3d231eac2a6e1a8b5720a353fc93c5e2"
+    }
+  ]
+}

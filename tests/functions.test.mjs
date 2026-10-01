@@ -68,7 +68,7 @@ function baseLifecycle(overrides = {}) {
   };
 }
 
-function userHandler(backend, logs = [], lifecycle = baseLifecycle()) {
+function userHandler(backend, logs = [], lifecycle = baseLifecycle(), overrides = {}) {
   return createUserApiHandler({
     backend,
     lifecycle,
@@ -84,6 +84,7 @@ function userHandler(backend, logs = [], lifecycle = baseLifecycle()) {
       confirmationPayloadCiphertext: 'encrypted-confirmation-token',
       payloadKeyVersion: 1,
     }),
+    ...overrides,
   });
 }
 
@@ -144,9 +145,35 @@ test('user API returns only the stable public create-alert projection', async ()
     reused: false,
   });
   assert.equal(response.headers.get('X-Request-ID'), REQUEST_ID);
+  assert.equal(response.headers.get('Server-Timing'), null);
   assert.equal(JSON.stringify(body).includes(TOKEN), false);
   assert.equal(JSON.stringify(logs).includes(TOKEN), false);
-  assert.deepEqual(Object.keys(logs[0]).sort(), ['durationMs', 'method', 'requestId', 'reused', 'route', 'status']);
+  assert.equal(logs[0].operation, 'alert');
+  assert.deepEqual(Object.keys(logs[0]).sort(), ['durationMs', 'method', 'operation', 'requestId', 'reused', 'route', 'status']);
+});
+
+test('development v2 alert responses expose numeric phase timing without identifiers', async () => {
+  let clock = Date.parse('2026-09-24T00:00:10Z');
+  const handler = userHandler(baseBackend(), [], baseLifecycle(), {
+    exposeServerTiming: true,
+    now: () => { clock += 5; return clock; },
+    network: {
+      create: async () => ({
+        eventId: EVENT_ID, state: 'active', delivery: 'queued',
+        serverTriggeredAt: '2026-09-24T00:00:11Z', reused: false,
+      }),
+    },
+  });
+  const request = alertRequest({ body: {
+    kind: 'test', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',
+  } });
+  const response = await handler(new Request(request.url.replace('/v1/', '/v2/'), request));
+  const timing = response.headers.get('Server-Timing');
+  assert.equal(response.status, 201);
+  assert.match(timing, /^auth_session;dur=\d+(?:\.\d+)?, preparation;dur=\d+(?:\.\d+)?, database;dur=\d+(?:\.\d+)?, app;dur=\d+(?:\.\d+)?$/);
+  assert.equal(timing.includes(USER_ID), false);
+  assert.equal(timing.includes(EVENT_ID), false);
+  assert.equal((await handler(alertRequest())).headers.get('Server-Timing'), null);
 });
 
 test('twenty concurrent identical creates produce one canonical event and outbox row', async () => {
@@ -306,7 +333,7 @@ test('contact setup cannot select another owner through its request body', async
 });
 
 test('contact setup fails closed without backend credentials', async () => {
-  const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key' });
+  const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'server-key' });
   await assert.rejects(gateway.saveContact({}, 'user-jwt'),
     (error) => error.status === 503 && error.code === 'SERVICE_UNAVAILABLE');
 });
@@ -323,7 +350,7 @@ test('contact setup uses backend credentials and exposes rate limits as bounded 
     });
   };
   try {
-    const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'backend-only-key' });
+    const gateway = createLifecycleGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'server-key', serviceRoleKey: 'backend-only-key' });
     await assert.rejects(
       gateway.saveContact({
         userId: USER_ID, name: 'Trusted', destinationCiphertext: 'encrypted-destination',
@@ -432,7 +459,7 @@ test('viewer tokens contain 256 random bits encoded as unpadded base64url', () =
   for (const token of tokens) assert.match(token, /^[A-Za-z0-9_-]{43}$/);
 });
 
-test('backend gateway forwards caller auth and maps the internal RPC result', async () => {
+test('backend gateway uses server credentials and maps the internal RPC result', async () => {
   const originalFetch = globalThis.fetch;
   let request;
   globalThis.fetch = async (url, init) => {
@@ -446,7 +473,7 @@ test('backend gateway forwards caller auth and maps the internal RPC result', as
     }]), { status: 200, headers: { 'Content-Type': 'application/json' } });
   };
   try {
-    const gateway = createBackendGateway({ url: 'https://project.supabase.co/', anonKey: 'publishable-key' });
+    const gateway = createBackendGateway({ url: 'https://project.supabase.co/', anonKey: 'publishable-key', serviceRoleKey: 'server-key' });
     const result = await gateway.createAlert({
       kind: 'real', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',
     }, USER_ID, IDEMPOTENCY_KEY, {
@@ -457,9 +484,9 @@ test('backend gateway forwards caller auth and maps the internal RPC result', as
     }, 'user-jwt');
 
     assert.equal(result.eventId, EVENT_ID);
-    assert.equal(request.url, 'https://project.supabase.co/rest/v1/rpc/create_or_reuse_alert');
-    assert.equal(request.init.headers.Authorization, 'Bearer user-jwt');
-    assert.equal(request.init.headers.apikey, 'publishable-key');
+    assert.equal(request.url, 'https://project.supabase.co/rest/v1/rpc/gateway_create_or_reuse_alert');
+    assert.equal(request.init.headers.Authorization, 'Bearer server-key');
+    assert.equal(request.init.headers.apikey, 'server-key');
     const rpcBody = JSON.parse(request.init.body);
     assert.equal(rpcBody.p_idempotency_key, IDEMPOTENCY_KEY);
     assert.equal(rpcBody.p_viewer_token, TOKEN);
@@ -478,7 +505,7 @@ test('malformed successful database results fail closed as retryable', async () 
     headers: { 'Content-Type': 'application/json' },
   });
   try {
-    const gateway = createBackendGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key' });
+    const gateway = createBackendGateway({ url: 'https://project.supabase.co', anonKey: 'publishable-key', serviceRoleKey: 'server-key' });
     await assert.rejects(
       gateway.createAlert({
         kind: 'real', triggerMethod: 'manual', clientTriggeredAt: '2026-09-24T00:00:00Z',
@@ -574,4 +601,16 @@ test('implausibly old or future location is omitted without blocking the alert',
   assert.ok(parseCreateAlert(input('2026-09-24T11:59:50Z'), now).location);
   assert.equal(parseCreateAlert(input('2026-09-23T11:59:59Z'), now).location, undefined);
   assert.equal(parseCreateAlert(input('2026-09-24T12:05:01Z'), now).location, undefined);
+});
+
+test('accepted alerts survive logger and best-effort wakeup failures',async()=>{
+ const logs={push(){throw Error('telemetry unavailable');}};
+ const handler=userHandler(baseBackend(),logs,baseLifecycle(),{wake(){throw Error('wakeup unavailable');}});
+ const response=await handler(alertRequest());assert.equal(response.status,201);
+ assert.equal((await response.json()).eventId,EVENT_ID);
+});
+test('contact confirmation survives logging failure',async()=>{
+ const handler=createContactConfirmHandler({lifecycle:baseLifecycle({confirmContact:async()=>true}),now:()=>1000,logger:{write(){throw Error('unavailable');}}});
+ const response=await handler(new Request(`https://api.example.test/v1/contacts/confirm/${TOKEN}`,{method:'POST'}));
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),{confirmed:true});
 });

@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 
 /// An isolated foreground challenge. No session credentials or recipient links
-/// enter this WebView; its only output is a short-lived signup token.
+/// enter this WebView; its only output is a short-lived CAPTCHA token.
 struct SignupVerificationView: UIViewRepresentable {
     let url: URL
     let completed: (String) -> Void

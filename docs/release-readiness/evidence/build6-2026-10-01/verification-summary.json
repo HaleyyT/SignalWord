@@ -1,0 +1,97 @@
+{
+  "source": "faa650bce06a3700e226e8334623531b9c2e31f3",
+  "version": "1.0 (6)",
+  "swift_core": {
+    "passed": 57,
+    "failed": 0
+  },
+  "crash_privacy": {
+    "passed": 1,
+    "failed": 0
+  },
+  "supporter": {
+    "passed": 10,
+    "failed": 0
+  },
+  "node": {
+    "passed": 223,
+    "failed": 0
+  },
+  "viewer": {
+    "passed": 44,
+    "failed": 0
+  },
+  "database": {
+    "passed": 325,
+    "suites": 16,
+    "failed": 0
+  },
+  "safe_update_restore": {
+    "assertions": 17,
+    "result": "PASS"
+  },
+  "simulator_ui": {
+    "suite_passed": 22,
+    "suite_failed": 1,
+    "isolated_rerun_passed": 1,
+    "failure": "Existing contact network journey: offscreen XCUI activation point. Same journey passed in isolated rerun without source change.",
+    "suite_result": "/var/folders/hx/q701f8992p35385dn217cg1w0000gn/T/signalword-ui.75IHxE/Journey.xcresult",
+    "rerun_result": "/var/folders/hx/q701f8992p35385dn217cg1w0000gn/T/signalword-ui.TluTiG/Journey.xcresult"
+  },
+  "release_preflight": "PASS",
+  "signed_archive": "PASS",
+  "normal_app_store_export": "PASS",
+  "apple_upload": "PASS",
+  "apple_processing": "Complete",
+  "export_compliance": "Owner saved; Missing Compliance no longer shown",
+  "internal_group": "SignalWord Internal",
+  "physical_build6_acceptance": {
+    "ocean_relaunch": "Owner reports PASS",
+    "lavender_relaunch": "Owner reports colour did not stay; awaiting selected checkmark result to distinguish preference from visual similarity",
+    "password_login": "PENDING: owner confirmed which latest password to use",
+    "actual_restore_result": "PENDING explicit success/result",
+    "no_new_purchase_required_for_second_accent": true
+  },
+  "settings": {
+    "project_ref": "voepalyamwgenceawdvl",
+    "project_name": "signalword-dev",
+    "site_url": "https://www.signalword.app",
+    "recovery_redirect": "https://www.signalword.app/auth/recovery",
+    "public_email_registration": true,
+    "confirm_email": true,
+    "captcha": "Turnstile enabled",
+    "signup_template": "Code-based",
+    "signin_template": "Code-based",
+    "recovery_template": "HTTPS token_hash recovery link"
+  },
+  "viewer_deployment": "https://signalword-gv10vqv2o-haleyyts-projects.vercel.app",
+  "ordinary_shipaton": "BLOCKED pending public store release and remaining submission assets",
+  "hosted_gates_not_closed": [
+    "H04 full replacement-candidate human auth/recovery",
+    "H08 managed restore",
+    "H11 fresh provider replay proof",
+    "H16 retained duplicate p95 failure",
+    "H17 coordinated final freeze"
+  ],
+  "apple_test_instructions": "Saved",
+  "approved_metadata": {
+    "primary_category": "Utilities",
+    "subtitle": "Trusted contacts kept informed",
+    "state": "Saved"
+  },
+  "live_store_draft": {
+    "selected_build": 4,
+    "review_credentials": "blank at readback",
+    "review_contact": "blank at readback; owner handoff requested",
+    "age_rating": "not configured",
+    "screenshots_uploaded": 6,
+    "release_option": "manual",
+    "app_review_submitted": false
+  },
+  "superseded_by": {
+    "version": "1.0 (8)",
+    "source": "0326ece1cd5b99e3aea1844e569ac9bb7e88b7d9",
+    "handoff": "../../submission/BUILD8_TESTFLIGHT_HANDOFF.md",
+    "reason": "Later clarified Home/navigation appearance defect repaired; privacy declarations aligned with approximate location and delivery diagnostics."
+  }
+}

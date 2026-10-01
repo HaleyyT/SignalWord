@@ -1,0 +1,140 @@
+{
+  "recorded_date": "2026-09-29",
+  "code_commit": "421f3c5b4c54bf6d5a13da62e7383a15e9fb8fac",
+  "scope": "local verification; no live delivery or physical-device proof",
+  "checks": [
+    {
+      "command": "npm ci",
+      "result": "pass"
+    },
+    {
+      "command": "npm run verify",
+      "result": "pass",
+      "node_tests": 172,
+      "viewer_tests": 44,
+      "viewer_build": true
+    },
+    {
+      "command": "npm run test:db",
+      "result": "pass",
+      "pgtap_assertions": 312,
+      "suites": 15,
+      "safeupdate_assertions": 17
+    },
+    {
+      "command": "npm run test:restore",
+      "result": "pass",
+      "boundary": "local pg_dump/restore with authority fixture; not managed recovery"
+    },
+    {
+      "command": "npm run test:integration",
+      "result": "pass",
+      "read_burst": 20,
+      "read_p95_ms": 104,
+      "duplicate_submissions": 10,
+      "submission_p95_ms": 179,
+      "provider": "programmable fake; no real email"
+    },
+    {
+      "command": "node scripts/test-contact-escalation-concurrency.mjs",
+      "result": "pass",
+      "cases": 5
+    },
+    {
+      "command": "node scripts/test-check-in-concurrency.mjs",
+      "result": "pass",
+      "cases": 3
+    },
+    {
+      "command": "swift test --package-path apps/ios",
+      "result": "pass",
+      "core_tests": 36,
+      "fallback_tests": 1
+    },
+    {
+      "command": "SIGNALWORD_WITH_SENTRY=1 swift test --package-path apps/ios --scratch-path /private/tmp/signalword-sentry-verification",
+      "result": "pass",
+      "core_tests": 36,
+      "real_sdk_serializer_tests": 1
+    },
+    {
+      "command": "swift run --package-path apps/ios SignalWordCoreVerification",
+      "result": "pass"
+    },
+    {
+      "command": "xcodebuild -project apps/ios/SignalWord.xcodeproj -scheme SignalWord -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build",
+      "result": "pass",
+      "modes": [
+        "SDK absent",
+        "SIGNALWORD_WITH_SENTRY=1"
+      ]
+    },
+    {
+      "command": "npm run test:ios:ui",
+      "result": "pass",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "device": "iPhone 18 Pro simulator / iOS 27.0"
+    },
+    {
+      "command": "SIGNALWORD_WITH_SENTRY=1 npm run test:ios:ui",
+      "result": "pass",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "device": "iPhone 18 Pro simulator / iOS 27.0"
+    },
+    {
+      "command": "npm run test:browser --workspace=@signalword/viewer",
+      "result": "pass"
+    },
+    {
+      "command": "npm run test:signup:browser",
+      "result": "pass"
+    },
+    {
+      "command": "npm run test:home:browser",
+      "result": "pass",
+      "widths": [
+        320,
+        768,
+        1440
+      ]
+    },
+    {
+      "command": "npm run test:monitor:runtime",
+      "result": "pass",
+      "cases": 4
+    },
+    {
+      "command": "npx --yes deno@2.2.12 check <all seven supabase/functions/*/index.ts entrypoints>",
+      "result": "pass",
+      "entrypoints": 7
+    },
+    {
+      "command": "npm run release:preflight",
+      "result": "pass",
+      "checks": 6
+    },
+    {
+      "command": "npm audit --omit=dev --audit-level=high",
+      "result": "pass",
+      "vulnerabilities": 0
+    },
+    {
+      "command": "git log --all --format=medium -p --full-history | docker run --rm -i zricethezav/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f stdin --redact --no-banner",
+      "result": "pass",
+      "bytes_scanned": 3624289,
+      "leaks": 0,
+      "boundary": "committed patch stream; not a scan of private ignored files"
+    }
+  ],
+  "failures_repaired": [
+    "Restore operator accepted arbitrary authority HTTPS origins; development host pinned and regression added.",
+    "Real Sentry macOS test exposed UIKit-only options; conditional compilation preserves all iOS privacy restrictions.",
+    "Clean Playwright installation lacked Chromium; installed required browser and reran all affected suites."
+  ],
+  "hosted_candidate_frozen": false,
+  "ready_for_iphone": false
+}

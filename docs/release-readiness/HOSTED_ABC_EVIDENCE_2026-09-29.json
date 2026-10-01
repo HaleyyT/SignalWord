@@ -1,0 +1,362 @@
+{
+  "date": "2026-09-29",
+  "repair_commit": "148dbf48ea2f484f3f8fa6c702bb7ba48a2f20e0",
+  "migration": "20261001040000_confirmation_retry.sql",
+  "scope": "One disposable sender, three consenting email recipients, TEST only; not full acceptance or load envelope",
+  "initial_submission_burst": {
+    "result": "At least one HTTP 503; one canonical incident and three deliveries recovered",
+    "limitation": "Original per-request samples were not retained by the old helper. Do not count this as a passing burst."
+  },
+  "retry_burst": {
+    "count": 10,
+    "successful": 10,
+    "p95Ms": 2332,
+    "samples": [
+      {
+        "sequence": 0,
+        "status": 200,
+        "durationMs": 1909,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 1,
+        "status": 200,
+        "durationMs": 1819,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 2,
+        "status": 200,
+        "durationMs": 1669,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 3,
+        "status": 200,
+        "durationMs": 2332,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 4,
+        "status": 200,
+        "durationMs": 1487,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 5,
+        "status": 200,
+        "durationMs": 1694,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 6,
+        "status": 200,
+        "durationMs": 1868,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 7,
+        "status": 200,
+        "durationMs": 1564,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 8,
+        "status": 200,
+        "durationMs": 1661,
+        "valid": true,
+        "transportError": false
+      },
+      {
+        "sequence": 9,
+        "status": 200,
+        "durationMs": 1505,
+        "valid": true,
+        "transportError": false
+      }
+    ]
+  },
+  "retry_samples": [
+    {
+      "sequence": 4,
+      "status": 200,
+      "durationMs": 1487,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 9,
+      "status": 200,
+      "durationMs": 1505,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 7,
+      "status": 200,
+      "durationMs": 1564,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 8,
+      "status": 200,
+      "durationMs": 1661,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 2,
+      "status": 200,
+      "durationMs": 1669,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 5,
+      "status": 200,
+      "durationMs": 1694,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 1,
+      "status": 200,
+      "durationMs": 1819,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 6,
+      "status": 200,
+      "durationMs": 1868,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 0,
+      "status": 200,
+      "durationMs": 1909,
+      "valid": true,
+      "transportError": false
+    },
+    {
+      "sequence": 3,
+      "status": 200,
+      "durationMs": 2332,
+      "valid": true,
+      "transportError": false
+    }
+  ],
+  "viewer_burst": {
+    "scope": "20 reads of recipient B for one three-recipient incident; not full multi-sender load",
+    "samples": [
+      {
+        "sequence": 0,
+        "status": 200,
+        "duration_ms": 2643,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 1,
+        "status": 200,
+        "duration_ms": 2595,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 2,
+        "status": 200,
+        "duration_ms": 2653,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 3,
+        "status": 200,
+        "duration_ms": 2621,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 4,
+        "status": 200,
+        "duration_ms": 2612,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 5,
+        "status": 200,
+        "duration_ms": 2617,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 6,
+        "status": 200,
+        "duration_ms": 1998,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 7,
+        "status": 200,
+        "duration_ms": 1978,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 8,
+        "status": 200,
+        "duration_ms": 2526,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 9,
+        "status": 200,
+        "duration_ms": 2612,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 10,
+        "status": 200,
+        "duration_ms": 2516,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 11,
+        "status": 200,
+        "duration_ms": 2643,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 12,
+        "status": 200,
+        "duration_ms": 1988,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 13,
+        "status": 200,
+        "duration_ms": 2476,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 14,
+        "status": 200,
+        "duration_ms": 2555,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 15,
+        "status": 200,
+        "duration_ms": 2643,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 16,
+        "status": 200,
+        "duration_ms": 2012,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 17,
+        "status": 200,
+        "duration_ms": 2475,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 18,
+        "status": 200,
+        "duration_ms": 2612,
+        "valid_test": true,
+        "acknowledged": false
+      },
+      {
+        "sequence": 19,
+        "status": 200,
+        "duration_ms": 2643,
+        "valid_test": true,
+        "acknowledged": false
+      }
+    ],
+    "p95_ms": 2643
+  },
+  "resolution": {
+    "sender_resolution_status": 200,
+    "recipient_resolved_view": true
+  },
+  "delivery": {
+    "initial_delivered": 3,
+    "resolution_delivered": 3,
+    "maximum_attempts": 1,
+    "matching_signed_sent_receipts": 6,
+    "matching_signed_delivered_receipts": 6,
+    "resolution_test_subject_received_in_connected_inbox": true
+  },
+  "withdrawal": {
+    "revoked_access": [
+      {
+        "method": "GET",
+        "status": 404,
+        "error_code": "NOT_FOUND"
+      },
+      {
+        "method": "POST",
+        "status": 404,
+        "error_code": "NOT_FOUND"
+      }
+    ],
+    "contact_statuses": [
+      "confirmed",
+      "confirmed",
+      "disabled"
+    ]
+  },
+  "withdrawal_initial_read_status": 503,
+  "confirmation_retry_hosted": {
+    "status": 410,
+    "reason": "Original capability expired before deployed retest; live positive retry remains pending"
+  },
+  "cleanup": {
+    "application_delete": 200,
+    "receipt": 200,
+    "users": 0,
+    "contacts": 0,
+    "deliveries": 0,
+    "authority_allowed": true,
+    "journal_version": 13,
+    "health_problems": []
+  },
+  "local_verification": {
+    "node": 175,
+    "viewer": 44,
+    "database_assertions": 315,
+    "safeupdate_assertions": 17,
+    "contact_races": 7,
+    "integration": "PASS after fixing fixture API-port mismatch",
+    "local_reader_p95_ms": 167,
+    "local_duplicate_p95_ms": 130
+  },
+  "manifest_frozen": false
+}

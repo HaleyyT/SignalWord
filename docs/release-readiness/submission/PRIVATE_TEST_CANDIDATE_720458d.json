@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "kind": "PRIVATE_TEST_CANDIDATE",
+  "recordedAt": "2026-09-29T14:35:30.135100+00:00",
+  "commit": "720458d74eb400ee006b52c32d49b6a20dab7feb",
+  "formalH17Passed": false,
+  "installationReady": true,
+  "pendingHumanHostedSignIn": false,
+  "publicReleaseReady": false,
+  "environment": {
+    "environment": "development",
+    "projectRef": "voepalyamwgenceawdvl",
+    "viewerOrigin": "https://www.signalword.app",
+    "app": {
+      "version": "1.0",
+      "build": "2",
+      "bundleId": "com.signalword.app",
+      "appGroup": "group.com.signalword.shared",
+      "minimumIOS": "18.0"
+    },
+    "turnstileSiteKey": "0x4AAAAAAFFb3ETKlwBxFCNF",
+    "deliveryProvider": "resend",
+    "features": {
+      "email": true,
+      "contactEscalation": true,
+      "checkInTimer": true,
+      "sms": false,
+      "professionalMonitoring": false
+    },
+    "apiContractVersions": [
+      1,
+      2
+    ],
+    "crashReporting": "disabled-pending-hosted-and-device-verification"
+  },
+  "app": {
+    "version": "1.0",
+    "build": "2",
+    "bundleId": "com.signalword.app",
+    "appGroup": "group.com.signalword.shared",
+    "signedArtifactPath": "/private/tmp/signalword-submission-720458d/DerivedData/Build/Products/Release-iphoneos/SignalWord.app",
+    "artifactTreeSHA256": "6a1888a6c409e547b283f72faa37ae5fde7ec8b240293aade9d2e6c8172ddea8",
+    "verification": {
+      "passed": true,
+      "problems": [],
+      "bundleId": "com.signalword.app",
+      "version": "1.0",
+      "build": "2"
+    },
+    "publicClientKeySHA256": "2fcf206dcfaeb7b2f83312fd20c85f7d2727e75188ff39776fafee9b343aa080",
+    "localSigningConfig": "/private/tmp/signalword-signing-preparation/Development.xcconfig",
+    "teamVerifiedLocally": true,
+    "registeredPhysicalDeviceProfileVerified": true
+  },
+  "viewer": {
+    "deploymentId": "dpl_DQimDp44cqr7CaeCSVCVH2JKnqm7",
+    "alias": "https://www.signalword.app",
+    "sourceCommit": "720458d74eb400ee006b52c32d49b6a20dab7feb",
+    "routingChecksPassed": 6
+  },
+  "edgeFunctions": [
+    {
+      "slug": "user-api",
+      "version": 11,
+      "status": "ACTIVE",
+      "verify_jwt": true
+    },
+    {
+      "slug": "public-event",
+      "version": 9,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    },
+    {
+      "slug": "contact-confirm",
+      "version": 9,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    },
+    {
+      "slug": "deletion-status",
+      "version": 9,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    },
+    {
+      "slug": "dispatch-deliveries",
+      "version": 10,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    },
+    {
+      "slug": "resend-webhook",
+      "version": 10,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    },
+    {
+      "slug": "operational-health",
+      "version": 4,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    }
+  ],
+  "migrationVersions": [
+    "20260921000000",
+    "20260924010000",
+    "20260924030000",
+    "20260924040000",
+    "20260924050000",
+    "20260924060000",
+    "20260926010000",
+    "20260926020000",
+    "20260926030000",
+    "20260926040000",
+    "20260926050000",
+    "20260926060000",
+    "20260926070000",
+    "20260926080000",
+    "20260926090000",
+    "20260926100000",
+    "20260926110000",
+    "20260926120000",
+    "20260927010000",
+    "20260927020000",
+    "20260928010000",
+    "20260928020000",
+    "20260929010000",
+    "20260929011000",
+    "20260929020000",
+    "20260929021000",
+    "20260929022000",
+    "20260930010000",
+    "20260930011000",
+    "20261001010000",
+    "20261001020000",
+    "20261001030000",
+    "20261001040000"
+  ],
+  "workers": {
+    "authority": {
+      "version": "183202c5-f1fb-40cb-9388-e419dc422559",
+      "configSHA256": "c233abbb91ca1d2609073d64cebdb596d98b2884329a3cfc1b0841aa1e02f8bd"
+    },
+    "monitor": {
+      "version": "ac57442a-4291-43bc-abcf-375975c0ab7f",
+      "configSHA256": "38ba150ff381bfbe3bb3d256ab08b1d80d0cf620c388f356a7b78511e6a3162d"
+    }
+  },
+  "health": {
+    "gateAllowed": true,
+    "quarantined": false,
+    "authorityDigest": "6017cd3d721bb0bff41933a50a6f2b73faed4ed93b82242559f4f7c83cf9e005",
+    "journalVersion": 16,
+    "healthProblems": [],
+    "deletedSubjectDenials": [
+      503,
+      503
+    ]
+  },
+  "provider": {
+    "name": "Resend",
+    "sender": "alerts@mail.signalword.app",
+    "SMTP": "smtp.resend.com:465",
+    "credentialLocation": "server-side only",
+    "webhookFunction": "resend-webhook"
+  },
+  "deferredOpen": [
+    "H08 managed restore",
+    "H11 exhaustive provider matrix",
+    "H16 full load envelope",
+    "H17 formal freeze",
+    "unused OTP expiry observation"
+  ],
+  "physicalAcceptance": "NOT_RUN",
+  "revenueCatInThisArtifact": false,
+  "hostedSignInEvidence": [
+    "2026-09-30-h04-human-invitation-pass.json",
+    "2026-09-30-h04-human-otp-pass.json"
+  ]
+}

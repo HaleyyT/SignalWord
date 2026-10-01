@@ -1,0 +1,14 @@
+{
+  "evidenceSource": "user-provided screenshot 2026-09-29 at 8.04.44 pm; transcription, not downloaded JSON",
+  "environment": "development",
+  "scope": "unused-token-expiry",
+  "recordedAt": "2026-09-29T09:56:23.524Z",
+  "elapsedMs": 310002.40000000596,
+  "expired": {
+    "status": 400,
+    "accepted": false,
+    "logoutStatus": null,
+    "rejection": "captcha_failed"
+  },
+  "passed": true
+}

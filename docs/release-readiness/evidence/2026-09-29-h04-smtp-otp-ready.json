@@ -1,0 +1,90 @@
+{
+  "recordedAt": "2026-09-29T13:01:10.287774+00:00",
+  "sourceCommit": "1fac46b3b95ec1864373dddec3ec0a158e5c0844",
+  "environment": "development",
+  "project": "voepalyamwgenceawdvl",
+  "viewerProject": "signalword-dev",
+  "deploymentId": "dpl_7zPRfrM6qkF86dNkP7xU4CEd6Uva",
+  "alias": "https://www.signalword.app",
+  "runtimeOrigins": {
+    "publicEvent": "https://voepalyamwgenceawdvl.supabase.co/functions/v1/public-event",
+    "contactConfirm": "https://voepalyamwgenceawdvl.supabase.co/functions/v1/contact-confirm"
+  },
+  "smtp": {
+    "username": "resend",
+    "host": "smtp.resend.com",
+    "port": 465,
+    "passwordNotRead": true,
+    "actualDeliveryVerified": false
+  },
+  "template": {
+    "subject": "SignalWord development sign-in code",
+    "codeTokenPresent": true,
+    "confirmationLinkAbsent": true,
+    "persistedAfterReload": true
+  },
+  "assets": [
+    {
+      "asset": "acceptance.html",
+      "sha256": "c9acbb54b197688fa28bebc9dc2d339d38b9247188a6468983cdceb8d8ab17dc",
+      "matchesSource": true
+    },
+    {
+      "asset": "acceptance.js",
+      "sha256": "8ec94d98820c24665360024df8ee60aaaef276eac78c3c68ab63722dc4b5862f",
+      "matchesSource": true
+    },
+    {
+      "asset": "invited-session.js",
+      "sha256": "1edd90803f28130c36780573429dd1c779c2919f26d3e4e58f0fc6323ba252b3",
+      "matchesSource": true
+    }
+  ],
+  "routingChecks": [
+    "PASS Viewer deep link",
+    "PASS Confirmation deep link",
+    "PASS Event GET routing",
+    "PASS Acknowledgement POST routing",
+    "PASS Confirmation POST routing",
+    "PASS Withdrawal POST routing",
+    "This checks hosting configuration, not live delivery, consent, or acknowledgement of a real TEST."
+  ],
+  "invitedIdentityPreparation": {
+    "environment": "development",
+    "project": "voepalyamwgenceawdvl",
+    "recordedAt": "2026-09-29T12:56:46.511084+00:00",
+    "operatorProvisioned": true,
+    "created": true,
+    "publicSignupDisabled": true,
+    "emailConfirmedBeforeHumanProof": false,
+    "identityDigest": "b6257c1ee12847ce298ed2573c9d0ae2c3c904dbc6c9c4623e472ff3ed437430",
+    "emailsSentByPreparation": 0,
+    "fixtureContainsPasswordOrAdminKey": false
+  },
+  "negativeProofChecks": {
+    "environment": "development",
+    "recordedAt": "2026-09-29T12:59:57.302122+00:00",
+    "scope": "invited-otp-proof-rejection",
+    "results": [
+      {
+        "case": "missing_captcha",
+        "status": 400,
+        "errorCode": "captcha_failed",
+        "passed": true
+      },
+      {
+        "case": "invalid_captcha",
+        "status": 400,
+        "errorCode": "captcha_failed",
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "gatePassed": false,
+  "remaining": [
+    "real human OTP delivery/verification/replay",
+    "actual unused OTP expiry and remaining hosted negative cases",
+    "final invited native contract and compatibility review"
+  ]
+}

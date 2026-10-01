@@ -12,20 +12,33 @@ enum UITestComposition {
         if arguments.contains("--reset-ui-state") {
             preferences.removePersistentDomain(forName: "SignalWord.UIJourney")
         }
+        if arguments.contains("--ui-layout-ready") {
+            preferences.set(true, forKey: "onboardingComplete")
+            preferences.set("Alex", forKey: "fixture.name")
+            preferences.set(arguments.contains("--ui-long-name") ? "Alexandria Charlotte Nguyen Montgomery" : "Hoa", forKey: "fixture.contact")
+            preferences.set(arguments.contains("--ui-contact-pending") ? "pending" : "confirmed", forKey: "fixture.contactStatus")
+        }
         let service = UITestService(preferences: preferences)
         return AppShellModel(backendConfigured: true, trigger: { kind, _ in
             await service.trigger(kind)
         }, lifecycle: .init(
-            prepare: { _ in }, profile: { name in await service.profile(name) },
+            prepare: { _ in
+                if await service.isSignedOut() || arguments.contains("--ui-invited-login") { throw SessionError.verificationRequired }
+                if arguments.contains("--ui-recovery-failure") { throw UserAPIError.invalidResponse }
+            }, profile: { name in await service.profile(name) },
             recover: { _ in await service.recover() },
             saveContact: { name, _ in await service.saveContact(name) },
-            getContact: { await service.contact() },
+            getContact: { try await service.loadContact() },
             disableContact: { _ in await service.withdraw() },
             getAlertStatus: { id in try await service.status(id) },
             authenticateResolution: { true },
             resolve: { id in try await service.resolve(id) },
             locationAuthorization: { .denied }, requestLocationAccess: { .denied },
-            deleteAccount: { await service.delete() }
+            deleteAccount: { await service.delete() },
+            signOut: {
+                if arguments.contains("--ui-signout-blocked") { throw SessionError.unavailable }
+                await service.signOut()
+            }
         ), preferences: preferences)
     }
 }
@@ -46,6 +59,17 @@ private final class UITestService {
         preferences.set(name, forKey: "fixture.contact")
         preferences.set("confirmed", forKey: "fixture.contactStatus")
         return contact()!
+    }
+    private var contactReadCount = 0
+    func loadContact() throws -> TrustedContactProjection? {
+        contactReadCount += 1
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--ui-contact-read-failure") ||
+            (arguments.contains("--ui-contact-read-fails-once") && contactReadCount == 1) {
+            throw UserAPIError.unavailable
+        }
+        if arguments.contains("--ui-contact-read-cancelled") { throw URLError(.cancelled) }
+        return contact()
     }
     func contact() -> TrustedContactProjection? {
         guard let name = preferences.string(forKey: "fixture.contact") else { return nil }
@@ -80,6 +104,8 @@ private final class UITestService {
         preferences.set("resolved", forKey: "fixture.state")
         return .init(eventID: id, state: "resolved", resolvedAt: Date())
     }
+    func isSignedOut() -> Bool { preferences.bool(forKey: "fixture.signedOut") }
+    func signOut() { preferences.set(true, forKey: "fixture.signedOut") }
     func delete() { preferences.removePersistentDomain(forName: "SignalWord.UIJourney") }
 }
 #endif

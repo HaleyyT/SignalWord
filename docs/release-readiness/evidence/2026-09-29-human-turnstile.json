@@ -1,0 +1,18 @@
+{
+  "environment": "development",
+  "scope": "existing-invited-password-login",
+  "recordedAt": "2026-09-29T08:39:32.350Z",
+  "fresh": {
+    "status": 200,
+    "accepted": true,
+    "logoutStatus": 204
+  },
+  "replay": {
+    "status": 400,
+    "accepted": false,
+    "logoutStatus": null
+  },
+  "passed": true,
+  "anonymousEnrollmentProven": false,
+  "nativeBridgeProven": false
+}

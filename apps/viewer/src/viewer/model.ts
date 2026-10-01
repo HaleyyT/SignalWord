@@ -11,6 +11,8 @@ export interface PublicLocation {
 }
 
 export interface PublicEvent {
+  cause?: 'missed_check_in'
+  checkInDeadline?: string
   kind: AlertKind
   displayName: string
   state: EventState

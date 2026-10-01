@@ -18,19 +18,17 @@ export function SupportPage() {
         </section>
         <section className="information-section">
           <h2>Before relying on SignalWord</h2>
-          <p>Complete the two locked-device tests, confirm your trusted contact, and verify the readiness screen. Delivery requires a network connection and can fail.</p>
+          <p>Confirm your trusted contact, check Setup &amp; readiness, and practise a TEST alert together on your own device. Delivery requires a network connection and can fail.</p>
         </section>
         <section className="information-section">
           <h2>Report a product problem</h2>
-          <p>For non-urgent product support, email support@signalword.app. Do not include private phrases, contact destinations, viewer links, tokens, precise coordinates, or account credentials.</p>
+          <p>For non-urgent product support, email us with the app version and a description of the problem. Do not include private phrases, contact details, alert links, passwords or precise locations.</p>
           <a className="action-link" href="mailto:support@signalword.app">Email SignalWord support</a>
-          <p>You can also report a non-sensitive product issue on GitHub.</p>
-          <a className="action-link" href="https://github.com/HaleyyT/SignalWord/issues/new" rel="noreferrer" target="_blank" aria-label="Open the SignalWord issue tracker in a new tab">Open the SignalWord issue tracker</a>
         </section>
         <section className="information-section">
           <h2>Report a security concern</h2>
-          <p>Do not publish suspected data exposure or credentials in an issue. Follow the private reporting guidance in the project security policy.</p>
-          <a className="action-link" href="https://github.com/HaleyyT/SignalWord/blob/main/SECURITY.md" rel="noreferrer" target="_blank" aria-label="Read the security policy in a new tab">Read the security policy</a>
+          <p>Report security concerns privately by email. Describe the issue without sending account credentials or live alert links. We can arrange a safe way to share further details.</p>
+          <a className="action-link" href="mailto:support@signalword.app?subject=SignalWord%20security%20report">Report a security concern</a>
         </section>
       </article>
     </main>

@@ -1,4 +1,5 @@
 begin;
+set local signalword.local_fixture='true';
 select no_plan();
 select is(has_table_privilege('anon','public.dispatch_requests','SELECT'), false, 'request diagnostics are not public');
 select is(has_table_privilege('authenticated','public.dispatch_requests','SELECT'), false, 'clients cannot read request diagnostics');
@@ -11,5 +12,9 @@ select is((public.signalword_operational_health()->'dispatchHTTP'->>'lastStatus'
 insert into public.dispatch_requests(request_id,requested_at) values (910000002,now()-interval '2 minutes');
 select ok((public.signalword_operational_health()->'dispatchHTTP'->>'overdue')::int >= 1,'missing HTTP response becomes overdue');
 select ok(public.signalword_operational_health()->'abuse' ? 'signupsLastHour','signup abuse metric is available without identities');
+insert into public.safety_journal_outbox(user_id,kind,created_at) values(gen_random_uuid(),'delete',now()-interval '2 minutes');
+select is((public.signalword_operational_health()->'journal'->>'pending')::int,1,'pending durable privacy work is visible');
+select ok((public.signalword_operational_health()->'journal'->>'oldestPendingSeconds')::numeric>=120,'journal outage age is visible');
+select is((public.signalword_operational_health()->'provider'->>'callbackOverdue')::int,0,'no traffic does not falsely report callback outage');
 select * from finish();
 rollback;

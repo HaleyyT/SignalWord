@@ -1,0 +1,9 @@
+{
+  "environment": "development",
+  "scope": "invited-email-code",
+  "requested": {
+    "status": 422,
+    "requestAccepted": false
+  },
+  "passed": false
+}

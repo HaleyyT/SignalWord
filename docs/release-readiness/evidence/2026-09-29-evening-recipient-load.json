@@ -1,0 +1,306 @@
+{
+  "environment": "development",
+  "sourceCommit": "f7f5e26",
+  "frozen": false,
+  "hostedPassed": 12,
+  "hostedTotal": 17,
+  "H10": {
+    "result": "pass",
+    "delayedRouting": "A delivered immediately; A acknowledgement did not cancel C escalation",
+    "withdrawal": "B withdrawn before dispatch: zero attempts; revoked GET and acknowledgement both 404",
+    "resolution": "A and C views resolved; only A acknowledged",
+    "deletion": "Disposable sender deleted; receipt 200; old session 401; old viewer 404"
+  },
+  "H11": {
+    "signedDeliveredReceipts": 12,
+    "initialDeliveryAttemptsEach": 1,
+    "transactionalSimulationChecksPassed": 4,
+    "freshSignedReplay": "attempted; new attempt not conclusively evidenced",
+    "result": "open"
+  },
+  "H16": {
+    "result": "open",
+    "samples": [
+      {
+        "sender": 1,
+        "round": "first",
+        "status": 201,
+        "ms": 894
+      },
+      {
+        "sender": 2,
+        "round": "first",
+        "status": 201,
+        "ms": 572
+      },
+      {
+        "sender": 3,
+        "round": "first",
+        "status": 201,
+        "ms": 564
+      },
+      {
+        "sender": 4,
+        "round": "first",
+        "status": 201,
+        "ms": 1151
+      },
+      {
+        "sender": 5,
+        "round": "first",
+        "status": 201,
+        "ms": 1096
+      },
+      {
+        "sender": 6,
+        "round": "first",
+        "status": 201,
+        "ms": 978
+      },
+      {
+        "sender": 7,
+        "round": "first",
+        "status": 201,
+        "ms": 1028
+      },
+      {
+        "sender": 8,
+        "round": "first",
+        "status": 201,
+        "ms": 891
+      },
+      {
+        "sender": 9,
+        "round": "first",
+        "status": 201,
+        "ms": 1020
+      },
+      {
+        "sender": 10,
+        "round": "first",
+        "status": 201,
+        "ms": 890
+      },
+      {
+        "sender": 1,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1039
+      },
+      {
+        "sender": 2,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 2020
+      },
+      {
+        "sender": 3,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1154
+      },
+      {
+        "sender": 4,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1007
+      },
+      {
+        "sender": 5,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 847
+      },
+      {
+        "sender": 6,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1182
+      },
+      {
+        "sender": 7,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1333
+      },
+      {
+        "sender": 8,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1386
+      },
+      {
+        "sender": 9,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1318
+      },
+      {
+        "sender": 10,
+        "round": "duplicate",
+        "status": 200,
+        "ms": 1306
+      }
+    ],
+    "recipientReads": {
+      "count": 20,
+      "successful": 20,
+      "p95Ms": 1692,
+      "samples": [
+        {
+          "sequence": 0,
+          "status": 200,
+          "durationMs": 1493,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 1,
+          "status": 200,
+          "durationMs": 1676,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 2,
+          "status": 200,
+          "durationMs": 1506,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 3,
+          "status": 200,
+          "durationMs": 933,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 4,
+          "status": 200,
+          "durationMs": 1559,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 5,
+          "status": 200,
+          "durationMs": 1491,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 6,
+          "status": 200,
+          "durationMs": 1447,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 7,
+          "status": 200,
+          "durationMs": 1665,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 8,
+          "status": 200,
+          "durationMs": 1643,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 9,
+          "status": 200,
+          "durationMs": 1583,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 10,
+          "status": 200,
+          "durationMs": 1692,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 11,
+          "status": 200,
+          "durationMs": 1421,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 12,
+          "status": 200,
+          "durationMs": 1479,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 13,
+          "status": 200,
+          "durationMs": 1419,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 14,
+          "status": 200,
+          "durationMs": 1623,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 15,
+          "status": 200,
+          "durationMs": 1690,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 16,
+          "status": 200,
+          "durationMs": 1479,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 17,
+          "status": 200,
+          "durationMs": 1706,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 18,
+          "status": 200,
+          "durationMs": 1472,
+          "valid": true,
+          "transportError": false
+        },
+        {
+          "sequence": 19,
+          "status": 200,
+          "durationMs": 1673,
+          "valid": true,
+          "transportError": false
+        }
+      ]
+    },
+    "firstP95Ms": 1151,
+    "duplicateP95Ms": 2020,
+    "duplicateBudgetMs": 2000,
+    "providerAcceptanceCoverage": "Incomplete; delivered timestamps must not be substituted for provider acceptance"
+  },
+  "finalState": {
+    "active_incidents": 0,
+    "active_schedules": 5,
+    "active_timers": 0,
+    "controlled_users": 9,
+    "queued_alert_deliveries": 0,
+    "unexpected_users": 0,
+    "unknown_alert_outcomes": 0
+  }
+}

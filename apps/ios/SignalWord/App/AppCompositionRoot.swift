@@ -40,10 +40,17 @@ enum AppCompositionRoot {
                 try await api.deleteAccount()
                 guard let containerURL = SignalWordConfiguration.appGroupContainerURL else { throw SessionError.configuration }
                 try await SQLiteAlertCommandStore(directoryURL: containerURL).clearAll()
-                for key in ["onboardingComplete", "shortcutConfigured", "verifiedRehearsals", "rehearsalContactID", "serverDeletionConfirmed", "deletionReceiptToken"] {
+                for key in ["onboardingComplete", "shortcutConfigured", "verifiedRehearsals", "rehearsalContactID", "serverDeletionConfirmed", "deletionReceiptToken", CheckInModel.pendingKey] {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
-            }
+            },
+            identityID: { try await api.identityID() },
+            beginReauthentication: { try await api.beginReauthentication() },
+            requestRegistrationCode: { email, token in try await api.requestRegistrationCode(email: email, captchaToken: token) },
+            requestInvitedCode: { email, token in try await api.requestInvitedCode(email: email, captchaToken: token) },
+            verifyInvitedCode: { email, code in try await api.verifyInvitedCode(email: email, code: code) },
+            signOut: { try await alertRunner.signOut(api: api) },
+            signInWithPassword: { email, password, token in try await api.signInWithPassword(email: email, password: password, captchaToken: token) }
         )
     }
 
@@ -96,7 +103,7 @@ enum AppCompositionRoot {
         return AppRecovery(alerts: alerts, needsConfirmation: needsConfirmation, pending: pending, pendingKind: pendingKind)
     }
 
-    private static var lifecycleAPI: RemoteUserLifecycleAPI? {
+    static var lifecycleAPI: RemoteUserLifecycleAPI? {
         guard let baseURL = SignalWordConfiguration.alertAPIBaseURL,
               let sessionManager else { return nil }
         return RemoteUserLifecycleAPI(baseURL: baseURL, sessionManager: sessionManager)
@@ -124,8 +131,31 @@ enum AppCompositionRoot {
 
     private actor LiveAlertRunner {
         private var coordinator: AlertTriggerCoordinator?
+        private var activeTriggers = 0
+        private var signingOut = false
+
+        func signOut(api: RemoteUserLifecycleAPI) async throws {
+            guard !signingOut, activeTriggers == 0 else { throw SessionError.unavailable }
+            signingOut = true
+            defer { signingOut = false }
+            guard let directory = SignalWordConfiguration.appGroupContainerURL else { throw SessionError.configuration }
+            let store = try SQLiteAlertCommandStore(directoryURL: directory)
+            guard !(try await store.allRecords()).contains(where: { $0.phase == .attempting || $0.phase == .queuedOffline }),
+                  UserDefaults.standard.data(forKey: CheckInModel.pendingKey) == nil else { throw SessionError.unavailable }
+            let alerts = try await api.recover()
+            let timer = try await api.recoverCheckIn()
+            guard !alerts.contains(where: { ["active", "pending"].contains($0.state.lowercased()) }),
+                  timer?.state != .active else { throw SessionError.unavailable }
+            // Only terminal local command history is cleared; the server account is untouched.
+            try await store.clearAll()
+            try await api.sessionManager.deleteLocalSession()
+            coordinator = nil
+        }
 
         func trigger(kind: AlertKind, method: TriggerMethod) async -> TriggerOutcome {
+            guard !signingOut else { return .rejected }
+            activeTriggers += 1
+            defer { activeTriggers -= 1 }
             do {
                 if coordinator == nil { coordinator = try await AppCompositionRoot.makeCoordinator() }
                 guard let coordinator else { return .failedRetryable }

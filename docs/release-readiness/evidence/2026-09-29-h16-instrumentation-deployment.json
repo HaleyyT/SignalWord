@@ -1,0 +1,17 @@
+{
+  "environment": "development",
+  "projectRef": "voepalyamwgenceawdvl",
+  "sourceCommit": "117e200682b07781ca0bc779fea3659743526158",
+  "recordedAt": "2026-09-29T11:36:10.176342+00:00",
+  "changedVersions": {
+    "user-api": [
+      10,
+      11
+    ]
+  },
+  "userApiJwtPreserved": true,
+  "userApiStatus": "ACTIVE",
+  "unauthenticatedAlertStatus": 401,
+  "h16Passed": false,
+  "samplesPending": true
+}

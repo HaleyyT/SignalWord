@@ -1,0 +1,24 @@
+{
+  "source": "faa650bce06a3700e226e8334623531b9c2e31f3",
+  "version": "1.0 (6)",
+  "project_ref": "voepalyamwgenceawdvl",
+  "checks": {
+    "version": true,
+    "bundle_id": true,
+    "backend": true,
+    "user_api": true,
+    "public_key_project_role": true,
+    "revenuecat_apple_key": true,
+    "captcha_configured": true,
+    "distribution": true,
+    "team": true,
+    "app_group": true,
+    "icon": true,
+    "privacy_manifest": true,
+    "reviewer_email_not_embedded": true,
+    "reviewer_password_not_embedded": true,
+    "matching_dsym": true
+  },
+  "ipa_sha256": "ddb63271475151053510140ff2c6e530d1ba8976c979015e123b9d5e4695adba",
+  "binary_uuid": "FDF48D9B-560F-372F-80BB-3989DAED81AD"
+}

@@ -1,0 +1,54 @@
+{
+  "environment": "local",
+  "hostedGatePassed": false,
+  "nodePassed": 199,
+  "viewerPassed": 44,
+  "swiftCorePassed": 42,
+  "simulatorUIPassed": 8,
+  "logs": [
+    {
+      "path": "/private/tmp/h04-swift.log",
+      "sha256": "12668675c55fa722ad7c508b50d53fb40d67f18f9924a308b56f09e1d61bbc72"
+    },
+    {
+      "path": "/private/tmp/h04-swift-with-tests.log",
+      "sha256": "56e1359ce4038669d25b9044e3f8a751b1957be8997ac33c558f94fb8b151f29"
+    },
+    {
+      "path": "/private/tmp/h04-swift-final.log",
+      "sha256": "bd0fdafd93f0ce7889934b847fa43c1771cbda7cf08b536585939ca4e7bfd1b4"
+    },
+    {
+      "path": "/private/tmp/h04-sentry.log",
+      "sha256": "0c391aef790bf2d8310b3758c42f33e8b6cc700bfd4da0598d33cabd76c26261"
+    },
+    {
+      "path": "/private/tmp/h04-final-node.log",
+      "sha256": "878e856af7eaada8de4544dc4638ae3f99c36e8bbe0acebe1aa9e44c1ad8272a"
+    },
+    {
+      "path": "/private/tmp/h04-browser-otp.log",
+      "sha256": "6c9a935909dc95cd7d32120194eeac1d3d231eac2a6e1a8b5720a353fc93c5e2"
+    },
+    {
+      "path": "/private/tmp/h04-ui.log",
+      "sha256": "df989a332c69fd6aebf2b3511516d3b1408e0f15f44a80488eaeb65aaa208afc"
+    },
+    {
+      "path": "/private/tmp/h04-ui-summary.json",
+      "sha256": "a9189b7976d484c26d6f73c233b159fcfa6e44cc2e69dd9efc72c8bfef07abb5"
+    },
+    {
+      "path": "/private/tmp/h04-release-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/private/tmp/h04-local-integration.log",
+      "sha256": "6fd38f44effd772b38722489cbf895217a8f7a2cff670eb6650d507bf7b05f39"
+    },
+    {
+      "path": "/private/tmp/h04-check-final.log",
+      "sha256": "d18cb82ce28fa77af9f6273319d0383cf5ba325697a4b09ef4f701e5a8fea8a4"
+    }
+  ]
+}

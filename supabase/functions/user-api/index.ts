@@ -1,15 +1,20 @@
+import { journalFromEnvironment } from "../_shared/safety-journal.ts";
+import { createCheckInGateway, parseCheckIn, type CheckInGateway } from "../_shared/check-in.ts";
+import { createContactNetworkGateway, type ContactNetworkGateway } from "../_shared/contact-network.ts";
 import { parseUserResponse, type ResponseContract } from "../_shared/response-contracts.ts";
 import { wakeDispatch } from "../_shared/dispatch-wakeup.ts";
 import { createDeliveryPolicy, type DeliveryCreationPolicy, type RuntimeEnvironment } from "../_shared/delivery.ts";
 import { createContactDataProtection, createDeliveryPayloadCipher } from "../_shared/encryption.ts";
 import { ApiError, asApiError, bearerToken, errorResponse, jsonResponse, readJson, requestId } from "../_shared/http.ts";
 import { createLifecycleGateway, type LifecycleGateway } from "../_shared/lifecycle.ts";
-import { structuredLogger, type SafeLogger } from "../_shared/logging.ts";
+import { structuredLogger, writeSafely, type SafeLogger } from "../_shared/logging.ts";
 import { createBackendGateway, type BackendGateway } from "../_shared/supabase.ts";
 import { generateViewerToken, sha256Hex } from "../_shared/tokens.ts";
 import { parseCreateAlert, parseIdempotencyKey } from "../_shared/validation.ts";
 
 export interface UserApiDependencies {
+  checkIn?: CheckInGateway;
+  network?: ContactNetworkGateway;
   wake?: () => void;
   backend: BackendGateway;
   lifecycle: LifecycleGateway;
@@ -25,10 +30,19 @@ export interface UserApiDependencies {
     confirmationPayloadCiphertext: string;
     payloadKeyVersion: number;
   }>;
+  exposeServerTiming?: boolean;
 }
 
 const RESPONSE_HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function timingHeaders(enabled: boolean | undefined, timings: Record<string, number>): Record<string, string> {
+  if (!enabled) return {};
+  const values = Object.entries(timings)
+    .filter(([, duration]) => Number.isFinite(duration) && duration >= 0)
+    .map(([name, duration]) => `${name};dur=${Math.round(duration * 10) / 10}`);
+  return values.length > 0 ? { "Server-Timing": values.join(", ") } : {};
+}
 
 function contactInput(value: unknown): { name: string; email: string } {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -52,21 +66,105 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
     const startedAt = dependencies.now();
     const id = requestId(request);
     let status = 500;
+    let operation: "profile" | "contact" | "check-in" | "contact-network" | "alert" | "account-deletion" | "other" = "other";
     let code: string | undefined;
     let reused: boolean | undefined;
+    const timings: Record<string, number> = {};
+    let exposeTimingForRequest = false;
 
     try {
       const path = new URL(request.url).pathname.replace(/\/+$/, "");
+      operation = path.endsWith("/v1/profile") ? "profile"
+        : path.endsWith("/v1/contact") || path.includes("/contacts") ? "contact"
+        : path.includes("/check-in") ? "check-in"
+        : path.endsWith("/contact-network") ? "contact-network"
+        : path.includes("/alerts") ? "alert"
+        : path.endsWith("/v1/data") ? "account-deletion" : "other";
+      exposeTimingForRequest = request.method === "POST" && path.endsWith("/v2/alerts");
       const jwt = bearerToken(request);
+      const authStartedAt = dependencies.now();
       const user = await dependencies.backend.authenticate(jwt);
+      timings.auth_session = Math.max(0, dependencies.now() - authStartedAt);
       let result: unknown;
       let contract: ResponseContract;
 
-      if (["GET", "PUT"].includes(request.method) && path.endsWith("/v1/profile")) {
+      if (path.includes("/v2/") && !dependencies.network) {
+        throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact network is unavailable.", true);
+      }
+      if (["GET","POST"].includes(request.method) && path.endsWith("/v2/check-in")) {
+        if (!dependencies.checkIn) throw new ApiError(503,"SERVICE_UNAVAILABLE","Timers are unavailable.",true);
+        contract="checkIn";
+        if (request.method === "GET") {
+          const command=new URL(request.url).searchParams.get("command") ?? undefined;
+          if (command && !UUID_PATTERN.test(command)) throw new ApiError(400,"INVALID_REQUEST","Invalid command.");
+          result=await dependencies.checkIn.recover(user.id,jwt,command);
+        } else {
+          const input=parseCheckIn(await readJson(request));
+          const command=parseIdempotencyKey(request.headers.get("Idempotency-Key"));
+          const payloads=[];
+          if (input.action === "start") {
+            dependencies.delivery.assertAvailable("real");
+            for (let i=0;i<3;i++) {
+              const token=dependencies.generateToken();
+              payloads.push({hash:await sha256Hex(token),...await dependencies.encryptPayload(token)});
+            }
+          }
+          result=await dependencies.checkIn.change(user.id,jwt,command,input,dependencies.delivery.provider,payloads);
+        }
+        status=200;
+      } else if (["GET", "PUT"].includes(request.method) && path.endsWith("/v2/contact-network")) {
+        let primary: string | undefined;
+        let policy: string | undefined;
+        if (request.method === "PUT") {
+          const body = await readJson(request) as Record<string, unknown>;
+          if (!body || typeof body !== "object" || Array.isArray(body) ||
+              Object.keys(body).some(k => !["primary", "policy"].includes(k)) ||
+              (body.primary !== undefined && (typeof body.primary !== "string" || !UUID_PATTERN.test(body.primary))) ||
+              (body.policy !== undefined && !["everyone", "primary_then_others"].includes(String(body.policy)))) {
+            throw new ApiError(400, "INVALID_REQUEST", "Invalid contact routing settings.");
+          }
+          primary=body.primary as string | undefined; policy=body.policy as string | undefined;
+        }
+        result=await dependencies.network!.network(user.id,jwt,primary,policy);
+        contract="contactNetwork"; status=200;
+      } else if (request.method === "GET" && /\/v2\/alerts\/[0-9a-f-]+\/recipients$/i.test(path)) {
+        const eventId=path.split("/").at(-2)!;
+        if (!UUID_PATTERN.test(eventId)) throw new ApiError(400,"INVALID_REQUEST","Invalid event.");
+        result=await dependencies.network!.recipients(user.id,eventId,jwt);
+        contract="recipients"; status=200;
+      } else if (request.method === "POST" && /\/v2\/contacts(?:\/[0-9a-f-]+)?$/i.test(path)) {
+        dependencies.delivery.assertAvailable("test");
+        const contactId=path.endsWith("/contacts") ? null : path.split("/").at(-1)!;
+        if (contactId && !UUID_PATTERN.test(contactId)) throw new ApiError(400,"INVALID_REQUEST","Invalid contact.");
+        const input=contactInput(await readJson(request));
+        const token=dependencies.generateToken();
+        const protectedData=await dependencies.protectContact(input.email,token);
+        result=await dependencies.network!.save({p_user_id:user.id,p_contact_id:contactId,p_name:input.name,p_channel:"email",
+          p_destination_ciphertext:protectedData.destinationCiphertext,p_destination_fingerprint:protectedData.destinationFingerprint,
+          p_destination_key_version:protectedData.destinationKeyVersion,p_confirmation_token_hash:`\\x${await sha256Hex(token)}`,
+          p_confirmation_payload_ciphertext:protectedData.confirmationPayloadCiphertext,p_payload_key_version:protectedData.payloadKeyVersion,
+          p_delivery_provider:dependencies.delivery.provider});
+        contract="contact"; status=202;
+      } else if (request.method === "POST" && path.endsWith("/v2/alerts")) {
+        const key=parseIdempotencyKey(request.headers.get("Idempotency-Key"));
+        const input=parseCreateAlert(await readJson(request),dependencies.now());
+        dependencies.delivery.assertAvailable(input.kind);
+        const preparationStartedAt = dependencies.now();
+        const recipients=[];
+        for (let i=0;i<3;i++) {
+          const token=dependencies.generateToken();
+          recipients.push({token,...await dependencies.encryptPayload(token)});
+        }
+        timings.preparation = Math.max(0, dependencies.now() - preparationStartedAt);
+        const databaseStartedAt = dependencies.now();
+        result=await dependencies.network!.create(input,user.id,key,dependencies.delivery.provider,recipients,jwt);
+        timings.database = Math.max(0, dependencies.now() - databaseStartedAt);
+        contract="createAlert"; reused=(result as {reused:boolean}).reused; status=reused ? 200 : 201;
+      } else if (["GET", "PUT"].includes(request.method) && path.endsWith("/v1/profile")) {
         let displayName: string | undefined;
         if (request.method === "PUT") {
           const body = await readJson(request) as { displayName?: unknown };
-          if (typeof body?.displayName !== "string" || !body.displayName.trim() || body.displayName.trim().length > 80) {
+          if (!body || Array.isArray(body) || Object.keys(body).some(key => key !== "displayName") || typeof body?.displayName !== "string" || !body.displayName.trim() || body.displayName.trim().length > 80) {
             throw new ApiError(400, "INVALID_REQUEST", "Enter a name between 1 and 80 characters.");
           }
           displayName = body.displayName.trim();
@@ -125,6 +223,9 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
           status = 200;
         } else if (request.method === "POST" && locationMatch && UUID_PATTERN.test(locationMatch[1])) {
           const body = await readJson(request) as { location?: unknown };
+          if (!body || Array.isArray(body) || Object.keys(body).some(key => key !== "location")) {
+            throw new ApiError(400, "INVALID_REQUEST", "Only location is accepted.");
+          }
           const parsed = parseCreateAlert({
             kind: "real", triggerMethod: "manual",
             clientTriggeredAt: new Date(dependencies.now()).toISOString(), location: body?.location,
@@ -154,17 +255,31 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
           throw new ApiError(404, "NOT_FOUND", "Route not found.");
         }
       }
-      if (request.method === "POST") dependencies.wake?.();
-      return jsonResponse(parseUserResponse(contract, result), status, { ...RESPONSE_HEADERS, "X-Request-ID": id });
+      if (request.method === "POST") {
+        // The committed outbox and scheduled sweep remain authoritative.
+        try { dependencies.wake?.(); } catch { /* Best-effort wakeup cannot undo acceptance. */ }
+      }
+      timings.app = Math.max(0, dependencies.now() - startedAt);
+      return jsonResponse(parseUserResponse(contract, result), status, {
+        ...RESPONSE_HEADERS,
+        ...timingHeaders(dependencies.exposeServerTiming && exposeTimingForRequest, timings),
+        "X-Request-ID": id,
+      });
     } catch (caught) {
       const error = asApiError(caught);
       status = error.status;
       code = error.code;
-      return errorResponse(error, id, { ...RESPONSE_HEADERS, "X-Request-ID": id });
+      timings.app = Math.max(0, dependencies.now() - startedAt);
+      return errorResponse(error, id, {
+        ...RESPONSE_HEADERS,
+        ...timingHeaders(dependencies.exposeServerTiming && exposeTimingForRequest, timings),
+        "X-Request-ID": id,
+      });
     } finally {
-      dependencies.logger.write({
+      writeSafely(dependencies.logger, {
         requestId: id,
         route: "user-api",
+        operation,
         method: request.method,
         status,
         durationMs: Math.max(0, dependencies.now() - startedAt),
@@ -200,8 +315,10 @@ if (import.meta.main) {
       const runtime = (globalThis as unknown as { EdgeRuntime?: { waitUntil(task: Promise<void>): void } }).EdgeRuntime;
       runtime?.waitUntil(task);
     },
-    backend: createBackendGateway({ url, anonKey }),
-    lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey }),
+    backend: createBackendGateway({ url, anonKey, serviceRoleKey }),
+    lifecycle: createLifecycleGateway({ url, anonKey, serviceRoleKey, journal: journalFromEnvironment() }),
+    network: createContactNetworkGateway({ url, anonKey, serviceRoleKey, journal: journalFromEnvironment() }),
+    checkIn: createCheckInGateway({ url, anonKey, serviceRoleKey }),
     delivery: createDeliveryPolicy(environment, provider),
     encryptPayload: async (viewerToken) => ({
       ciphertext: await cipher.encrypt(viewerToken),
@@ -217,5 +334,6 @@ if (import.meta.main) {
       confirmationPayloadCiphertext: await contactProtection.encryptConfirmationToken(confirmationToken),
       payloadKeyVersion: contactProtection.keyVersion,
     }),
+    exposeServerTiming: environment === "development",
   }));
 }

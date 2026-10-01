@@ -1,0 +1,220 @@
+{
+  "recorded_at": "2026-09-29T07:08:48.551891+00:00",
+  "source_commit": "2c941269b7fba68aab4e84ea649bfbb90b1f0666",
+  "scope": "post-signing local regressions; not hosted acceptance or physical proof",
+  "checks": [
+    {
+      "name": "verify",
+      "command": "npm run verify",
+      "exit_code": 0,
+      "seconds": 3.54,
+      "log": "/private/tmp/signalword-post-signing-regression/verify.log",
+      "log_sha256": "556a33ab57e55b8c8b66fc586419ade42c573247a08a027ae4efbbdcd334eaf7"
+    },
+    {
+      "name": "database",
+      "command": "npm run test:db",
+      "exit_code": 0,
+      "seconds": 3.58,
+      "log": "/private/tmp/signalword-post-signing-regression/database.log",
+      "log_sha256": "069bf8b06a92eb5448f91c6129e746e907d875e9785d089a03b5cf83277b79bf"
+    },
+    {
+      "name": "restore",
+      "command": "npm run test:restore",
+      "exit_code": 0,
+      "seconds": 2.63,
+      "log": "/private/tmp/signalword-post-signing-regression/restore.log",
+      "log_sha256": "2d7009122211fc368d1e1da33419645d2fa3cc18c1a045cb2cc0f8a2b692c724"
+    },
+    {
+      "name": "contact-races",
+      "command": "node scripts/test-contact-escalation-concurrency.mjs",
+      "exit_code": 0,
+      "seconds": 20.66,
+      "log": "/private/tmp/signalword-post-signing-regression/contact-races.log",
+      "log_sha256": "200f3af5a1e28ee0655fd6700480e60c3f3ef3d1c99b2331f55c9481ce548fce"
+    },
+    {
+      "name": "timer-races",
+      "command": "node scripts/test-check-in-concurrency.mjs",
+      "exit_code": 0,
+      "seconds": 12.84,
+      "log": "/private/tmp/signalword-post-signing-regression/timer-races.log",
+      "log_sha256": "31f39443d7946ec25243634db3b80006507cf20e2e49565920d9a5f34c124687"
+    },
+    {
+      "name": "integration",
+      "command": "npm run test:integration",
+      "exit_code": 0,
+      "seconds": 11.41,
+      "log": "/private/tmp/signalword-post-signing-regression/integration.log",
+      "log_sha256": "9e1d7575739e8c4fcb4b6aa26c03241293f413afb7707966c49c45fb4c039a99"
+    },
+    {
+      "name": "swift-core",
+      "command": "swift test --package-path apps/ios",
+      "exit_code": 0,
+      "seconds": 7.51,
+      "log": "/private/tmp/signalword-post-signing-regression/swift-core.log",
+      "log_sha256": "dc92becb355aad1f9f6e7734e716d41e4e68f89cddbc4f992ce8cc47f0b8a8d9"
+    },
+    {
+      "name": "swift-behavior",
+      "command": "swift run --package-path apps/ios SignalWordCoreVerification",
+      "exit_code": 0,
+      "seconds": 1.68,
+      "log": "/private/tmp/signalword-post-signing-regression/swift-behavior.log",
+      "log_sha256": "bcad87c58084da649bf287fac5cdf84427c29e40ca17be4e7b996e838196581a"
+    },
+    {
+      "name": "sentry-privacy",
+      "command": "SIGNALWORD_WITH_SENTRY=1 swift test --package-path apps/ios --scratch-path /private/tmp/signalword-sentry-verification",
+      "exit_code": 0,
+      "seconds": 4.12,
+      "log": "/private/tmp/signalword-post-signing-regression/sentry-privacy.log",
+      "log_sha256": "56df8491957f12c4d7b99425c57a0e976126ddb1e4f3eab7c0d910e1fe0ba837"
+    },
+    {
+      "name": "browser",
+      "command": "npm run test:browser --workspace=@signalword/viewer",
+      "exit_code": 0,
+      "seconds": 3.0,
+      "log": "/private/tmp/signalword-post-signing-regression/browser.log",
+      "log_sha256": "50649155bf59bcfa7e57f4d4213f8313a3fb1c144e886f5f701a5e9001376c54"
+    },
+    {
+      "name": "signup-browser",
+      "command": "npm run test:signup:browser",
+      "exit_code": 0,
+      "seconds": 0.98,
+      "log": "/private/tmp/signalword-post-signing-regression/signup-browser.log",
+      "log_sha256": "991b08448b2681bc9d3c4806cb7b868d9dd26f8aa157c8454afd7798eceb724e"
+    },
+    {
+      "name": "home-browser",
+      "command": "npm run test:home:browser",
+      "exit_code": 0,
+      "seconds": 7.69,
+      "log": "/private/tmp/signalword-post-signing-regression/home-browser.log",
+      "log_sha256": "b78af56fbf21ecc235740697256251031592c503b5fb67f94d89d8712cb6b998"
+    },
+    {
+      "name": "monitor-runtime",
+      "command": "npm run test:monitor:runtime",
+      "exit_code": 0,
+      "seconds": 4.85,
+      "log": "/private/tmp/signalword-post-signing-regression/monitor-runtime.log",
+      "log_sha256": "52352a62c702c37520bcdbf990c3ee6509566e0e142c85cae0ba1b499c4c3da9"
+    },
+    {
+      "name": "deno",
+      "command": "npx --yes deno@2.2.12 check supabase/functions/user-api/index.ts supabase/functions/public-event/index.ts supabase/functions/contact-confirm/index.ts supabase/functions/deletion-status/index.ts supabase/functions/dispatch-deliveries/index.ts supabase/functions/resend-webhook/index.ts supabase/functions/operational-health/index.ts",
+      "exit_code": 0,
+      "seconds": 1.42,
+      "log": "/private/tmp/signalword-post-signing-regression/deno.log",
+      "log_sha256": "8c343e5b47ed58767348501f9fa282254bcc030495291de52df42fef854a1ec8"
+    },
+    {
+      "name": "preflight",
+      "command": "npm run release:preflight",
+      "exit_code": 0,
+      "seconds": 13.18,
+      "log": "/private/tmp/signalword-post-signing-regression/preflight.log",
+      "log_sha256": "adbbb5c1a28b3448c68521afc12d55964f094a14d831e2c465861c5a54f85892"
+    },
+    {
+      "name": "dependencies",
+      "command": "npm audit --omit=dev --audit-level=high",
+      "exit_code": 0,
+      "seconds": 0.83,
+      "log": "/private/tmp/signalword-post-signing-regression/dependencies.log",
+      "log_sha256": "6d8c5c8f3d7684adb070417bd608d01ae90aa3dc26a65af03ffda4955f38d9a3"
+    },
+    {
+      "name": "simulator-ui",
+      "command": "npm run test:ios:ui",
+      "exit_code": 0,
+      "seconds": 477.31,
+      "log": "/private/tmp/signalword-post-signing-regression/simulator-ui.log",
+      "log_sha256": "66648a9b1e0cfa9993ae79d8331c43e62e43e60f270c342b6c58ce080b0f1367"
+    },
+    {
+      "name": "sentry-simulator-ui",
+      "command": "SIGNALWORD_WITH_SENTRY=1 npm run test:ios:ui",
+      "exit_code": 0,
+      "seconds": 488.63,
+      "log": "/private/tmp/signalword-post-signing-regression/sentry-simulator-ui.log",
+      "log_sha256": "bdd9ef1e709c68ab48ae9d513f79f35c4da61d01b182ba6da26da0977ac73405"
+    },
+    {
+      "name": "signed-artifact",
+      "command": "SIGNALWORD_EXPECTED_TEAM=NM65T6PR46 node scripts/verify-ios-installation.mjs /private/tmp/signalword-signing-preparation/DerivedData/Build/Products/Release-iphoneos/SignalWord.app",
+      "exit_code": 0,
+      "seconds": 0.35,
+      "log": "/private/tmp/signalword-post-signing-regression/signed-artifact.log",
+      "log_sha256": "34440c0cfa6fa1119ad81eb13f7531a63ee72ce442725af3098601720d3609db"
+    }
+  ],
+  "additional_checks": {
+    "packaging_regression_tests": 4,
+    "node_tests": 180,
+    "viewer_tests": 44,
+    "database_assertions": 315,
+    "safeupdate_assertions": 17,
+    "contact_races": 7,
+    "timer_races": 3,
+    "simulator_ui_without_sdk": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "release_builds": [
+      "without SDK passed",
+      "with SDK passed"
+    ],
+    "full_dependency_vulnerabilities": 0,
+    "history_scan": {
+      "findings": 10,
+      "verified_source_sha256_false_positives": 10,
+      "source_manifest_commit": "95477d3030bd09ec0d6177d28b9ed5b4f4326bdc"
+    },
+    "clean_source_signed_build": {
+      "result": "PASS",
+      "source_commit": "2c941269b7fba68aab4e84ea649bfbb90b1f0666",
+      "method": "git archive HEAD into a new directory; xcodebuild Release for generic iOS with local-only development xcconfig",
+      "artifact": "/private/tmp/signalword-post-signing-regression/clean-signed-build/Build/Products/Release-iphoneos/SignalWord.app",
+      "verifier": {
+        "passed": true,
+        "problems": [],
+        "bundleId": "com.signalword.app",
+        "version": "1.0",
+        "build": "2"
+      }
+    },
+    "simulator_ui_with_sdk": {
+      "result": "Passed",
+      "passedTests": 8,
+      "failedTests": 0,
+      "skippedTests": 0
+    }
+  },
+  "hosted": {
+    "passed_gates": 11,
+    "total_gates": 17,
+    "open": [
+      "H04",
+      "H08",
+      "H10",
+      "H11",
+      "H16",
+      "H17"
+    ],
+    "signup_disabled": true,
+    "authority_journal_version": 13,
+    "health_problems": []
+  },
+  "manifest_frozen": false,
+  "ready_for_installation": false,
+  "local_regression_complete": true
+}

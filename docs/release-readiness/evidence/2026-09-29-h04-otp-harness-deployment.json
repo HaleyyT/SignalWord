@@ -1,0 +1,38 @@
+{
+  "recordedAt": "2026-09-29T10:58:49.535703+00:00",
+  "environment": "development",
+  "sourceCommit": "9b03a7d8d9ec5e87651b64a7d6a17aa3e1832673",
+  "project": "signalword-dev",
+  "deploymentId": "dpl_Dz47ogxhVDGL9aWcFtvHK7GAdq31",
+  "alias": "www.signalword.app",
+  "supabaseProject": "voepalyamwgenceawdvl",
+  "runtimeOriginsPinnedAtDeployment": true,
+  "hostedRoutingChecksPassed": 6,
+  "assets": [
+    {
+      "asset": "acceptance.html",
+      "sha256": "c9acbb54b197688fa28bebc9dc2d339d38b9247188a6468983cdceb8d8ab17dc",
+      "matchesSource": true,
+      "status": 200
+    },
+    {
+      "asset": "acceptance.js",
+      "sha256": "eda12b06c3305553bae1889536ae6646329c100e1e6ff68a76415c976e7b855c",
+      "matchesSource": true,
+      "status": 200
+    },
+    {
+      "asset": "invited-session.js",
+      "sha256": "1edd90803f28130c36780573429dd1c779c2919f26d3e4e58f0fc6323ba252b3",
+      "matchesSource": true,
+      "status": 200
+    }
+  ],
+  "h04Passed": false,
+  "pending": [
+    "SMTP credential entry and readback",
+    "OTP template configuration",
+    "real invited OTP positive/replay/expiry and closure evidence"
+  ],
+  "manifestFrozen": false
+}

@@ -57,6 +57,16 @@ final class AppShellModel {
         let requestLocationAccess: @Sendable () async -> DeviceLocationAuthorization
         let deleteAccount: @Sendable () async throws -> Void
 
+        var identityID: @Sendable () async throws -> String? = { nil }
+        var beginReauthentication: @Sendable () async throws -> Void = { throw SessionError.configuration }
+        var requestRegistrationCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
+        var requestInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
+        var verifyInvitedCode: @Sendable (String, String) async throws -> Void = { _, _ in throw SessionError.configuration }
+
+        var signOut: @Sendable () async throws -> Void = { throw SessionError.configuration }
+
+        var signInWithPassword: @Sendable (String, String, String) async throws -> Void = { _, _, _ in throw SessionError.configuration }
+
         static let unconfigured = LifecycleActions(
             prepare: { _ in throw SessionError.configuration },
             profile: { _ in throw SessionError.configuration },
@@ -86,6 +96,33 @@ final class AppShellModel {
     private var contactID: UUID?
     private(set) var needsIdentityVerification = false
     private(set) var identityReady = false
+    enum AccountLoadState { case unknown, loading, available, unavailable }
+    private(set) var accountLoadState: AccountLoadState = .unknown
+    private(set) var requiresSessionRecovery = false
+    private var isPreparing = false
+    private var readinessIdentityID: String?
+    private struct SavedReadiness: Codable {
+        let contactID: String?; let startedAt: Date; let lockedReports: [String]; let shortcutConfigured: Bool
+    }
+    private func restoreReadiness(for identity: String?) {
+        guard let identity, readinessIdentityID != identity else { return }
+        readinessIdentityID = identity
+        if preferences.string(forKey: "readinessIdentityID") == identity { return }
+        guard let data = preferences.data(forKey: "accountReadiness." + identity),
+              let saved = try? JSONDecoder().decode(SavedReadiness.self, from: data) else { return }
+        preferences.set(saved.contactID, forKey: "rehearsalContactID")
+        rehearsalStartedAt = saved.startedAt; lockedTestReports = Set(saved.lockedReports)
+        shortcutConfigured = saved.shortcutConfigured
+    }
+    private func saveReadiness() {
+        guard let identity = readinessIdentityID else { return }
+        preferences.set(identity, forKey: "readinessIdentityID")
+        let value = SavedReadiness(contactID: preferences.string(forKey: "rehearsalContactID"),
+            startedAt: rehearsalStartedAt, lockedReports: Array(lockedTestReports), shortcutConfigured: shortcutConfigured)
+        if let data = try? JSONEncoder().encode(value) { preferences.set(data, forKey: "accountReadiness." + identity) }
+    }
+    var isCreatingAccount = false
+    var canEditContact: Bool { identityReady && accountLoadState == .available }
     private(set) var isSavingContact = false
     private(set) var shortcutConfigured = false { didSet { preferences.set(shortcutConfigured, forKey: "shortcutConfigured") } }
     private var lockedTestReports: Set<String> = []
@@ -121,6 +158,7 @@ final class AppShellModel {
         rehearsalStartedAt = preferences.object(forKey: "rehearsalStartedAt") as? Date ?? .now
     }
 
+    #if !SWIFT_PACKAGE
     static func live() -> AppShellModel {
         AppShellModel(
             backendConfigured: AppCompositionRoot.isConfigured,
@@ -128,6 +166,8 @@ final class AppShellModel {
             lifecycle: AppCompositionRoot.makeLifecycleActions()
         )
     }
+
+    #endif
 
     var contactValidationMessage: String? {
         if displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || displayName.count > 80 {
@@ -237,7 +277,86 @@ final class AppShellModel {
         beginContactEdit()
     }
 
+    var invitedEmail = ""
+    var invitedCode = ""
+    private(set) var invitedCodeRequested = false
+    private(set) var isSigningIn = false
+    private(set) var isSigningOut = false
+    var canSignOut: Bool { !isSigningOut && !isSigningIn && !isRecovering && !isSavingContact && !isSubmitting }
+
+    func changeInvitedEmail() {
+        guard !isSigningIn else { return }
+        invitedCodeRequested = false
+        invitedCode = ""
+        accountMessage = nil
+    }
+
+    private var deletionBlocksSignIn: Bool {
+        preferences.bool(forKey: "serverDeletionConfirmed") || preferences.string(forKey: "deletionReceiptToken") != nil
+    }
+
+    func requestInvitedCode(captchaToken: String) async {
+        guard !isSigningIn, !deletionBlocksSignIn else { return }
+        isSigningIn = true
+        defer { isSigningIn = false }
+        do {
+            invitedEmail = try InvitedSignIn.normalizedEmail(invitedEmail)
+            if isCreatingAccount { try await lifecycle.requestRegistrationCode(invitedEmail, captchaToken) }
+            else { try await lifecycle.requestInvitedCode(invitedEmail, captchaToken) }
+            invitedCodeRequested = true
+            accountMessage = "Check your inbox for an email verification code. If it does not arrive, check the address and spam folder."
+        } catch {
+            accountMessage = (error as? SessionError)?.message ?? "Could not request a code. Check your email and connection, then complete verification again."
+        }
+    }
+
+    func verifyInvitedCode() async {
+        guard !isSigningIn, !deletionBlocksSignIn else { return }
+        isSigningIn = true
+        defer { isSigningIn = false; invitedCode = "" }
+        do {
+            try await lifecycle.verifyInvitedCode(invitedEmail, invitedCode)
+            invitedEmail = ""
+            invitedCodeRequested = false
+            await prepare()
+        } catch {
+            accountMessage = "Code not accepted. It may be incorrect, expired or already used. Try again or request a new code."
+        }
+    }
+
+    func signInWithPassword(password: String, captchaToken: String) async {
+        guard !isSigningIn, !deletionBlocksSignIn else { return }
+        isSigningIn = true
+        defer { isSigningIn = false }
+        do {
+            try await lifecycle.signInWithPassword(invitedEmail, password, captchaToken)
+            invitedEmail = ""
+            invitedCode = ""
+            invitedCodeRequested = false
+            await prepare()
+        } catch {
+            accountMessage = (error as? SessionError)?.message ?? "Sign-in could not be completed. Check your connection and retry."
+        }
+    }
+
+    func signInAgain() async {
+        guard !isSigningIn, !isPreparing else { return }
+        do {
+            try await lifecycle.beginReauthentication()
+            identityReady = false
+            needsIdentityVerification = true
+            requiresSessionRecovery = false
+            isCreatingAccount = false
+            accountMessage = SessionError.sessionExpired.message
+        } catch { accountMessage = "Could not prepare account recovery. Unlock your device and retry. Your account data is kept." }
+    }
+
     func prepare(captchaToken: String? = nil) async {
+        guard !isSigningOut, !isPreparing, !requiresSessionRecovery else { return }
+        isPreparing = true
+        defer { isPreparing = false }
+        // Preserve the result of an explicit sign-in attempt until the next attempt.
+        guard !needsIdentityVerification || isSigningIn || deletionBlocksSignIn else { return }
         apply(await lifecycle.locationAuthorization())
         if preferences.bool(forKey: "serverDeletionConfirmed") ||
             preferences.string(forKey: "deletionReceiptToken") != nil {
@@ -247,28 +366,52 @@ final class AppShellModel {
         }
         guard backendConfigured else { return }
         do {
-            if !identityReady {
-                try await lifecycle.prepare(captchaToken)
-                identityReady = true
-                needsIdentityVerification = false
-                accountMessage = nil
-            }
-            if displayName.isEmpty { displayName = try await lifecycle.profile(nil) }
-            applyContact(try await lifecycle.getContact())
+            accountLoadState = .loading
+            try await lifecycle.prepare(captchaToken)
+            let profileName = displayName.isEmpty ? try await lifecycle.profile(nil) : displayName
+            let contact = try await lifecycle.getContact()
+            let identity = try await lifecycle.identityID()
+            guard !Task.isCancelled, !isSigningOut else { return }
+            displayName = profileName
+            restoreReadiness(for: identity)
+            applyContact(contact)
+            saveReadiness()
+            accountLoadState = .available
+            identityReady = true
+            // A returning configured account does not need to reinvite its recipient.
+            if contact != nil && stage == .understand { hasEnteredDashboard = true }
+            // Clear a previous preparation error only after every required read succeeds.
+            accountMessage = nil
+            needsIdentityVerification = false
+        } catch is CancellationError {
+            // Scene changes cancel foreground recovery; cancellation is not an auth failure.
+            return
+        } catch let error as URLError where error.code == .cancelled {
+            return
         } catch SessionError.verificationRequired {
+            identityReady = false
+            accountLoadState = .unknown
             needsIdentityVerification = true
-            accountMessage = hasEnteredDashboard
-                ? "Your saved account credentials are missing. Contact support before creating another account. Earlier alerts cannot be recovered through a new identity."
-                : "Complete verification to protect your new account from automated signups."
+            accountMessage = "Sign in to your existing account, or choose Create account if you are new."
+        } catch SessionError.sessionExpired {
+            identityReady = false
+            accountLoadState = .unavailable
+            requiresSessionRecovery = true
+            accountMessage = SessionError.sessionExpired.message
         } catch is KeychainError {
+            identityReady = false
+            accountLoadState = .unavailable
             accountMessage = "Your saved identity is unavailable. Unlock the device and retry. Your account has not been replaced."
         } catch {
-            accountMessage = "SignalWord could not create a protected device identity. Check the connection and try again."
+            guard !Task.isCancelled else { return }
+            identityReady = false
+            accountLoadState = .unavailable
+            accountMessage = "Your account data could not be loaded. Check the connection and retry. Your saved contact has not been replaced."
         }
     }
 
     func recover(allowDelayed: Bool = false) async {
-        guard !isRecovering else { return }
+        guard !isRecovering, !isSigningOut else { return }
         isRecovering = true
         defer { isRecovering = false }
         recoveryMessage = nil
@@ -301,6 +444,11 @@ final class AppShellModel {
                 alertState = .idle
             }
             await refreshContact()
+        } catch SessionError.sessionExpired {
+            identityReady = false
+            accountLoadState = .unavailable
+            requiresSessionRecovery = true
+            accountMessage = SessionError.sessionExpired.message
         } catch {
             recoveryMessage = "Recovery could not finish. Saved commands remain on this device. Retry when connected."
         }
@@ -368,6 +516,20 @@ final class AppShellModel {
                 contactStatus = "unknown"
                 contactMessage = "We couldn't confirm the invitation or consent status. Alerts stay unavailable until you refresh. Your entries remain here."
             }
+        }
+    }
+
+    func checkInvitationStatus() async {
+        do {
+            let contact = try await lifecycle.getContact()
+            applyContact(contact)
+            if let contact {
+                contactMessage = "Saved contact: \(contact.name). Server status: \(contact.status). Checking status does not send another invitation."
+            } else {
+                contactMessage = "No contact invitation is saved for this account. Your entries are still here."
+            }
+        } catch {
+            contactMessage = "Invitation status could not be checked. Keep your entries and try checking again when connected; do not assume an email was sent."
         }
     }
 
@@ -447,36 +609,71 @@ final class AppShellModel {
         }
     }
 
+    func signOut(statusUpdateInProgress: Bool = false) async {
+        guard !statusUpdateInProgress else {
+            accountMessage = "A status update is still running. Wait for it to finish, then try signing out again."
+            return
+        }
+        guard canSignOut, !deletionBlocksSignIn else { return }
+        isSigningOut = true
+        defer { isSigningOut = false }
+        do {
+            try await lifecycle.signOut()
+            saveReadiness()
+            clearAccountViewState()
+            needsIdentityVerification = true
+            accountMessage = "Signed out on this iPhone. Your account and server data have not been deleted."
+        } catch {
+            accountMessage = "Could not sign out safely. Connect to the internet, resolve active alerts, end any check-in timer, and refresh pending changes before trying again. Your account has not been deleted."
+        }
+    }
+
+    private func clearAccountViewState() {
+        identityReady = false
+        accountLoadState = .unknown
+        readinessIdentityID = nil
+        preferences.removeObject(forKey: "readinessIdentityID")
+        requiresSessionRecovery = false
+        isCreatingAccount = false
+        hasDelayedCommands = false
+        delayedAlertKind = nil
+        availableAlerts = []
+        resolveMessage = nil
+        shortcutConfigured = false
+        lockedTestReports = []
+        preferences.removeObject(forKey: "lockedTestReports")
+        preferences.removeObject(forKey: "verifiedRehearsals")
+        preferences.removeObject(forKey: "rehearsalContactID")
+        preferences.removeObject(forKey: "rehearsalStartedAt")
+        rehearsalStartedAt = .now
+        selectedAlertStatus = nil
+        deliveryStatus = nil
+        acknowledgedMessage = nil
+        canReportLockedTestForCurrentEvent = false
+        currentAcknowledgedTestID = nil
+        contactName = ""
+        contactEmail = ""
+        contactID = nil
+        displayName = ""
+        hasContactDraft = false
+        contactStatus = "not configured"
+        contactMessage = nil
+        alertState = .idle
+        hasEnteredDashboard = false
+        stage = .understand
+        savedContactName = ""
+        isEditingContactDraft = false
+        invitedEmail = ""
+        invitedCode = ""
+        invitedCodeRequested = false
+        recoveryMessage = nil
+    }
+
     func deleteAccount() async {
         do {
             try await lifecycle.deleteAccount()
-            identityReady = false
-            hasDelayedCommands = false
-            delayedAlertKind = nil
-            availableAlerts = []
-            resolveMessage = nil
-            shortcutConfigured = false
-            lockedTestReports = []
-            preferences.removeObject(forKey: "lockedTestReports")
-            preferences.removeObject(forKey: "verifiedRehearsals")
-            preferences.removeObject(forKey: "rehearsalContactID")
-            preferences.removeObject(forKey: "rehearsalStartedAt")
-            rehearsalStartedAt = .now
-            selectedAlertStatus = nil
-            deliveryStatus = nil
-            acknowledgedMessage = nil
-            canReportLockedTestForCurrentEvent = false
-            currentAcknowledgedTestID = nil
-            contactName = ""
-            contactEmail = ""
-            contactID = nil
-            displayName = ""
-            hasContactDraft = false
-            contactStatus = "not configured"
-            contactMessage = nil
-            alertState = .idle
-            hasEnteredDashboard = false
-            stage = .understand
+            if let identity = readinessIdentityID { preferences.removeObject(forKey: "accountReadiness." + identity) }
+            clearAccountViewState()
             accountMessage = "SignalWord data was deleted from the server and this device."
         } catch {
             if preferences.string(forKey: "deletionReceiptToken") != nil { identityReady = false }

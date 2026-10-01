@@ -1,0 +1,10 @@
+UI test artifacts: /var/folders/hx/q701f8992p35385dn217cg1w0000gn/T//signalword-ui.iycjHS
+Writing result bundle at path:
+	/var/folders/hx/q701f8992p35385dn217cg1w0000gn/T/signalword-ui.iycjHS/Journey.xcresult
+
+2026-09-30 16:23:54.957 xcodebuild[76518:6381244] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-09-30 16:23:54.957 xcodebuild[76518:6381244] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-09-30 16:24:18.487 xcodebuild[76518:6381244] [MT] IDETestOperationsObserverDebug: 59.224 elapsed -- Testing started completed.
+2026-09-30 16:24:18.488 xcodebuild[76518:6381244] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-09-30 16:24:18.488 xcodebuild[76518:6381244] [MT] IDETestOperationsObserverDebug: 59.224 sec, +59.224 sec -- end
+Testing started

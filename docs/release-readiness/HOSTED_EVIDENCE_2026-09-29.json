@@ -1,0 +1,225 @@
+{
+  "recorded_at": "2026-09-28T18:58:01.963839+00:00",
+  "gate_allowed": true,
+  "quarantined": false,
+  "journal_version": 9,
+  "digest": "eead4a70e8916e9cd59da48b58cc0f71c76501bef1510eb3e7235929382c2f97",
+  "deleted_subject_denials": [
+    503,
+    503
+  ],
+  "health_problems": [],
+  "worker_versions": {
+    "signalword-dev-monitor": [
+      {
+        "version_id": "ac57442a-4291-43bc-abcf-375975c0ab7f",
+        "percentage": 100
+      }
+    ],
+    "signalword-dev-safety-authority": [
+      {
+        "version_id": "183202c5-f1fb-40cb-9388-e419dc422559",
+        "percentage": 100
+      }
+    ]
+  },
+  "monitor_crons": [
+    "* * * * *"
+  ],
+  "scope": "development only",
+  "supabase_project": "voepalyamwgenceawdvl",
+  "public_signup_disabled": true,
+  "controlled_accounts_remaining": 0,
+  "contacts": 0,
+  "active_timers": 0,
+  "queued_messages": 0,
+  "unknown_outcomes": 0,
+  "reopening": {
+    "receipt_verified": true,
+    "duplicate_replay_verified": true,
+    "gate_allowed": true,
+    "journal_version": 3,
+    "digest": "2ae04c620114f050a03b65204a2ab72e757da4f1969f88e1a6a93010e04b0fe1",
+    "quarantined": false,
+    "accounts": 0,
+    "checked_in_workflow": true
+  },
+  "public_routing_checks_passed": 6,
+  "functions": [
+    {
+      "slug": "user-api",
+      "version": 10,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "public-event",
+      "version": 9,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "contact-confirm",
+      "version": 9,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "deletion-status",
+      "version": 9,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "dispatch-deliveries",
+      "version": 10,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "resend-webhook",
+      "version": 10,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "operational-health",
+      "version": 4,
+      "status": "ACTIVE"
+    }
+  ],
+  "migrations": [
+    "20260921000000_initial_alerts.sql",
+    "20260924010000_alert_api_walking_skeleton.sql",
+    "20260924030000_user_lifecycle_api.sql",
+    "20260924040000_provider_delivery.sql",
+    "20260924050000_auth_profile_bootstrap.sql",
+    "20260924060000_contact_setup_rate_limits.sql",
+    "20260926010000_recovery_and_acknowledgement.sql",
+    "20260926020000_delivery_recovery.sql",
+    "20260926030000_dispatch_schedule.sql",
+    "20260926040000_webhook_reconciliation.sql",
+    "20260926050000_retention_and_names.sql",
+    "20260926060000_sender_identity.sql",
+    "20260926070000_delivery_health.sql",
+    "20260926080000_uncertain_delivery_guard.sql",
+    "20260926090000_deletion_receipts.sql",
+    "20260926100000_disable_unsafe_deletion.sql",
+    "20260926110000_recipient_withdrawal.sql",
+    "20260926120000_resend_invalidation.sql",
+    "20260927010000_correlated_delivery_receipts.sql",
+    "20260927020000_operational_readiness.sql",
+    "20260928010000_protect_contact_consent.sql",
+    "20260928020000_dispatch_monitoring.sql",
+    "20260929010000_contact_escalation.sql",
+    "20260929011000_escalation_health.sql",
+    "20260929020000_check_in_timers.sql",
+    "20260929021000_timer_projection_and_retention.sql",
+    "20260929022000_check_in_health.sql",
+    "20260930010000_delivery_trust_boundary.sql",
+    "20260930011000_public_link_budget.sql",
+    "20261001010000_independent_restore_protection.sql",
+    "20261001020000_journal_and_provider_health.sql",
+    "20261001030000_restore_safeupdate.sql"
+  ],
+  "controlled_identity_checks": [
+    {
+      "check": "own_profile_update",
+      "status": 200
+    },
+    {
+      "check": "cross_user_profile_read",
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "check": "forged_owner_request",
+      "status": 400
+    },
+    {
+      "check": "own_profile_update",
+      "status": 200
+    },
+    {
+      "check": "cross_user_profile_read",
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "check": "forged_owner_request",
+      "status": 400
+    },
+    {
+      "check": "authenticated_profile_read_burst",
+      "requests": 20,
+      "successful": 20,
+      "p95_ms": 1142.0,
+      "limitation": "Not alert acceptance or provider throughput"
+    },
+    {
+      "check": "deletion_and_receipt",
+      "application_status": 200,
+      "receipt_status": 200
+    },
+    {
+      "check": "deletion_and_receipt",
+      "application_status": 200,
+      "receipt_status": 200
+    }
+  ],
+  "configuration_problems": [
+    "UNVERIFIED_CAPTCHA"
+  ],
+  "resend_replay": {
+    "event": "email.delivered",
+    "status": 202,
+    "source": "prior user-reported provider dashboard replay"
+  },
+  "monitoring": {
+    "acceptance": "passed for the connected operator inbox",
+    "receipt_source": "Gmail connector, narrowly scoped SignalWord Healthchecks queries; complete pagination including spam/trash for suppression",
+    "operations": {
+      "down": "2026-09-28T17:35:45Z",
+      "up": "2026-09-28T17:58:47Z",
+      "incident_messages": 1,
+      "recovery_messages": 1,
+      "repeated_failure_suppressed": true
+    },
+    "missed_heartbeat": {
+      "down": "2026-09-28T17:55:47Z",
+      "up": "2026-09-28T17:57:47Z",
+      "reason": "success signal did not arrive on time, grace time passed",
+      "email_receipt_verified": true
+    },
+    "reporting_failure": {
+      "down": "2026-09-28T18:06:46Z",
+      "up": "2026-09-28T18:07:48Z",
+      "reason": "received a failure signal",
+      "fault": "temporary invalid operations reporting destination; stored secrets untouched",
+      "email_receipt_verified": true
+    },
+    "temporary_outage_handler_removed": true,
+    "second_operator_inbox_independently_verified": false
+  },
+  "managed_backup_restore": {
+    "performed": false,
+    "blocker": "Supabase development Free plan has no managed backups; dashboard verified",
+    "rpo_measured": false,
+    "rto_measured": false
+  },
+  "manifest_frozen": false,
+  "ready_for_iphone": false,
+  "hosted_contact_database_proof": {
+    "command": "supabase db query --linked --project-ref voepalyamwgenceawdvl --file scripts/hosted-contact-proof.sql",
+    "checks": 23,
+    "persisted_contacts": 0,
+    "persisted_deliveries": 0,
+    "persisted_users": 0,
+    "result": "passed",
+    "scope": "deployed SQL/RLS in rollback-only transaction; not HTTP consent or provider delivery",
+    "fixture_bypass_used": false
+  },
+  "hosted_progress": {
+    "passed": 11,
+    "total": 17,
+    "percent": 65
+  },
+  "latest_controlled_journey": "HOSTED_TEST_JOURNEY_2026-09-29.json",
+  "viewer_deployment": "dpl_B4mdNxwtHNhJ7e6TnPyiyGJX1rzT",
+  "latest_repair_commit": "14e1c9c1efdcad0a7c1198b091713d589dd14eb9",
+  "dispatch_deliveries_version": 10
+}

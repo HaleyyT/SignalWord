@@ -33,5 +33,6 @@ responses have a separate privacy projection validator.
 The Swift package now contains the same lifecycle wire models used by the live
 client. XCTest decodes profile, contact, status, recovery, and resolution fixtures;
 viewer tests decode the public-event fixture. Missing/invalid response fields are
-also exercised in Node tests. There is not yet a generated, exhaustive OpenAPI or
-JSON Schema specification for all request, error, webhook, and response variants.
+also exercised in Node tests. The complete route inventory is in `endpoints.json` (19 authenticated method/path combinations) and `system-endpoints.json` (13 public, worker, provider and authority operations). Runtime validators, wire-model fixtures and positive/negative handler tests enforce the current contracts; this is not a generated OpenAPI specification. System-operation schemas and distinct error formats are recorded explicitly; do not assume webhook or operator errors use the mobile envelope.
+
+Run `node --test tests/endpoint-contracts.test.mjs tests/system-contracts.test.mjs` for route fixtures, then `npm run test:integration` for real local gateway/database behavior. The latter covers the canonical v2 journey; v1 compatibility also runs through existing API and database tests. The device guide retains real CAPTCHA and provider acceptance as separate gates.

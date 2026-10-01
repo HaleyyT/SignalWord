@@ -47,6 +47,8 @@ export function parsePublicProjection(value: unknown): Record<string, unknown> {
 
   return {
     kind,
+    ...(value.cause === "missed_check_in" ? {cause: "missed_check_in"} : {}),
+    ...(isTimestamp(value.checkInDeadline) ? {checkInDeadline: value.checkInDeadline} : {}),
     displayName,
     state,
     triggeredAt,
