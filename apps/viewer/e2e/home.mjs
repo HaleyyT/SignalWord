@@ -9,7 +9,7 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true, ...(process.env.SIGNALWORD_CHROME_PATH ? { executablePath: process.env.SIGNALWORD_CHROME_PATH } : {}) });
   for (const colorScheme of ['dark', 'light']) {
-    for (const width of [320, 768, 1440]) {
+    for (const width of [320, 390, 768, 1024, 1440, 1920]) {
       const page = await browser.newPage({ viewport: { width, height: 900 }, colorScheme, reducedMotion: 'reduce' });
       const errors = [];
       const privateRequests = [];
@@ -51,6 +51,10 @@ try {
       assert.equal(await page.locator('details[open]').count(), 1);
       await page.getByText('Can I download the app now?', { exact: true }).click();
       await page.getByRole('link', { name: 'support@signalword.app' }).waitFor();
+      await page.getByText('Is SignalWord free?', { exact: true }).click();
+      await page.getByText('It is not a subscription.', { exact: false }).waitFor();
+      await page.getByRole('link', { name: 'See how SignalWord works' }).click();
+      assert.equal(new URL(page.url()).hash, '#how-it-works');
       assert.deepEqual(errors, []);
       assert.deepEqual(privateRequests, [], 'Home must never access private APIs');
       await page.screenshot({ path: `/tmp/signalword-home-${colorScheme}-${width}.png`, fullPage: true });
@@ -59,5 +63,5 @@ try {
       await page.close();
     }
   }
-  console.log('PASS homepage navigation, FAQ, keyboard entry, image, no private requests, light/dark and 320/768/1440px layouts.');
+  console.log('PASS homepage navigation, free/one-time pricing FAQ, keyboard entry, image, no private requests, light/dark and 320/390/768/1024/1440/1920px layouts.');
 } finally { await browser?.close(); await server?.close(); }

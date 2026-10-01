@@ -1,0 +1,85 @@
+{
+  "accessibility": [
+    {
+      "path": "/",
+      "violations": []
+    },
+    {
+      "path": "/support",
+      "violations": []
+    },
+    {
+      "path": "/privacy",
+      "violations": []
+    }
+  ],
+  "lighthouse": [
+    {
+      "mode": "mobile",
+      "scores": {
+        "performance": 99,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": "1.4\u00a0s",
+        "largest-contentful-paint": "2.0\u00a0s",
+        "cumulative-layout-shift": "0",
+        "total-blocking-time": "0\u00a0ms"
+      }
+    },
+    {
+      "mode": "desktop",
+      "scores": {
+        "performance": 100,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": "0.3\u00a0s",
+        "largest-contentful-paint": "0.4\u00a0s",
+        "cumulative-layout-shift": "0",
+        "total-blocking-time": "0\u00a0ms"
+      }
+    }
+  ],
+  "layout": [
+    {
+      "width": 320,
+      "textZoom": "200%",
+      "noOverflow": true
+    },
+    {
+      "width": 390,
+      "textZoom": "200%",
+      "noOverflow": true
+    },
+    {
+      "width": 768,
+      "textZoom": "200%",
+      "noOverflow": true
+    },
+    {
+      "width": 1440,
+      "textZoom": "200%",
+      "noOverflow": true
+    }
+  ],
+  "scope": "Public Home, Support and Privacy pages; local production bundle. Not App Review approval or hosted safety-system acceptance.",
+  "recorded_at_utc": "2026-10-01T04:27:37.119925+00:00",
+  "browser": "Playwright Chromium",
+  "functional_browser_cases": 12,
+  "automated_checks": {
+    "repository_tests_passed": 223,
+    "viewer_tests_passed": 44,
+    "production_build": "passed",
+    "production_home_browser": "passed",
+    "wcag_tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag21aa"
+    ]
+  }
+}

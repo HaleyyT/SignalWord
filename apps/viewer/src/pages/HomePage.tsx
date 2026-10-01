@@ -36,7 +36,7 @@ export function HomePage() {
           <div className="home-hero-copy">
             <p className="eyebrow home-eyebrow"><span className="home-eyebrow-mark" aria-hidden="true" />Voice-triggered iPhone safety</p>
             <h1 id="home-title">Private phrase.<br /><span>Trusted response.</span></h1>
-            <p className="home-lede">Set a private phrase with iPhone Vocal Shortcuts, or ask Siri to run a SignalWord Shortcut. In an urgent moment, SignalWord is designed to discreetly alert someone you trust when unlocking, typing, or calling feels difficult or unsafe.</p>
+            <p className="home-lede">Alert someone you trust with a private iPhone phrase, a Shortcut or a tap.</p>
             <div className="home-hero-actions">
               <a className="home-button" href="#how-it-works">See how SignalWord works <span aria-hidden="true">→</span></a>
               <a className="home-secondary-link" href="#for-trusted-contacts">For trusted contacts</a>
@@ -47,7 +47,7 @@ export function HomePage() {
             <div className="home-photo-shade" aria-hidden="true" />
             <div className="home-preview">
               <div className="home-preview-head">
-                <span className="home-preview-kicker">Illustrative flow</span>
+                <span className="home-preview-kicker">Example alert flow</span>
               </div>
               <div className="home-preview-detected">
                 <div className="home-waveform" aria-hidden="true">
@@ -74,13 +74,12 @@ export function HomePage() {
         </section>
 
         <aside className="home-status home-wrap" aria-label="Pricing">
-          <span className="home-status-icon" aria-hidden="true">i</span>
+          <span className="home-status-icon" aria-hidden="true">Free</span>
           <div><strong>Safety features stay free</strong><p>Alerts, trusted contacts and check-ins are free. One optional Supporter purchase unlocks both Ocean and Lavender colour themes.</p></div>
         </aside>
 
         <section className="home-section home-wrap" id="how-it-works" tabIndex={-1} aria-labelledby="how-title">
           <div className="home-section-intro">
-            <p className="eyebrow">A clear path to your person</p>
             <h2 id="how-title">A small phrase.<br /><span>A considered response.</span></h2>
             <p>Set up the connection before you need it, then practise the flow together.</p>
           </div>
@@ -110,7 +109,6 @@ export function HomePage() {
 
         <section className="home-difference home-wrap" id="why-signalword" tabIndex={-1} aria-labelledby="difference-title">
           <div className="home-difference-intro">
-            <p className="eyebrow">Why SignalWord</p>
             <h2 id="difference-title">Designed for the moment you can’t use your phone as usual.</h2>
             <p>A familiar, voice-led route to a person you chose, with clear signals about what happened next.</p>
           </div>
@@ -148,7 +146,8 @@ export function HomePage() {
           <details><summary>Does SignalWord contact emergency services?</summary><p>No. It notifies your confirmed trusted contact. It does not dispatch police, ambulance or other emergency services. If someone may be in immediate danger, contact local emergency services directly.</p></details>
           <details><summary>Is email delivery guaranteed?</summary><p>No. A network connection and working delivery services are required. Provider acceptance, delivery reports and recipient acknowledgment are separate states. A delivered email does not prove that someone read it.</p></details>
           <details><summary>What about location and privacy?</summary><p>Location is optional. If available, the recipient view shows its age and accuracy. Access uses a private link, so anyone with that link may be able to view it. Read our <a href="/privacy">Privacy</a> page for the data lifecycle and limitations.</p></details>
-          <details><summary>Can I download the app now?</summary><p>SignalWord has been submitted for App Store review. Public download will be available after approval and release. It will be free to download, with an optional one-time colour-theme purchase. For product questions, email <a href="mailto:support@signalword.app">support@signalword.app</a>. Please don’t include private alert links, passwords or precise locations.</p></details>
+          <details><summary>Is SignalWord free?</summary><p>Yes. Alerts, trusted contacts, check-ins and all safety features are free. One optional, one-time Supporter purchase unlocks both Ocean and Lavender colour themes. It is not a subscription.</p></details>
+          <details><summary>Can I download the app now?</summary><p>SignalWord is awaiting App Store review. Public download will be available after approval and release. For product questions, email <a href="mailto:support@signalword.app">support@signalword.app</a>. Please don’t include private alert links, passwords or precise locations.</p></details>
         </section>
       </main>
       <footer className="home-footer home-wrap">
