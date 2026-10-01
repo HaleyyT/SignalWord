@@ -13,7 +13,7 @@ Shorten the hero copy, remove the negative offset that overlapped navigation, im
 ## Verification and assessment
 
 - Repository checks, 223 Node tests and 44 viewer tests passed. TypeScript and the production build passed.
-- Production-bundle browser journeys passed at 320, 390, 768, 1024, 1440 and 1920 pixels under both light and dark browser preferences. The page intentionally retains its established dark palette.
+- Production-bundle browser journeys passed at 320, 390, 768, 1024, 1440 and 1920 pixels under both light and dark browser preferences. The page intentionally retains its established dark palette. A follow-up also removed the shared 320px document minimum and passed fourteen cases including 305px, covering the usable width beside a desktop scrollbar. Overflow failures now report actual layout dimensions for diagnosis.
 - Navigation, hash focus/reload, skip link, FAQ expansion, pricing explanation, support email and privacy navigation passed. No page errors or private API requests occurred.
 - Text enlarged to 200% produced no horizontal overflow at 320, 390, 768 and 1440 pixels.
 - Axe found no WCAG 2 A/AA or 2.1 AA violations on Home, Support and Privacy, including expanded homepage FAQs.

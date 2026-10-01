@@ -9,7 +9,8 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true, ...(process.env.SIGNALWORD_CHROME_PATH ? { executablePath: process.env.SIGNALWORD_CHROME_PATH } : {}) });
   for (const colorScheme of ['dark', 'light']) {
-    for (const width of [320, 390, 768, 1024, 1440, 1920]) {
+    // 305px covers the usable area of a 320px desktop viewport with a scrollbar.
+    for (const width of [305, 320, 390, 768, 1024, 1440, 1920]) {
       const page = await browser.newPage({ viewport: { width, height: 900 }, colorScheme, reducedMotion: 'reduce' });
       const errors = [];
       const privateRequests = [];
@@ -23,7 +24,14 @@ try {
         const img = document.querySelector('.home-photo img');
         return img?.complete && img.naturalWidth > 0;
       });
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${width}px overflow`);
+      const layout = await page.evaluate(() => ({
+        viewport: innerWidth, available: document.documentElement.clientWidth,
+        content: document.documentElement.scrollWidth,
+        outside: [...document.querySelectorAll('body *')].filter(el => el.getBoundingClientRect().right > innerWidth + 1)
+          .slice(0, 8).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right })),
+      }));
+      if (layout.content > layout.viewport) await page.screenshot({ path: `/tmp/signalword-home-overflow-${width}.png`, fullPage: true });
+      assert.ok(layout.content <= layout.viewport, `${width}px overflow: ${JSON.stringify(layout)}`);
       await page.keyboard.press('Tab');
       await page.getByRole('link', { name: 'Skip to content' }).press('Enter');
       assert.equal(new URL(page.url()).hash, '#main');
@@ -63,5 +71,5 @@ try {
       await page.close();
     }
   }
-  console.log('PASS homepage navigation, free/one-time pricing FAQ, keyboard entry, image, no private requests, light/dark and 320/390/768/1024/1440/1920px layouts.');
+  console.log('PASS homepage navigation, free/one-time pricing FAQ, keyboard entry, image, no private requests, light/dark and 305/320/390/768/1024/1440/1920px layouts.');
 } finally { await browser?.close(); await server?.close(); }
