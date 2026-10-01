@@ -53,13 +53,13 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     func testSignOutKeepsAccountAndReturnsToSignIn() {
+        continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready"]
         app.launch()
         XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
         app.buttons["navigation.Settings"].tap()
-        tap("account.signOut")
-        tap("account.confirmSignOut")
+        confirmSignOut()
         XCTAssertTrue(app.textFields["onboarding.invitedEmail"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Signed out on this iPhone. Your account and server data have not been deleted."].exists)
         app.terminate()
@@ -70,13 +70,13 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     func testUnsafeSignOutLeavesAccountUsable() {
+        continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-signout-blocked"]
         app.launch()
         XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
         app.buttons["navigation.Settings"].tap()
-        tap("account.signOut")
-        tap("account.confirmSignOut")
+        confirmSignOut()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Could not sign out safely.")).firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["navigation.Home"].exists)
     }
@@ -157,6 +157,30 @@ final class SignalWordJourneyTests: XCTestCase {
         let button = app.buttons[title].firstMatch
         reveal(button)
         button.tap()
+    }
+
+    private func confirmSignOut() {
+        let signOut = app.buttons["account.signOut"].firstMatch
+        reveal(signOut)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: signOut)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Account refresh must finish before signing out")
+        reveal(signOut)
+        // Tap the visible row rather than a potentially stale accessibility
+        // activation point retained from before the Settings page scrolled.
+        signOut.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        // A native confirmation dialog is not part of the Settings scroll
+        // view. Wait for it and tap directly; a page swipe can dismiss it.
+        let confirm = app.buttons["account.confirmSignOut"].firstMatch
+        let appeared = confirm.waitForExistence(timeout: 5)
+        if !appeared {
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            print(signOut.debugDescription)
+            print(app.debugDescription)
+        }
+        XCTAssertTrue(appeared, "Sign-out confirmation must appear")
+        confirm.tap()
     }
 
     private func completeContactSetup(waitForRecovery: Bool = false) {
