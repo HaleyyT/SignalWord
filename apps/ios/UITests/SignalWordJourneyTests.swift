@@ -92,22 +92,39 @@ final class SignalWordJourneyTests: XCTestCase {
         // The keyboard's prediction strip is also a ScrollView. Target setup
         // explicitly so typing cannot change which container the test pans.
         let setupScroll = app.scrollViews["onboarding.scroll"]
-        let scroll = setupScroll.exists ? setupScroll : app.scrollViews.firstMatch
-        for _ in 0..<60 {
+        let isSetup = setupScroll.exists
+        let scroll = isSetup ? setupScroll : app.scrollViews.firstMatch
+        let largestText = app.launchArguments.contains("--ui-testing-largest-text")
+        for _ in 0..<(largestText ? 60 : 18) {
+            // Keep the existing navigation for standard-size journeys. Only
+            // AX5 needs measured pans to reach its tall labels and fields.
+            if !largestText {
+                if element.exists && element.isHittable { return }
+                if useMargin {
+                    scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.8 : 0.2))
+                        .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.2 : 0.8)))
+                } else if scrollingUp { app.swipeUp() } else { app.swipeDown() }
+                continue
+            }
             var top = scroll.frame.minY + 4
             var bottom = scroll.frame.maxY - 4
             if app.navigationBars.firstMatch.exists { top = max(top, app.navigationBars.firstMatch.frame.maxY + 4) }
             if app.buttons["navigation.Home"].exists { bottom = min(bottom, app.buttons["navigation.Home"].frame.minY - 4) }
             if app.keyboards.firstMatch.exists { bottom = min(bottom, app.keyboards.firstMatch.frame.minY - 4) }
-            if element.exists && element.isHittable && element.frame.minY >= top && element.frame.maxY <= bottom { return }
+            let hasFrame = element.exists && !element.frame.isEmpty
+            if hasFrame && element.isHittable && element.frame.minY >= top && element.frame.maxY <= bottom { return }
             // Pan inside the visible scroll area, above the keyboard. At AX5 a
             // screen-wide swipe can hit the keyboard or overshoot a text field.
-            let upward = element.exists ? element.frame.maxY > bottom : scrollingUp
+            // SwiftUI can expose an offscreen field with a zero frame. That is
+            // unknown geometry, not evidence that the field is above the form.
+            let upward = hasFrame ? element.frame.maxY > bottom : scrollingUp
             let height = bottom - top
-            let overflow = !element.exists ? height / 2 : upward ? element.frame.maxY - bottom : top - element.frame.minY
+            let overflow = !hasFrame ? height / 2 : upward ? element.frame.maxY - bottom : top - element.frame.minY
             let distance = min(height / 2, max(30, overflow + 8))
             let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
-                dx: scroll.frame.minX + scroll.frame.width * (useMargin ? 0.02 : 0.5),
+                // A drag inside a focused text field moves its selection rather
+                // than the form. The setup margin belongs to the scroll view.
+                dx: scroll.frame.minX + scroll.frame.width * ((useMargin || isSetup) ? 0.02 : 0.5),
                 dy: upward ? bottom - height * 0.2 : top + height * 0.2))
             start.press(forDuration: 0.02,
                         thenDragTo: start.withOffset(CGVector(dx: 0, dy: upward ? -distance : distance)),
