@@ -2,6 +2,8 @@
 
 The submitted iOS candidate remains 1.0 (8). This change updates the public website and repository presentation while Apple reviews that candidate. It does not replace or rebuild the submitted binary.
 
+Repository CI also exposed an Xcode 16.4 type-check timeout in the existing hold-confirm control. The repository source now separates its unchanged label, progress indicator and contents into smaller SwiftUI expressions. Alert actions, timing, confirmation, accessibility and styling remain the same. The existing unsigned simulator build passes locally; the source cleanup is for future builds and does not alter the already uploaded Build 8 archive.
+
 ## Design decision
 
 Preserve the existing dark theme, lavender/mint brand, photograph, section order and example alert illustration. Refine this design rather than replace it. Design dials: variance 4/10, motion 3/10, density 4/10. The existing dark-only palette, secondary mint accent and clearly labelled illustrative overlay are intentional preservation decisions under the owner's brief.
