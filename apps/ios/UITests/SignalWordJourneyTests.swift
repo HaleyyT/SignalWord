@@ -89,14 +89,26 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     private func reveal(_ element: XCUIElement, scrollingUp: Bool = true, useMargin: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
-        for _ in 0..<18 {
-            if element.exists && element.isHittable { return }
-            // Drag the scroll margin: a centre-screen swipe can land on the
-            // safety hold control, which intentionally consumes that gesture.
-            if useMargin {
-                app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.8 : 0.2))
-                    .press(forDuration: 0.05, thenDragTo: app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.2 : 0.8)))
-            } else if scrollingUp { app.swipeUp() } else { app.swipeDown() }
+        let scroll = app.scrollViews.firstMatch
+        for _ in 0..<60 {
+            var top = scroll.frame.minY + 4
+            var bottom = scroll.frame.maxY - 4
+            if app.navigationBars.firstMatch.exists { top = max(top, app.navigationBars.firstMatch.frame.maxY + 4) }
+            if app.buttons["navigation.Home"].exists { bottom = min(bottom, app.buttons["navigation.Home"].frame.minY - 4) }
+            if app.keyboards.firstMatch.exists { bottom = min(bottom, app.keyboards.firstMatch.frame.minY - 4) }
+            if element.exists && element.isHittable && element.frame.minY >= top && element.frame.maxY <= bottom { return }
+            // Pan inside the visible scroll area, above the keyboard. At AX5 a
+            // screen-wide swipe can hit the keyboard or overshoot a text field.
+            let upward = element.exists ? element.frame.maxY > bottom : scrollingUp
+            let height = bottom - top
+            let overflow = !element.exists ? height / 2 : upward ? element.frame.maxY - bottom : top - element.frame.minY
+            let distance = min(height / 2, max(30, overflow + 8))
+            let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+                dx: scroll.frame.minX + scroll.frame.width * (useMargin ? 0.02 : 0.5),
+                dy: upward ? bottom - height * 0.2 : top + height * 0.2))
+            start.press(forDuration: 0.02,
+                        thenDragTo: start.withOffset(CGVector(dx: 0, dy: upward ? -distance : distance)),
+                        withVelocity: .slow, thenHoldForDuration: 0.15)
         }
         if !element.exists || !element.isHittable {
             let screenshot = XCTAttachment(screenshot: app.screenshot())

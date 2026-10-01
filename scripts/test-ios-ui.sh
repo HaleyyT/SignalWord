@@ -25,6 +25,24 @@ sys.exit("No available iPhone simulator. Install an iOS runtime in Xcode.")
 fi
 results="$(mktemp -d "${TMPDIR:-/tmp}/signalword-ui.XXXXXX")"
 printf 'UI test artifacts: %s\n' "$results"
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  printf 'results=%s\n' "$results" >> "$GITHUB_OUTPUT"
+fi
+finish() {
+  status=$?
+  # Quiet xcodebuild output omits assertion details. Preserve the actual failure
+  # report and screenshots so CI failures can be diagnosed from the run.
+  if [ -d "$results/Journey.xcresult" ]; then
+    xcrun xcresulttool get test-results summary --path "$results/Journey.xcresult" \
+      > "$results/summary.json" 2>/dev/null || true
+    if [ "$status" -ne 0 ] && [ -s "$results/summary.json" ]; then
+      cat "$results/summary.json"
+    fi
+  fi
+  rmdir "$lock_dir"
+  exit "$status"
+}
+trap finish EXIT
 # UI fixtures do not exempt the app from build configuration validation.
 config_args=()
 if [ -n "${SIGNALWORD_XCCONFIG:-}" ]; then
