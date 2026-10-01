@@ -89,7 +89,10 @@ final class SignalWordJourneyTests: XCTestCase {
     }
 
     private func reveal(_ element: XCUIElement, scrollingUp: Bool = true, useMargin: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
-        let scroll = app.scrollViews.firstMatch
+        // The keyboard's prediction strip is also a ScrollView. Target setup
+        // explicitly so typing cannot change which container the test pans.
+        let setupScroll = app.scrollViews["onboarding.scroll"]
+        let scroll = setupScroll.exists ? setupScroll : app.scrollViews.firstMatch
         for _ in 0..<60 {
             var top = scroll.frame.minY + 4
             var bottom = scroll.frame.maxY - 4
