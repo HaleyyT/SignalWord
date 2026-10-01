@@ -240,10 +240,14 @@ final class SignalWordJourneyTests: XCTestCase {
         let email = app.textFields["Email"]
         email.tap(); email.typeText("taylor@example.test\n")
         tap("Send invitation")
+        // Underlying page controls can enter the accessibility tree while the
+        // invitation sheet and its keyboard are still dismissing.
+        XCTAssertTrue(name.waitForNonExistence(timeout: 5), "Invitation editor must close before changing routing")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Invitation keyboard must dismiss before changing routing")
         let routing = app.buttons["Primary now, others after 2 minutes"]
-        reveal(routing)
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: routing)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Invitation save must finish before changing routing")
+        reveal(routing)
         routing.tap()
         // Selection changes only after the service confirms the new snapshot.
         // Terminating sooner can cancel the change or race a disabled button.
