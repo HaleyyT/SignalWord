@@ -26,7 +26,6 @@ export function HomePage() {
               <a className="home-button" href="#how-it-works">See how SignalWord works <span aria-hidden="true">→</span></a>
               <a className="home-secondary-link" href="#for-trusted-contacts">For trusted contacts</a>
             </div>
-            <p className="home-hero-note"><span aria-hidden="true">i</span>Development preview · Not for emergency use</p>
           </div>
           <figure className="home-photo" aria-labelledby="preview-caption">
             <img src="/images/trusted-connection.webp" width="1024" height="1280" fetchPriority="high" alt="Two friends walking together beside the sea at dusk." />
@@ -59,9 +58,9 @@ export function HomePage() {
           </figure>
         </section>
 
-        <aside className="home-status home-wrap" aria-label="Product availability">
+        <aside className="home-status home-wrap" aria-label="Pricing">
           <span className="home-status-icon" aria-hidden="true">i</span>
-          <div><strong>Currently in development</strong><p>We’re testing an invitation-only email experience. Public enrollment is not open. Do not rely on this version in an emergency.</p></div>
+          <div><strong>Safety features stay free</strong><p>Alerts, trusted contacts and check-ins are free. One optional Supporter purchase unlocks both Ocean and Lavender colour themes.</p></div>
         </aside>
 
         <section className="home-section home-wrap" id="how-it-works" aria-labelledby="how-title">
@@ -130,11 +129,11 @@ export function HomePage() {
 
         <section className="home-section home-wrap home-faq" aria-labelledby="questions-title">
           <h2 id="questions-title">A few things to know.</h2>
-          <details><summary>How do I trigger an alert?</summary><p>The iPhone app includes a manual alert action. You can also configure separate TEST and REAL Vocal Shortcuts in iOS. Practise on your own device before use; locked-device behavior still needs release validation.</p></details>
+          <details><summary>How do I trigger an alert?</summary><p>Send an alert in the iPhone app, or configure separate TEST and REAL Vocal Shortcuts in iOS. Confirm your trusted contact and practise a TEST alert on your own device before use. Shortcut availability depends on your device settings and connection.</p></details>
           <details><summary>Does SignalWord contact emergency services?</summary><p>No. It notifies your confirmed trusted contact. It does not dispatch police, ambulance or other emergency services. If someone may be in immediate danger, contact local emergency services directly.</p></details>
           <details><summary>Is email delivery guaranteed?</summary><p>No. A network connection and working delivery services are required. Provider acceptance, delivery reports and recipient acknowledgment are separate states. A delivered email does not prove that someone read it.</p></details>
           <details><summary>What about location and privacy?</summary><p>Location is optional. If available, the recipient view shows its age and accuracy. Access uses a private link, so anyone with that link may be able to view it. Read our <a href="/privacy">Privacy</a> page for the data lifecycle and limitations.</p></details>
-          <details><summary>Can I download the app now?</summary><p>Public enrollment is not open. Device testing, operational checks and pilot evidence are still being completed. For non-urgent product questions, email <a href="mailto:support@signalword.app">support@signalword.app</a>. Please don’t include private alert links, passwords or precise locations.</p></details>
+          <details><summary>Can I download the app now?</summary><p>SignalWord has been submitted for App Store review. Public download will be available after approval and release. It will be free to download, with an optional one-time colour-theme purchase. For product questions, email <a href="mailto:support@signalword.app">support@signalword.app</a>. Please don’t include private alert links, passwords or precise locations.</p></details>
         </section>
       </main>
       <footer className="home-footer home-wrap">
