@@ -73,7 +73,6 @@ struct SignalWordRootView: View {
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
             ContactEditorSheet(model: model).environment(\.dynamicTypeSize, textSize).environment(\.signalWordAccent, accent)
         }
-        .task { await model.recover() }
         .task(id: scenePhase) {
             // Restore the saved accent on cold launch, before the purchase screen is opened.
             // Billing identity is independent of the safety account.
@@ -81,6 +80,8 @@ struct SignalWordRootView: View {
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
+            // Own both initial and periodic recovery here. A separate startup
+            // task can retry immediately and race the first recovery result.
             while !Task.isCancelled {
                 await model.recover()
                 if model.identityReady {
