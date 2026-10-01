@@ -9,6 +9,7 @@ The owner's screenshots show submission `871aa417-f89f-48d8-b7ee-5bb67d86c2f8` r
 - [Reply to App Review](REPLY_TO_APP_REVIEW.txt): answers all seven numbered requests, including recipient access, consent controls, service roles and one-time purchase behavior.
 - [App Review Notes](APP_REVIEW_NOTES.txt): a shorter matching version for the version's private review Notes field.
 - [Physical-device recording guide](RECORDING_GUIDE.md): exact flows and safe account order; preserves the dedicated reviewer account.
+- [Recording script](RECORDING_SCRIPT.md): scene-by-scene screen actions and plain narration/captions for the same Build 8 demonstration.
 
 **These are prepared text, not a sent reply or completed recording.** The reply and Notes refer to a supplied physical-device video, so copy them only after attaching that real video or adding its tested reviewer-accessible link. The device model, actual iOS version, video reference and timestamps are not fabricated. Add those facts to Apple's private response once the footage exists.
 
