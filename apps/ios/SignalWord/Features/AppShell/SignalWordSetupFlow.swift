@@ -93,6 +93,7 @@ struct SignalWordSetupFlow: View {
                 .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
+            .accessibilityIdentifier("onboarding.scroll")
             // Each setup step starts at its heading, including at accessibility text sizes.
             .id(model.stage)
             .background(SignalWordBackground())

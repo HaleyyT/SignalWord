@@ -47,6 +47,7 @@ struct SignalWordRootView: View {
     @State private var selectedTab: SignalTab = .home
     @State private var showDeleteConfirmation = false
     @State private var showSignOutConfirmation = false
+    @State private var isConfirmingSignOut = false
     @State private var showContactEditor = false
 
     private var accent: SignalWordAccent { SignalWordAccent(appearance: supporter.selectedAppearance) }
@@ -73,7 +74,6 @@ struct SignalWordRootView: View {
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
             ContactEditorSheet(model: model).environment(\.dynamicTypeSize, textSize).environment(\.signalWordAccent, accent)
         }
-        .task { await model.recover() }
         .task(id: scenePhase) {
             // Restore the saved accent on cold launch, before the purchase screen is opened.
             // Billing identity is independent of the safety account.
@@ -81,22 +81,32 @@ struct SignalWordRootView: View {
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
+            // Own both initial and periodic recovery here. A separate startup
+            // task can retry immediately and race the first recovery result.
             while !Task.isCancelled {
-                await model.recover()
-                if model.identityReady {
-                    await network.refresh(eventID: model.currentAlertEventID)
-                    await timer.refresh()
+                // Finish any current read before confirmation is enabled, then
+                // avoid starting a new poll over the user's sign-out operation.
+                if !showSignOutConfirmation && !isConfirmingSignOut {
+                    await model.recover()
+                    if model.identityReady {
+                        await network.refresh(eventID: model.currentAlertEventID)
+                        await timer.refresh()
+                    }
                 }
                 do { try await Task.sleep(for: .seconds(10)) } catch { return }
             }
         }
         .confirmationDialog("Sign out of SignalWord?", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
             Button("Sign out") {
+                isConfirmingSignOut = true
                 Task {
+                    defer { isConfirmingSignOut = false }
                     await model.signOut(statusUpdateInProgress: timer.busy || network.busy)
                     if !model.hasEnteredDashboard { network.clear(); timer.clear(); selectedTab = .home }
                 }
-            }.accessibilityIdentifier("account.confirmSignOut")
+            }
+            .disabled(!model.canSignOut || timer.busy || network.busy)
+            .accessibilityIdentifier("account.confirmSignOut")
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Your account and server data are kept. Sign-out does not cancel alerts or check-in timers. Finish active alerts and timers first. Vocal Shortcuts cannot send alerts while signed out; after switching accounts, they use the signed-in account.")
