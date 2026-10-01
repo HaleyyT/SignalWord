@@ -111,7 +111,17 @@ jobs:
           build
 
       - name: Test iOS application journeys
+        id: journeys
         run: bash scripts/test-ios-ui.sh
+      - name: Retain iOS journey results
+        if: always() && steps.journeys.outputs.results != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-journeys
+          path: |
+            ${{ steps.journeys.outputs.results }}/Journey.xcresult
+            ${{ steps.journeys.outputs.results }}/summary.json
+          retention-days: 7
 
   ios-crash-sdk:
     name: Verify optional crash SDK and privacy filter
@@ -132,4 +142,14 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO build
       - name: Verify application journeys with SDK linked
+        id: journeys
         run: bash scripts/test-ios-ui.sh
+      - name: Retain SDK journey results
+        if: always() && steps.journeys.outputs.results != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-crash-sdk-journeys
+          path: |
+            ${{ steps.journeys.outputs.results }}/Journey.xcresult
+            ${{ steps.journeys.outputs.results }}/summary.json
+          retention-days: 7
