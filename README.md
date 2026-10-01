@@ -1,6 +1,8 @@
 # SignalWord
 
-SignalWord is a privacy-first personal safety coordination app for iPhone. Send an alert manually or through an iOS Vocal Shortcut, notify up to three consenting trusted contacts, and optionally share a recent location snapshot through a private, expiring viewer link. Server-backed check-in timers and clearly separated delivery, acknowledgement and resolution states support the same workflow.
+A private phrase. A trusted response.
+
+Need help to alert your people in difficult cases? SignalWord helps you reach the people you trust when unlocking your phone or navigating an app may not be practical. Trigger a discreet alert with Apple Vocal Shortcuts, notify up to three trusted contacts, share an optional location snapshot, use safety check-ins, and see exactly what has been sent, delivered, acknowledged and resolved.
 
 It is not an emergency-dispatch service, does not run an app-owned always-on microphone, does not receive the private phrase or ambient audio, and must not claim delivery or live location without evidence.
 
