@@ -240,7 +240,15 @@ final class SignalWordJourneyTests: XCTestCase {
         let email = app.textFields["Email"]
         email.tap(); email.typeText("taylor@example.test\n")
         tap("Send invitation")
-        tap("Primary now, others after 2 minutes")
+        let routing = app.buttons["Primary now, others after 2 minutes"]
+        reveal(routing)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: routing)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Invitation save must finish before changing routing")
+        routing.tap()
+        // Selection changes only after the service confirms the new snapshot.
+        // Terminating sooner can cancel the change or race a disabled button.
+        let confirmed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true AND isEnabled == true"), object: routing)
+        XCTAssertEqual(XCTWaiter.wait(for: [confirmed], timeout: 5), .completed, "Routing change must be confirmed before relaunch")
         app.terminate()
         app.launchArguments = ["--ui-testing", "--network-ui-testing"]
         app.launch()
@@ -248,7 +256,6 @@ final class SignalWordJourneyTests: XCTestCase {
         let invited = app.staticTexts["Taylor"]
         reveal(invited)
         XCTAssertTrue(invited.exists, "Server contact snapshot should recover on relaunch")
-        let routing = app.buttons["Primary now, others after 2 minutes"]
         reveal(routing)
         XCTAssertTrue(routing.isSelected, "Confirmed policy survives relaunch")
         tap("Withdraw Taylor")
