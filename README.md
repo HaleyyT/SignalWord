@@ -31,7 +31,7 @@ tests/             fast repository automation tests
 
 ## Current release
 
-Version **1.0 (8)** and the optional **SignalWord Supporter Appearance** purchase were submitted together to Apple on **1 October 2026 at 04:16 Sydney time**. After Apple requested additional information under Guideline 2.1, the same Build 8 was resubmitted on **2 October 2026 at 01:33 Sydney time**. Owner-provided screenshots captured at 02:04–02:06 show both items **Waiting for Review**. This is submission evidence, not Apple approval or a public App Store release.
+Version **1.0 (8)** and the optional **SignalWord Supporter Appearance** purchase were submitted together to Apple on **1 October 2026 at 04:16 Sydney time**. After Apple requested additional information under Guideline 2.1, the same Build 8 was resubmitted on **2 October 2026 at 01:33 Sydney time**. Owner-provided screenshots captured at 02:04–02:06 show both items **Waiting for Review**. This is submission evidence, not Apple approval or a public App Store release. See [the selected Apple review evidence](assets/submission/README.md).
 
 The app is configured for free download. All safety features remain free; one non-consumable Supporter purchase unlocks both Ocean and Lavender accent colours. RevenueCat manages the optional purchase and restoration.
 
