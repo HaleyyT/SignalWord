@@ -1,5 +1,7 @@
 # Build 8 App Review notes — prepared draft
 
+For the 1 October Guideline 2.1 information request, use the newer [seven-answer response and matching Notes](apple-2-1-build8/README.md). The text below preserves the earlier submission preparation.
+
 Use only after Build 8 physical acceptance. Copy credentials into App Store Connect's private sign-in fields, never this file. Replace any earlier closed-pilot/localhost instructions with the verified current paths.
 
 ## Review Notes

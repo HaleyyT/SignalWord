@@ -1,5 +1,7 @@
 # Release acceleration handoff
 
+Current Apple follow-up: [Build 8 Guideline 2.1 response packet](apple-2-1-build8/README.md), prepared 1 October 2026. The owner reports Apple rejected the submission for additional information; the actual physical-device recording is still required. The operational checklist below is historical and separate from that response.
+
 This folder holds submission preparation only. **Hosted acceptance is still 11/17 and no manifest is frozen.** Do not install or submit a build on the strength of these documents alone.
 
 1. [First physical session and signing](FIRST_DEVICE_SESSION.md): A1 → C1 → C2 → L1 → L2, evidence, cleanup and repair loop.
