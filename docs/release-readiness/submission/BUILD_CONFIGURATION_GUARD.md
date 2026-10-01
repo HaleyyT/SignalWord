@@ -27,3 +27,9 @@ SIGNALWORD_XCCONFIG=/private/tmp/signalword-signing-preparation/Development.xcco
 ```
 
 The external file is machine-local; do not commit credentials or use a failed build's retained older app as a new candidate. These guards prove configuration consistency, not production readiness, endpoint availability, or successful reviewer authentication.
+
+## Offline GitHub simulator jobs
+
+The CI workflow runs `scripts/prepare-ios-ci-config.sh` to write an explicit configuration into the runner's temporary directory. It keeps the pinned project URLs and supplies a deliberately non-functional public-key-shaped fixture. The simulator journey tests inject offline responses; no production authentication or hosted readiness is established by these builds.
+
+Both build validation phases remain enabled, including the processed Info.plist comparison. The helper refuses to run outside GitHub Actions, and the workflow builds only unsigned simulator applications. This temporary configuration must never be used for an archive, TestFlight upload or distribution. Production candidates still require the real external configuration and hosted acceptance tests.

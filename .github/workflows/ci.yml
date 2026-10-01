@@ -92,6 +92,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare offline simulator configuration
+        run: bash scripts/prepare-ios-ci-config.sh
       - run: swift run --package-path apps/ios SignalWordCoreVerification
       - run: swift test --package-path apps/ios
       - name: Verify optional purchase behavior
@@ -99,6 +101,7 @@ jobs:
       - name: Build SignalWord for iOS Simulator
         run: >-
           xcodebuild -quiet
+          -xcconfig "$SIGNALWORD_XCCONFIG"
           -project apps/ios/SignalWord.xcodeproj
           -scheme SignalWord
           -configuration Debug
@@ -118,11 +121,13 @@ jobs:
       SIGNALWORD_WITH_SENTRY: "1"
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare offline simulator configuration
+        run: bash scripts/prepare-ios-ci-config.sh
       - name: Test real SDK serialization and core behavior
         run: swift test --package-path apps/ios
       - name: Link SDK in Release simulator app
         run: >-
-          xcodebuild -quiet -project apps/ios/SignalWord.xcodeproj
+          xcodebuild -quiet -xcconfig "$SIGNALWORD_XCCONFIG" -project apps/ios/SignalWord.xcodeproj
           -scheme SignalWord -configuration Release -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO build
