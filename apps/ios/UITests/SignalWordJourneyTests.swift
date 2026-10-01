@@ -95,31 +95,44 @@ final class SignalWordJourneyTests: XCTestCase {
         let isSetup = setupScroll.exists
         let scroll = isSetup ? setupScroll : app.scrollViews.firstMatch
         let largestText = app.launchArguments.contains("--ui-testing-largest-text")
+        func visibleBounds() -> CGRect {
+            // Confirmation dialogs belong to a modal surface, not the scroll
+            // view and navigation underneath them.
+            if app.sheets.firstMatch.exists { return app.sheets.firstMatch.frame.intersection(app.frame) }
+            if app.alerts.firstMatch.exists { return app.alerts.firstMatch.frame.intersection(app.frame) }
+            let frame = scroll.exists ? scroll.frame.intersection(app.frame) : app.frame
+            var top = frame.minY + 4
+            var bottom = frame.maxY - 4
+            if app.navigationBars.firstMatch.exists { top = max(top, app.navigationBars.firstMatch.frame.maxY + 4) }
+            if app.buttons["navigation.Home"].exists { bottom = min(bottom, app.buttons["navigation.Home"].frame.minY - 4) }
+            if app.keyboards.firstMatch.exists { bottom = min(bottom, app.keyboards.firstMatch.frame.minY - 4) }
+            return CGRect(x: frame.minX, y: top, width: frame.width, height: max(0, bottom - top))
+        }
         for _ in 0..<(largestText ? 60 : 18) {
+            let bounds = visibleBounds()
+            let frame = element.exists ? element.frame : .zero
+            let hasFrame = !frame.isEmpty
+            // XCTest can throw while resolving an offscreen activation point,
+            // even when SwiftUI exposes a nonempty accessibility frame.
+            if hasFrame && bounds.contains(frame) && element.isHittable { return }
             // Keep the existing navigation for standard-size journeys. Only
             // AX5 needs measured pans to reach its tall labels and fields.
             if !largestText {
-                if element.exists && element.isHittable { return }
                 if useMargin {
                     scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.8 : 0.2))
                         .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: scrollingUp ? 0.2 : 0.8)))
                 } else if scrollingUp { app.swipeUp() } else { app.swipeDown() }
                 continue
             }
-            var top = scroll.frame.minY + 4
-            var bottom = scroll.frame.maxY - 4
-            if app.navigationBars.firstMatch.exists { top = max(top, app.navigationBars.firstMatch.frame.maxY + 4) }
-            if app.buttons["navigation.Home"].exists { bottom = min(bottom, app.buttons["navigation.Home"].frame.minY - 4) }
-            if app.keyboards.firstMatch.exists { bottom = min(bottom, app.keyboards.firstMatch.frame.minY - 4) }
-            let hasFrame = element.exists && !element.frame.isEmpty
-            if hasFrame && element.isHittable && element.frame.minY >= top && element.frame.maxY <= bottom { return }
+            let top = bounds.minY
+            let bottom = bounds.maxY
             // Pan inside the visible scroll area, above the keyboard. At AX5 a
             // screen-wide swipe can hit the keyboard or overshoot a text field.
             // SwiftUI can expose an offscreen field with a zero frame. That is
             // unknown geometry, not evidence that the field is above the form.
-            let upward = hasFrame ? element.frame.maxY > bottom : scrollingUp
+            let upward = hasFrame ? frame.maxY > bottom : scrollingUp
             let height = bottom - top
-            let overflow = !hasFrame ? height / 2 : upward ? element.frame.maxY - bottom : top - element.frame.minY
+            let overflow = !hasFrame ? height / 2 : upward ? frame.maxY - bottom : top - frame.minY
             let distance = min(height / 2, max(30, overflow + 8))
             let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
                 // A drag inside a focused text field moves its selection rather
@@ -130,13 +143,14 @@ final class SignalWordJourneyTests: XCTestCase {
                         thenDragTo: start.withOffset(CGVector(dx: 0, dy: upward ? -distance : distance)),
                         withVelocity: .slow, thenHoldForDuration: 0.15)
         }
-        if !element.exists || !element.isHittable {
+        let isVisible = element.exists && !element.frame.isEmpty && visibleBounds().contains(element.frame) && element.isHittable
+        if !isVisible {
             let screenshot = XCTAttachment(screenshot: app.screenshot())
             screenshot.lifetime = .keepAlways
             add(screenshot)
             print(app.debugDescription)
         }
-        XCTAssertTrue(element.exists && element.isHittable, "Expected visible control: \(element)", file: file, line: line)
+        XCTAssertTrue(isVisible, "Expected visible control: \(element)", file: file, line: line)
     }
 
     private func tap(_ title: String) {
