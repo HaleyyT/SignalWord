@@ -129,7 +129,7 @@ struct HoldConfirmControl: View {
         }
     }
 
-    private var holdSurface: some View {
+    private var holdAppearance: some View {
         holdContents
         .foregroundStyle(action == .sendRealAlert ? SignalWordColor.attention : SignalWordColor.primaryText)
         .padding(.vertical, 12)
@@ -139,7 +139,10 @@ struct HoldConfirmControl: View {
         .overlay { RoundedRectangle(cornerRadius: SignalWordRadius.control).stroke(action == .sendRealAlert ? SignalWordColor.attention.opacity(0.6) : SignalWordColor.separator, lineWidth: 1) }
         .contentShape(RoundedRectangle(cornerRadius: SignalWordRadius.control, style: .continuous))
         .opacity(isEnabled ? 1 : 0.55)
-        .overlay {
+    }
+
+    private var holdInteraction: some View {
+        holdAppearance.overlay {
             ScrollCompatibleHoldSurface(
                 duration: holdDuration,
                 enabled: isEnabled && !isRunning && scenePhase == .active,
@@ -151,8 +154,11 @@ struct HoldConfirmControl: View {
         .onChange(of: isHolding) { _, holding in
             holdStartedAt = holding ? .now : nil
         }
+    }
+
+    private var holdSurface: some View {
         // Expose the whole hold surface as one actionable accessibility element.
-        .accessibilityElement(children: .ignore)
+        holdInteraction.accessibilityElement(children: .ignore)
         .accessibilityIdentifier(identifier ?? "alert.hold-confirm")
         .accessibilityLabel(action.buttonTitle)
         .accessibilityValue(isRunning ? "In progress" : "Ready")
