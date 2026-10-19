@@ -52,3 +52,32 @@ Existing confirmed contacts, alert/timer APIs and legacy setup behavior are
 unchanged in this gated slice. Pending legacy invitation cleanup and rejecting
 legacy setup writes belong to the coordinated cutover, not this migration.
 No hosted deployment or migration is performed by these source changes.
+## Recipient verification implementation status (19 October 2026)
+
+The next backend slice lives in `_shared/contact-join.ts` and
+`20261019020000_recipient_join_verification.sql`. It is **not registered as an
+HTTP write route or added to scheduled dispatch**. `CONTACT_ENROLLMENT_ENABLED`
+must remain false. Existing legacy enrollment is unchanged until cutover.
+
+- A recipient-owned request requires the current consent version, an explicit
+  acceptance and a successful injected CAPTCHA verifier before storage. Production
+  CAPTCHA hostname/action validation and browser request/origin validation remain
+  integration requirements; no placeholder verifier is configured at runtime.
+- The server encrypts the email and code. The stored code proof uses HMAC with a
+  server secret and binds the invitation, attempt UUID and six-digit code.
+- Code validity: ten minutes, five incorrect guesses, single use. Pending recipient
+  data: thirty minutes, purged by the existing invitation job every minute.
+- New codes require a sixty-second destination cooldown. Limits are three requests
+  per destination/hour, three per invitation/hour and ten per sender/hour. These
+  are fixed hourly windows, not rolling windows. A fresh request supersedes earlier
+  attempts for that invitation/address. Request retries preserve the original code
+  and never queue a second email; an expired CAPTCHA may require a fresh challenge.
+- Email requests live in a private encrypted queue. A worker leases one request;
+  expired leases or ambiguous provider outcomes become `unknown`, without automatic
+  resend. The Resend adapter and recipient-requested template are covered with
+  mocked network tests. They are not connected to the deployed dispatcher.
+- Verification records the recipient's acceptance/version and email proof only.
+  It creates **no trusted contact and no alert**. Sender approval, immutable consent
+  receipts for active contacts, recipient withdrawal, provider webhook/health
+  integration and restore invalidation of pending enrollment remain prerequisites
+  for activation. Existing confirmed contacts are untouched.

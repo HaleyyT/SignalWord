@@ -1,6 +1,37 @@
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Domain-separated proofs bind a low-entropy email code to one join attempt.
+ * A database-only leak must not permit offline enumeration of six-digit codes.
+ */
+export function createJoinCodeProtection(encodedKey: string, fingerprintKey: string, keyVersion: number) {
+  if (!Number.isInteger(keyVersion) || keyVersion < 1 || keyVersion > 32767) throw new Error("Invalid join key version");
+  function validate(attemptId: string, invitationHash: string, code: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(attemptId) || !/^[0-9a-f]{64}$/.test(invitationHash) || !/^\d{6}$/.test(code)) {
+      throw new Error("Invalid join proof");
+    }
+  }
+  return {
+    keyVersion,
+    async hash(attemptId: string, invitationHash: string, code: string): Promise<string> {
+      validate(attemptId, invitationHash, code);
+      return hmacSha256Hex(fingerprintKey, `contact-join-code:v1:${attemptId.toLowerCase()}:${invitationHash}:${code}`);
+    },
+    async encrypt(attemptId: string, invitationHash: string, code: string): Promise<string> {
+      validate(attemptId, invitationHash, code);
+      return encryptText(encodedKey, JSON.stringify({ purpose: "contact-join-code:v1", attemptId: attemptId.toLowerCase(), invitationHash, code }));
+    },
+    async decrypt(ciphertext: string, version: number, attemptId: string, invitationHash: string): Promise<string> {
+      if (version !== keyVersion) throw new Error("Unknown join key version");
+      const payload = JSON.parse(await decryptText(encodedKey, ciphertext));
+      if (payload?.purpose !== "contact-join-code:v1" || payload.attemptId !== attemptId.toLowerCase()
+        || payload.invitationHash !== invitationHash || typeof payload.code !== "string") throw new Error("Invalid join payload");
+      validate(attemptId, invitationHash, payload.code);
+      return payload.code;
+    },
+  };
+}
+
 function decodeBase64Url(value: string): Uint8Array<ArrayBuffer> {
   const padded = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
   const binary = atob(padded);

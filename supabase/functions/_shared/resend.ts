@@ -106,6 +106,18 @@ export function renderContactVerificationEmail(confirmationUrl: string): {
   };
 }
 
+/** Recipient-requested code, separate from the legacy sender-entered invite. */
+export function renderJoinCodeEmail(senderName: string, code: string): { subject: string; text: string; html: string } {
+  if (!/^\d{6}$/.test(code)) throw new Error("Invalid join code");
+  const sender = senderName.trim().replace(/[\r\n]/g, " ").slice(0, 80);
+  if (!sender) throw new Error("Missing inviter name");
+  return {
+    subject: "Your SignalWord email verification code",
+    text: `You requested to become a SignalWord trusted contact for ${sender}.\n\nYour code: ${code}\n\nEnter it only on the invitation page you opened. It expires in 10 minutes. Verifying your email does not activate alerts; ${sender} must also approve the connection.\n\nIf you did not request this code, ignore this email. Do not share the code. For unwanted requests, contact support@signalword.app. This is not an emergency alert.`,
+    html: `<p>You requested to become a SignalWord trusted contact for ${escapeHtml(sender)}.</p><p>Your code: <strong>${code}</strong></p><p>Enter it only on the invitation page you opened. It expires in 10 minutes. Verifying your email does not activate alerts; ${escapeHtml(sender)} must also approve the connection.</p><p>If you did not request this code, ignore this email. Do not share the code. For unwanted requests, contact support@signalword.app. This is not an emergency alert.</p>`,
+  };
+}
+
 export function validateResendConfiguration(configuration: ResendConfiguration): void {
   if (!['development', 'test', 'production'].includes(configuration.environment)) throw new Error("Invalid APP_ENV");
   if (!/^re_[A-Za-z0-9_-]{16,}$/.test(configuration.apiKey)) throw new Error("RESEND_API_KEY is invalid");
@@ -149,6 +161,13 @@ export class ResendDeliveryAdapter implements DeliveryProviderAdapter, ContactVe
       this.#configuration.environment,
     );
     return this.#send(delivery.recipient, delivery.idempotencyKey, renderAlertEmail(delivery, viewerUrl));
+  }
+
+  async sendJoinCode(delivery: { recipient: string; code: string; senderName: string; idempotencyKey: string }): Promise<{ providerMessageId: string }> {
+    if (!/^contact\/join\/[0-9a-f-]{36}$/i.test(delivery.idempotencyKey)) {
+      throw new DeliveryAttemptError("INVALID_PROVIDER_IDEMPOTENCY_KEY", false);
+    }
+    return this.#send(delivery.recipient, delivery.idempotencyKey, renderJoinCodeEmail(delivery.senderName, delivery.code));
   }
 
   async sendVerification(delivery: {
