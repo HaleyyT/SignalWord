@@ -1,4 +1,5 @@
 import { HomePage } from './pages/HomePage'
+import { EnrollmentPage } from './pages/EnrollmentPage'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ViewerApp } from './viewer/ViewerApp'
@@ -18,6 +19,8 @@ if (!root) {
 const page = pageForPath(window.location.pathname)
 const content = page === 'home'
   ? <HomePage />
+  : page === 'enrollment'
+  ? <EnrollmentPage />
   : page === 'event'
   ? <ViewerApp />
   : page === 'confirm'

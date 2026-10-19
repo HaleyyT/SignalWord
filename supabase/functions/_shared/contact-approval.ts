@@ -36,6 +36,13 @@ export function createContactApprovalGateway(config: {
     return user.id;
   }
   return {
+    async status(withdrawalToken: string) {
+      if (!HASH.test(withdrawalToken)) throw new ApiError(410, "LINK_UNAVAILABLE", "This management link is unavailable.");
+      const row = await rpc("contact_join_status", { p_withdrawal_hash: `\\x${await sha256Hex(withdrawalToken)}` }) as Record<string, unknown> | null;
+      if (row === null) throw new ApiError(410, "LINK_UNAVAILABLE", "This management link is unavailable.");
+      if (!row || !["pending_email", "pending_approval", "approved", "withdrawal_pending", "withdrawn", "expired"].includes(row.status as string)) return unavailable();
+      return { status: row.status as "pending_email" | "pending_approval" | "approved" | "withdrawal_pending" | "withdrawn" | "expired" };
+    },
     async review(jwt: string, invitationId: string) {
       validUUID(invitationId);
       const userId = await owner(jwt);

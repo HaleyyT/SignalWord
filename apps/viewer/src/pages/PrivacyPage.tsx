@@ -21,6 +21,11 @@ export function PrivacyPage() {
           <p>After an alert, SignalWord may process your chosen display name, encrypted trusted-contact destination, alert status, and the latest available location with its timestamp and accuracy.</p>
         </section>
         <section className="information-section">
+          <h2>Recipient-owned invitations</h2>
+          <p>In the recipient-owned invitation flow, you enter your own email and explicitly agree before a verification code is requested. Cloudflare Turnstile checks the verification challenge and Resend delivers the code. Mailbox verification and sender approval are separate; verification alone does not enable alerts. The sender can review a masked email hint. A private management link in the email lets you cancel or withdraw without an app or account.</p>
+          <p>Incomplete encrypted recipient records expire after 30 minutes and are scheduled for deletion every minute. Minimal delivery evidence, containing request/provider identifiers and outcomes rather than email addresses, names, codes or private links, is scheduled for deletion after seven days and used to investigate uncertain delivery. Approved consent evidence remains with the contact until contact/account deletion; the independent recovery journal protects later withdrawal.</p>
+        </section>
+        <section className="information-section">
           <h2>Optional purchases</h2>
           <p>SignalWord offers a one-time supporter appearance purchase through RevenueCat and your app store. Billing uses a separate anonymous purchase identifier, transaction information, and SDK device information to provide purchases, restore entitlements, and analyse purchase activity. We do not attach your safety account, contact addresses, phrases, alert links, or location to RevenueCat. Safety features remain free. Store transaction records are separate from safety-account deletion; deleting your account does not refund a purchase. Contact support for billing-data questions.</p>
         </section>

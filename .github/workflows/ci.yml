@@ -27,6 +27,7 @@ jobs:
       - run: npm run test:browser --workspace=@signalword/viewer
       - run: npm run test:signup:browser
       - run: npm run test:home:browser
+      - run: npm run test:enrollment:browser
 
   functions:
     name: Type-check Edge Functions
