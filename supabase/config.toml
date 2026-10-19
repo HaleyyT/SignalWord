@@ -440,3 +440,8 @@ enabled = true
 # Uses its dedicated read-only operational credential, never a public client key.
 [functions.operational-health]
 verify_jwt = false
+
+# Read-only preview is scoped by a random invitation capability, not a user JWT.
+# Remains fail-closed until CONTACT_ENROLLMENT_ENABLED is explicitly true.
+[functions.contact-invitation-preview]
+verify_jwt = false

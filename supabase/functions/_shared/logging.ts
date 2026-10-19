@@ -1,6 +1,6 @@
 export interface SafeLogEvent {
   requestId: string;
-  route: "user-api" | "public-event" | "contact-confirm";
+  route: "user-api" | "public-event" | "contact-confirm" | "contact-invitation-preview";
   method: string;
   operation?: "profile" | "contact" | "check-in" | "contact-network" | "alert" | "account-deletion" | "other";
   status: number;

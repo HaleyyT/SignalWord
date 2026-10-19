@@ -1,10 +1,11 @@
 import { journalFromEnvironment } from "../_shared/safety-journal.ts";
 import { createCheckInGateway, parseCheckIn, type CheckInGateway } from "../_shared/check-in.ts";
 import { createContactNetworkGateway, type ContactNetworkGateway } from "../_shared/contact-network.ts";
+import { createContactInvitationGateway, type ContactInvitationGateway } from "../_shared/contact-invitations.ts";
 import { parseUserResponse, type ResponseContract } from "../_shared/response-contracts.ts";
 import { wakeDispatch } from "../_shared/dispatch-wakeup.ts";
 import { createDeliveryPolicy, type DeliveryCreationPolicy, type RuntimeEnvironment } from "../_shared/delivery.ts";
-import { createContactDataProtection, createDeliveryPayloadCipher } from "../_shared/encryption.ts";
+import { createContactDataProtection, createDeliveryPayloadCipher, createInvitationTokenCipher } from "../_shared/encryption.ts";
 import { ApiError, asApiError, bearerToken, errorResponse, jsonResponse, readJson, requestId } from "../_shared/http.ts";
 import { createLifecycleGateway, type LifecycleGateway } from "../_shared/lifecycle.ts";
 import { structuredLogger, writeSafely, type SafeLogger } from "../_shared/logging.ts";
@@ -13,6 +14,7 @@ import { generateViewerToken, sha256Hex } from "../_shared/tokens.ts";
 import { parseCreateAlert, parseIdempotencyKey } from "../_shared/validation.ts";
 
 export interface UserApiDependencies {
+  invitations?: ContactInvitationGateway;
   checkIn?: CheckInGateway;
   network?: ContactNetworkGateway;
   wake?: () => void;
@@ -75,7 +77,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
     try {
       const path = new URL(request.url).pathname.replace(/\/+$/, "");
       operation = path.endsWith("/v1/profile") ? "profile"
-        : path.endsWith("/v1/contact") || path.includes("/contacts") ? "contact"
+        : path.endsWith("/v1/contact") || path.includes("/contacts") || path.includes("/contact-invitations") ? "contact"
         : path.includes("/check-in") ? "check-in"
         : path.endsWith("/contact-network") ? "contact-network"
         : path.includes("/alerts") ? "alert"
@@ -91,7 +93,30 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       if (path.includes("/v2/") && !dependencies.network) {
         throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact network is unavailable.", true);
       }
-      if (["GET","POST"].includes(request.method) && path.endsWith("/v2/check-in")) {
+      if (/\/v3\/contact-invitations(?:\/[0-9a-f-]+)?$/i.test(path)) {
+        if (!dependencies.invitations) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Invitations are not available yet.", true);
+        if (path.endsWith("/contact-invitations")) {
+          if (request.method === "POST") {
+            const key = parseIdempotencyKey(request.headers.get("Idempotency-Key"));
+            const body = await readJson(request);
+            if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 0) {
+              throw new ApiError(400, "INVALID_REQUEST", "Invitation creation accepts an empty object, without recipient details.");
+            }
+            result = await dependencies.invitations.create(user.id, key);
+            contract = "contactInvitation"; status = 200;
+          } else if (request.method === "GET") {
+            result = await dependencies.invitations.list(user.id, jwt);
+            contract = "contactInvitations"; status = 200;
+          } else throw new ApiError(405, "METHOD_NOT_ALLOWED", "Use GET or POST for invitations.");
+        } else {
+          if (request.method !== "DELETE") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Use DELETE to revoke an invitation.");
+          const invitationId = path.split("/").at(-1)!;
+          if (!UUID_PATTERN.test(invitationId)) throw new ApiError(404, "NOT_FOUND", "Invitation not found.");
+          const revoked = await dependencies.invitations.revoke(user.id, invitationId, jwt);
+          if (!revoked) throw new ApiError(404, "NOT_FOUND", "Invitation not found.");
+          result = { revoked }; contract = "revokeInvitation"; status = 200;
+        }
+      } else if (["GET","POST"].includes(request.method) && path.endsWith("/v2/check-in")) {
         if (!dependencies.checkIn) throw new ApiError(503,"SERVICE_UNAVAILABLE","Timers are unavailable.",true);
         contract="checkIn";
         if (request.method === "GET") {
@@ -310,6 +335,12 @@ if (import.meta.main) {
     contactEncryptionKey, contactFingerprintKey, destinationKeyVersion,
   );
   Deno.serve(createUserApiHandler({
+    invitations: Deno.env.get("CONTACT_ENROLLMENT_ENABLED") === "true"
+      ? createContactInvitationGateway({ url, anonKey, serviceRoleKey,
+        publicOrigin: Deno.env.get("CONTACT_INVITATION_ORIGIN") ?? "",
+        allowLocalhost: environment === "development" || environment === "test",
+        generateToken: generateViewerToken, cipher: createInvitationTokenCipher(encodedKey, keyVersion) })
+      : undefined,
     wake: () => {
       const task = wakeDispatch(url, Deno.env.get("DISPATCH_SECRET") ?? "");
       const runtime = (globalThis as unknown as { EdgeRuntime?: { waitUntil(task: Promise<void>): void } }).EdgeRuntime;

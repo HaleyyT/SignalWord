@@ -21,17 +21,31 @@ const contact: Shape = {
   required: { contactId: uuid, name, channel: oneOf("email"), status: oneOf("pending", "confirmed", "disabled") },
   optional: { confirmationExpiresAt: timestamp },
 };
+const invitation: Shape = {
+  required: { invitationId: uuid, displayName: name, status: oneOf("open", "revoked", "expired"), expiresAt: timestamp },
+};
+const shareURL: Validator = (value) => {
+  if (typeof value !== "string") return false;
+  try {
+    const url = new URL(value);
+    const local = url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    return (url.protocol === "https:" || local) && !url.username && !url.password && !url.search && !url.hash
+      && /^\/join\/[A-Za-z0-9_-]{43}$/.test(url.pathname);
+  } catch { return false; }
+};
 const shapes = {
   profile: { required: { displayName: name } },
   createAlert: { required: { eventId: uuid, state, delivery, serverTriggeredAt: timestamp, reused: boolean } },
   contact,
+  contactInvitation: { ...invitation, optional: { shareURL } },
+  revokeInvitation: { required: { revoked: boolean } },
   alertStatus,
   disableContact: { required: { disabled: boolean } },
   appendLocation: { required: { accepted: boolean, receivedAt: timestamp } },
   resolveAlert: { required: { eventId: uuid, state: oneOf("resolved"), resolvedAt: timestamp } },
   deleteData: { required: { deletionId: uuid } },
 } satisfies Record<string, Shape>;
-export type ResponseContract = keyof typeof shapes | "recovery" | "contactNetwork" | "recipients" | "checkIn";
+export type ResponseContract = keyof typeof shapes | "recovery" | "contactNetwork" | "recipients" | "checkIn" | "contactInvitations";
 
 function invalid(): never {
   // Do not echo malformed upstream data, which may contain private fields.
@@ -58,6 +72,10 @@ function project(value: unknown, shape: Shape): Record<string, unknown> {
  * A database change cannot accidentally expose extra columns or report corrupt state.
  */
 export function parseUserResponse(contract: ResponseContract, value: unknown): unknown {
+  if (contract === "contactInvitations") {
+    if (!Array.isArray(value) || value.length > 20) return invalid();
+    return value.map(entry => project(entry, invitation));
+  }
   if (contract === "checkIn") {
     if (value === null) return null;
     return project(value,{required:{timerId:uuid,state:oneOf("active","checked_in","cancelled","escalated","failed"),deadline:timestamp,graceEndsAt:timestamp,serverNow:timestamp},

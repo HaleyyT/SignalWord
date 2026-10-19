@@ -51,6 +51,28 @@ async function decryptText(encodedKey: string, ciphertext: string): Promise<stri
   return new TextDecoder("utf-8", { fatal: true }).decode(decrypted);
 }
 
+/** Invitation capabilities must not be interchangeable with alert/viewer payloads. */
+export function createInvitationTokenCipher(encodedKey: string, keyVersion: number) {
+  if (!Number.isInteger(keyVersion) || keyVersion < 1 || keyVersion > 32767) {
+    throw new Error("Invalid invitation key version");
+  }
+  return {
+    keyVersion,
+    async encrypt(token: string): Promise<string> {
+      if (!TOKEN_PATTERN.test(token)) throw new Error("Invalid invitation token");
+      return encryptText(encodedKey, JSON.stringify({ purpose: "contact-invitation:v1", token }));
+    },
+    async decrypt(ciphertext: string, requestedVersion: number): Promise<string> {
+      if (requestedVersion !== keyVersion) throw new Error("Unknown invitation key version");
+      const payload = JSON.parse(await decryptText(encodedKey, ciphertext)) as { purpose?: unknown; token?: unknown };
+      if (payload.purpose !== "contact-invitation:v1" || typeof payload.token !== "string" || !TOKEN_PATTERN.test(payload.token)) {
+        throw new Error("Invalid invitation payload");
+      }
+      return payload.token;
+    },
+  };
+}
+
 export function createContactDataProtection(
   encodedEncryptionKey: string,
   encodedFingerprintKey: string,

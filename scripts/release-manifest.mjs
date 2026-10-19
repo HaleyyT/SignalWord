@@ -8,6 +8,7 @@ export const functions = [
   "user-api",
   "public-event",
   "contact-confirm",
+  "contact-invitation-preview",
   "deletion-status",
   "dispatch-deliveries",
   "resend-webhook",
@@ -46,6 +47,7 @@ export const schedules = [
   "signalword-hourly-retention",
   "signalword-check-in-expiry",
   "signalword-check-in-retention",
+  "signalword-invitation-retention",
 ];
 
 export function configurationProblems(config, inventory) {

@@ -43,6 +43,7 @@ jobs:
           supabase/functions/user-api/index.ts
           supabase/functions/public-event/index.ts
           supabase/functions/contact-confirm/index.ts
+          supabase/functions/contact-invitation-preview/index.ts
           supabase/functions/dispatch-deliveries/index.ts
           supabase/functions/resend-webhook/index.ts
           supabase/functions/deletion-status/index.ts
