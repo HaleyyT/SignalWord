@@ -11,15 +11,25 @@ export function createJoinCodeProtection(encodedKey: string, fingerprintKey: str
       throw new Error("Invalid join proof");
     }
   }
+  function withdrawalToken(attemptId: string, invitationHash: string) {
+    validate(attemptId, invitationHash, "000000");
+    return hmacSha256Hex(fingerprintKey, `contact-join-withdrawal:v1:${attemptId.toLowerCase()}:${invitationHash}`);
+  }
   return {
     keyVersion,
+    async withdrawalToken(attemptId: string, invitationHash: string): Promise<string> {
+      // Deterministic recovery after a lost response; never derived from a code
+      // or an address, and never returned by a sender-facing projection.
+      return withdrawalToken(attemptId, invitationHash);
+    },
     async hash(attemptId: string, invitationHash: string, code: string): Promise<string> {
       validate(attemptId, invitationHash, code);
       return hmacSha256Hex(fingerprintKey, `contact-join-code:v1:${attemptId.toLowerCase()}:${invitationHash}:${code}`);
     },
     async encrypt(attemptId: string, invitationHash: string, code: string): Promise<string> {
       validate(attemptId, invitationHash, code);
-      return encryptText(encodedKey, JSON.stringify({ purpose: "contact-join-code:v1", attemptId: attemptId.toLowerCase(), invitationHash, code }));
+      return encryptText(encodedKey, JSON.stringify({ purpose: "contact-join-code:v1", attemptId: attemptId.toLowerCase(), invitationHash, code,
+        withdrawalToken: await withdrawalToken(attemptId, invitationHash) }));
     },
     async decrypt(ciphertext: string, version: number, attemptId: string, invitationHash: string): Promise<string> {
       if (version !== keyVersion) throw new Error("Unknown join key version");
@@ -28,6 +38,14 @@ export function createJoinCodeProtection(encodedKey: string, fingerprintKey: str
         || payload.invitationHash !== invitationHash || typeof payload.code !== "string") throw new Error("Invalid join payload");
       validate(attemptId, invitationHash, payload.code);
       return payload.code;
+    },
+    async decryptWithdrawalToken(ciphertext: string, version: number, attemptId: string, invitationHash: string): Promise<string> {
+      if (version !== keyVersion) throw new Error("Unknown join key version");
+      const payload = JSON.parse(await decryptText(encodedKey, ciphertext));
+      if (payload?.purpose !== "contact-join-code:v1" || payload.attemptId !== attemptId.toLowerCase()
+        || payload.invitationHash !== invitationHash || typeof payload.withdrawalToken !== "string"
+        || !/^[0-9a-f]{64}$/.test(payload.withdrawalToken)) throw new Error("Invalid management payload");
+      return payload.withdrawalToken;
     },
   };
 }

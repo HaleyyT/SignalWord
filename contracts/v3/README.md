@@ -77,7 +77,45 @@ must remain false. Existing legacy enrollment is unchanged until cutover.
   resend. The Resend adapter and recipient-requested template are covered with
   mocked network tests. They are not connected to the deployed dispatcher.
 - Verification records the recipient's acceptance/version and email proof only.
-  It creates **no trusted contact and no alert**. Sender approval, immutable consent
-  receipts for active contacts, recipient withdrawal, provider webhook/health
-  integration and restore invalidation of pending enrollment remain prerequisites
-  for activation. Existing confirmed contacts are untouched.
+  It creates **no trusted contact and no alert**. The approval milestone below
+  adds a separate activation transaction. Existing confirmed contacts are untouched.
+
+## Sender approval, withdrawal and restore status
+
+`20261019030000_contact_join_approval.sql` and `_shared/contact-approval.ts`
+implement the next backend milestone. These are not wired to public/native routes.
+
+- Recipient-only verification responses now include a private 64-hex-character
+  withdrawal capability. It is recovered deterministically using a separate HMAC
+  purpose so retries do not replace it. Only its SHA-256 hash is stored. The
+  capability is also encrypted into the verification email payload and linked at
+  `/manage-contact/{token}`. That browser route remains to be implemented. Keep it
+  out of logs, analytics, referrers and provider click tracking.
+- The owner review gateway verifies the current session before a privileged
+  lookup, decrypts only verified pending addresses and returns masked email hints.
+  It never returns raw destinations, ciphertext, codes or withdrawal capabilities.
+  A hint is not proof of a person's identity: the sender must confirm the intended
+  recipient before approving; the future UI must not auto-approve candidates.
+- Approval uses the owner's JWT. It requires a live own invitation, verified and
+  unexpired/non-superseded proof, current consent version and withdrawal capability.
+  It locks against deletion/contact changes, creates one confirmed contact and a
+  persistent versioned consent receipt atomically, then closes the invitation.
+  It sends no email or alert and never overwrites an existing contact.
+- Approval retries return the same still-valid contact; they cannot reactivate
+  withdrawn or changed consent. Receipts survive pending-data/invitation purge and
+  are removed with their contact/account. Their evidence fields are not exposed
+  for arbitrary updates; withdrawal is recorded separately.
+- The recipient can cancel before approval or withdraw afterwards. Active contact
+  withdrawal disables that consent generation, revokes its viewer access and
+  writes the existing independent safety journal. The gateway acknowledges success
+  only after the journal is durable. Repeating a request is safe. It cannot retract
+  messages already accepted by the email provider.
+- Restore reconciliation keeps the previous journal/provider checks, closes all
+  restored invitation links and deletes pending recipient/code data. Restored
+  incomplete proofs cannot activate or send. Existing proven consent remains
+  governed by the independent journal. An old withdrawal capability cannot disable
+  a newer consent generation. The former restore entry point is private.
+
+Keep enrollment disabled until provider webhook/health integration, real CAPTCHA,
+browser/native screens, legacy cutover and controlled end-to-end/restore evidence
+are complete. The local backend tests do not establish TestFlight readiness.

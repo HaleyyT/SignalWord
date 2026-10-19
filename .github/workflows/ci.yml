@@ -49,6 +49,7 @@ jobs:
           supabase/functions/deletion-status/index.ts
           supabase/functions/operational-health/index.ts
           supabase/functions/_shared/contact-join.ts
+          supabase/functions/_shared/contact-approval.ts
 
   secrets:
     name: Scan committed history for secrets

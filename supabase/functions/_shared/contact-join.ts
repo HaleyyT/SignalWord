@@ -71,6 +71,7 @@ export function createContactJoinService(config: {
       if (!accepted) throw new ApiError(400, "INVALID_REQUEST", "Complete the verification challenge.");
       const attemptId = input.attemptId.toLowerCase();
       const hash = await sha256Hex(input.invitationToken);
+      const withdrawalToken = await codes.withdrawalToken(attemptId, hash);
       const code = (config.generateCode ?? generateJoinCode)();
       const email = input.email.trim().toLowerCase();
       const result = await rpc("begin_contact_join", {
@@ -81,12 +82,14 @@ export function createContactJoinService(config: {
         p_code_hash: `\\x${await codes.hash(attemptId, hash, code)}`,
         p_code_payload_ciphertext: await codes.encrypt(attemptId, hash, code), p_payload_key_version: codes.keyVersion,
         p_consent_version: input.consentVersion, p_consent_accepted: true, p_provider: config.provider,
+        p_withdrawal_hash: `\\x${await sha256Hex(withdrawalToken)}`,
       });
       if (result === null) throw new ApiError(410, "LINK_UNAVAILABLE", "This invitation is unavailable.");
       const row = result as Record<string, unknown>;
       if (row?.attemptId !== attemptId || typeof row.expiresAt !== "string" || !Number.isFinite(Date.parse(row.expiresAt))) return unavailable();
-      // Never return an email, code, ciphertext or existence hint to the caller.
-      return { attemptId: row.attemptId as string, expiresAt: row.expiresAt };
+      // Recipient-only response. The browser must retain this private management
+      // capability without putting it in analytics, logs or a sender response.
+      return { attemptId: row.attemptId as string, expiresAt: row.expiresAt, withdrawalToken };
     },
     async verify(invitationToken: string, attemptId: string, code: string): Promise<boolean> {
       if (!TOKEN.test(invitationToken) || !UUID.test(attemptId) || !/^\d{6}$/.test(code)) {
@@ -122,7 +125,8 @@ export function createContactJoinService(config: {
     },
     async decryptEmail(email: JoinEmail) {
       return { recipient: await protection.decryptDestination(email.destinationCiphertext, email.destinationKeyVersion),
-        code: await codes.decrypt(email.payloadCiphertext, email.payloadKeyVersion, email.attemptId, email.invitationHash) };
+        code: await codes.decrypt(email.payloadCiphertext, email.payloadKeyVersion, email.attemptId, email.invitationHash),
+        withdrawalToken: await codes.decryptWithdrawalToken(email.payloadCiphertext, email.payloadKeyVersion, email.attemptId, email.invitationHash) };
     },
   };
 }
@@ -133,11 +137,11 @@ export function createContactJoinService(config: {
 export async function runContactJoinEmail(deps: {
   leaseId: string;
   service: Pick<ReturnType<typeof createContactJoinService>, "claimEmail" | "decryptEmail" | "finishEmail">;
-  adapter: { provider: "fake" | "resend"; sendJoinCode(input: { recipient: string; code: string; senderName: string; idempotencyKey: string }): Promise<{ providerMessageId: string }> };
+  adapter: { provider: "fake" | "resend"; sendJoinCode(input: { recipient: string; code: string; withdrawalToken: string; senderName: string; idempotencyKey: string }): Promise<{ providerMessageId: string }> };
 }): Promise<"idle" | "sent" | "failed" | "unknown" | "lease_lost"> {
   const email = await deps.service.claimEmail(deps.leaseId);
   if (!email) return "idle";
-  let plaintext: { recipient: string; code: string };
+  let plaintext: { recipient: string; code: string; withdrawalToken: string };
   try {
     if (email.provider !== deps.adapter.provider) throw new Error("Provider mismatch");
     plaintext = await deps.service.decryptEmail(email);

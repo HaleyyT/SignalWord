@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createContactJoinService, generateJoinCode, runContactJoinEmail } from '../supabase/functions/_shared/contact-join.ts';
 import { createJoinCodeProtection, createInvitationTokenCipher, createContactDataProtection } from '../supabase/functions/_shared/encryption.ts';
 import { sha256Hex } from '../supabase/functions/_shared/tokens.ts';
-import { ResendDeliveryAdapter, renderJoinCodeEmail } from '../supabase/functions/_shared/resend.ts';
+import { ResendDeliveryAdapter, renderJoinCodeEmail, createJoinManagementUrl } from '../supabase/functions/_shared/resend.ts';
 
 const ID = 'a4000000-0000-4000-8000-000000000001';
 const OTHER = 'a4000000-0000-4000-8000-000000000002';
@@ -72,7 +72,9 @@ test('begin encrypts recipient and code, fingerprints normalized email, returns 
     assert.doesNotMatch(init.body, /Recipient@|recipient@example|012345|captcha-proof/);
     return response({ attemptId: ID, expiresAt: '2026-10-19T00:10:00Z', code: 'private', recipient: 'private' });
   });
-  assert.deepEqual(await api.begin(input), { attemptId: ID, expiresAt: '2026-10-19T00:10:00Z' });
+  const withdrawalToken = await proof.withdrawalToken(ID, HASH);
+  assert.deepEqual(await api.begin(input), { attemptId: ID, expiresAt: '2026-10-19T00:10:00Z', withdrawalToken });
+  assert.equal(body.p_withdrawal_hash, `\\x${await sha256Hex(withdrawalToken)}`);
   const contacts = createContactDataProtection(KEY, PEPPER, 1);
   assert.equal(await contacts.decryptDestination(body.p_destination_ciphertext, 1), 'recipient@example.test');
   assert.equal(body.p_destination_fingerprint, `\\x${await contacts.fingerprintDestination('recipient@example.test')}`);
@@ -130,7 +132,7 @@ function worker({ claim = claimed, decrypt, send, finish } = {}) {
   const finished = [], sends = [];
   const deps = { leaseId: OTHER, service: {
     claimEmail: async () => claim,
-    decryptEmail: decrypt ?? (async () => ({ recipient: 'recipient@example.test', code: '012345' })),
+    decryptEmail: decrypt ?? (async () => ({ recipient: 'recipient@example.test', code: '012345', withdrawalToken: 'a'.repeat(64) })),
     finishEmail: finish ?? (async (...args) => { finished.push(args); return true; }),
   }, adapter: { provider: 'fake', sendJoinCode: send ?? (async value => { sends.push(value); return { providerMessageId: 'fake/receipt' }; }) } };
   return { run: () => runContactJoinEmail(deps), finished, sends };
@@ -139,7 +141,7 @@ function worker({ claim = claimed, decrypt, send, finish } = {}) {
 test('worker sends once with stable idempotency and finalizes the leased attempt', async () => {
   const task = worker();
   assert.equal(await task.run(), 'sent');
-  assert.deepEqual(task.sends, [{ recipient: 'recipient@example.test', code: '012345', senderName: 'Sender', idempotencyKey: `contact/join/${ID}` }]);
+  assert.deepEqual(task.sends, [{ recipient: 'recipient@example.test', code: '012345', withdrawalToken: 'a'.repeat(64), senderName: 'Sender', idempotencyKey: `contact/join/${ID}` }]);
   assert.deepEqual(task.finished, [[ID, OTHER, 'sent', 'fake/receipt']]);
 });
 
@@ -185,12 +187,14 @@ test('claim and finish gateway allowlist results and reject malformed types', as
 });
 
 test('recipient-requested email identifies inviter, bounds expiry, avoids marketing and escapes untrusted names', () => {
-  const email = renderJoinCodeEmail('<Sender>\r\nInjected', '012345');
+  const email = renderJoinCodeEmail('<Sender>\r\nInjected', '012345', 'https://example.test/manage-contact/' + 'a'.repeat(64));
   assert.equal(email.subject, 'Your SignalWord email verification code');
   assert.match(email.text, /You requested/);
   assert.match(email.text, /10 minutes/);
   assert.match(email.text, /does not activate alerts/);
   assert.match(email.text, /did not request/);
+  assert.match(email.text, /withdraw consent after approval/);
+  assert.match(email.text, /No app or account is needed/);
   assert.doesNotMatch(email.html, /<Sender>/);
   assert.match(email.html, /&lt;Sender&gt;/);
   assert.doesNotMatch(email.subject, /Injected/);
@@ -207,8 +211,17 @@ test('Resend join adapter uses existing idempotency and sanitized correlation ta
     assert.deepEqual(message.to, ['recipient@example.test']);
     assert.match(message.text, /012345/);
     assert.doesNotMatch(JSON.stringify(message.tags), /012345|recipient@example/);
+    assert.match(message.html, /manage-contact\//);
     return response({ id: 'provider-receipt' });
   });
-  assert.deepEqual(await adapter.sendJoinCode({ recipient: 'recipient@example.test', code: '012345', senderName: 'Sender',
+  assert.deepEqual(await adapter.sendJoinCode({ recipient: 'recipient@example.test', code: '012345', withdrawalToken: 'a'.repeat(64), senderName: 'Sender',
     idempotencyKey: `contact/join/${ID}` }), { providerMessageId: 'provider-receipt' });
+});
+
+test('management links reject invalid capability, credentials, query, fragment and production HTTP', () => {
+  assert.equal(createJoinManagementUrl('https://example.test', 'a'.repeat(64), 'production'), `https://example.test/manage-contact/${'a'.repeat(64)}`);
+  for (const url of ['http://example.test', 'https://user:pass@example.test', 'https://example.test?tracking=1', 'https://example.test#fragment']) {
+    assert.throws(() => createJoinManagementUrl(url, 'a'.repeat(64), 'production'));
+  }
+  assert.throws(() => createJoinManagementUrl('https://example.test', 'invalid', 'production'));
 });
