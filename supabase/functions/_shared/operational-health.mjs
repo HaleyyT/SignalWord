@@ -8,6 +8,16 @@ const nonnegative = value => typeof value === 'number' && Number.isFinite(value)
 /** Interpret aggregate health without copying any server-provided free text. */
 export function operationalProblems(health, now = Date.now(), { maximumSignups = 100, maximumInvitations = 200 } = {}) {
   const problems = [];
+  if (health?.joinVerification !== undefined) {
+    const joins = health.joinVerification;
+    if (!['queued','oldestQueuedSeconds','unknown','callbackOverdue','deliveryReportOverdue'].every(key => nonnegative(joins?.[key]))) problems.push('JOIN_VERIFICATION_METRICS_INVALID');
+    else {
+      if (joins.oldestQueuedSeconds > 60) problems.push('JOIN_VERIFICATION_QUEUE_OVERDUE');
+      if (joins.unknown > 0) problems.push('JOIN_VERIFICATION_OUTCOME_UNKNOWN');
+      if (joins.callbackOverdue > 0) problems.push('JOIN_VERIFICATION_CALLBACK_OVERDUE');
+      if (joins.deliveryReportOverdue > 0) problems.push('JOIN_VERIFICATION_REPORT_OVERDUE');
+    }
+  }
   if (health?.dispatchConfigured !== true) problems.push('DISPATCH_CONFIGURATION_MISSING');
   for (const [key, label] of [['delivery', 'ALERT'], ['contactDelivery', 'CONTACT']]) {
     const value = health?.[key];

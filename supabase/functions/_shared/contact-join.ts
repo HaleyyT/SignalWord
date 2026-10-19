@@ -1,6 +1,7 @@
 import { ApiError } from "./http.ts";
 import { createContactDataProtection, createJoinCodeProtection } from "./encryption.ts";
 import { sha256Hex } from "./tokens.ts";
+import { DeliveryAttemptError } from "./delivery.ts";
 
 export const JOIN_CONSENT_VERSION = "2026-10-19";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -153,8 +154,9 @@ export async function runContactJoinEmail(deps: {
     result = await deps.adapter.sendJoinCode({ ...plaintext, senderName: email.senderName,
       idempotencyKey: `contact/join/${email.attemptId}` });
     if (typeof result?.providerMessageId !== "string" || result.providerMessageId.length < 1 || result.providerMessageId.length > 200) throw new Error("Invalid provider receipt");
-  } catch {
-    return await deps.service.finishEmail(email.attemptId, deps.leaseId, "unknown") ? "unknown" : "lease_lost";
+  } catch (error) {
+    const outcome = error instanceof DeliveryAttemptError && ["PROVIDER_REQUEST_REJECTED", "INVALID_PROVIDER_IDEMPOTENCY_KEY"].includes(error.safeCode) ? "failed" : "unknown";
+    return await deps.service.finishEmail(email.attemptId, deps.leaseId, outcome) ? outcome : "lease_lost";
   }
   // Once accepted, a database failure must leave the lease uncertain, never send again.
   try {

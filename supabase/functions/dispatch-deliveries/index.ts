@@ -1,4 +1,5 @@
 import { journalFromEnvironment } from "../_shared/safety-journal.ts";
+import { createContactJoinService, runContactJoinEmail } from "../_shared/contact-join.ts";
 import {
   FakeDeliveryAdapter,
   runContactVerificationWorker,
@@ -13,7 +14,7 @@ import { ResendDeliveryAdapter } from "../_shared/resend.ts";
 
 interface DispatchDependencies {
   dispatchSecret: string;
-  run(workerId: string): Promise<{ alerts: unknown; confirmations: unknown }>;
+  run(workerId: string): Promise<{ alerts: unknown; confirmations: unknown; joins?: unknown }>;
 }
 
 function secretMatches(actual: string | null, expected: string): boolean {
@@ -65,7 +66,7 @@ if (import.meta.main) {
     throw new Error("Dispatch backend and encryption configuration are required");
   }
 
-  let adapter: DeliveryProviderAdapter & ContactVerificationProviderAdapter;
+  let adapter: DeliveryProviderAdapter & ContactVerificationProviderAdapter & Pick<ResendDeliveryAdapter, "sendJoinCode">;
   if (providerName === "resend") {
     const apiKey = Deno.env.get("RESEND_API_KEY");
     const from = Deno.env.get("RESEND_FROM_EMAIL");
@@ -88,6 +89,10 @@ if (import.meta.main) {
   const payloadCipher = createDeliveryPayloadCipher(payloadKey, payloadKeyVersion);
   const contactCipher = createContactDataProtection(contactKey, fingerprintKey, contactKeyVersion);
   const database = { url, serviceRoleKey };
+  const joinService = Deno.env.get("CONTACT_ENROLLMENT_ENABLED") === "true" ? createContactJoinService({
+    ...database, encryptionKey: contactKey, fingerprintKey, keyVersion: contactKeyVersion,
+    provider: providerName as "resend" | "fake", environment, verifyCaptcha: async () => false,
+  }) : undefined;
   Deno.serve(createDispatchHandler({
     dispatchSecret,
     async run(workerId) {
@@ -97,6 +102,7 @@ if (import.meta.main) {
       await journalFromEnvironment().flush(undefined, false).catch(() => undefined);
       let alerts = { claimed: 0, sent: 0, failed: 0, leaseLost: 0 };
       let confirmations = { claimed: 0, sent: 0, failed: 0, leaseLost: 0 };
+      const joins = { sent: 0, failed: 0, unknown: 0, leaseLost: 0 };
       const deadline = Date.now() + 20_000;
       for (let iteration = 0; iteration < 10 && Date.now() < deadline; iteration++) {
       const alertBatch = await runDeliveryWorker({
@@ -116,9 +122,13 @@ if (import.meta.main) {
       for (const key of ["claimed", "sent", "failed", "leaseLost"] as const) {
         alerts[key] += alertBatch[key]; confirmations[key] += contactBatch[key];
       }
-      if (alertBatch.claimed + contactBatch.claimed === 0) break;
+      const joinOutcome = joinService ? await runContactJoinEmail({ leaseId: crypto.randomUUID(), service: joinService,
+        adapter: { provider: providerName as "resend" | "fake", sendJoinCode: adapter.sendJoinCode.bind(adapter) } }) : "idle";
+      if (joinOutcome === "lease_lost") joins.leaseLost++;
+      else if (joinOutcome !== "idle") joins[joinOutcome]++;
+      if (alertBatch.claimed + contactBatch.claimed === 0 && joinOutcome === "idle") break;
       }
-      return { alerts, confirmations };
+      return { alerts, confirmations, ...(joinService ? { joins } : {}) };
     },
   }));
 }

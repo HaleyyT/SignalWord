@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createContactJoinService, generateJoinCode, runContactJoinEmail } from '../supabase/functions/_shared/contact-join.ts';
 import { createJoinCodeProtection, createInvitationTokenCipher, createContactDataProtection } from '../supabase/functions/_shared/encryption.ts';
 import { sha256Hex } from '../supabase/functions/_shared/tokens.ts';
+import { DeliveryAttemptError } from '../supabase/functions/_shared/delivery.ts';
 import { ResendDeliveryAdapter, renderJoinCodeEmail, createJoinManagementUrl } from '../supabase/functions/_shared/resend.ts';
 
 const ID = 'a4000000-0000-4000-8000-000000000001';
@@ -176,6 +177,12 @@ test('accepted email with lost finalization is never re-sent by worker', async (
     assert.equal(await task.run(), 'lease_lost');
     assert.equal(sends, 1);
   }
+});
+
+test('known provider rejection is reported as failed rather than uncertain', async () => {
+  const task = worker({ send: async () => { throw new DeliveryAttemptError('PROVIDER_REQUEST_REJECTED', false); } });
+  assert.equal(await task.run(), 'failed');
+  assert.equal(task.finished[0][2], 'failed');
 });
 
 test('claim and finish gateway allowlist results and reject malformed types', async () => {

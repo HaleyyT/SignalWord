@@ -145,6 +145,10 @@ export class FakeDeliveryAdapter implements DeliveryProviderAdapter, ContactVeri
   async sendVerification(delivery: { idempotencyKey: string }): Promise<{ providerMessageId: string }> {
     return { providerMessageId: `fake/${delivery.idempotencyKey}` };
   }
+
+  async sendJoinCode(delivery: { idempotencyKey: string }): Promise<{ providerMessageId: string }> {
+    return { providerMessageId: `fake/${delivery.idempotencyKey}` };
+  }
 }
 
 export async function runDeliveryWorker(dependencies: {
