@@ -6,7 +6,7 @@ const HASH = /^[0-9a-f]{64}$/;
 function unavailable(): never { throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact approval is unavailable.", true); }
 function validUUID(value: string) { if (!UUID.test(value)) throw new ApiError(400, "INVALID_REQUEST", "Invalid contact request."); }
 
-/** Not enabled or wired to public routes yet. Authentication is deliberately
+/** Owner routes are feature gated. Authentication is deliberately
  * inside this boundary, before any service-role candidate lookup. */
 export function createContactApprovalGateway(config: {
   url: string; anonKey: string; serviceRoleKey: string;

@@ -199,41 +199,12 @@ struct SignalWordSetupFlow: View {
 
     private var contactSetup: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeading(
-                eyebrow: "YOUR PEOPLE",
-                title: "Choose one trusted contact.",
-                detail: "They confirm by email before TEST or REAL alerts can be sent."
-            )
-            SignalWordCard {
-                VStack(spacing: 0) {
-                    LabeledTextField(title: "Your name", placeholder: "Name they’ll recognise", text: $model.displayName, contentType: .name)
-                    FieldDivider()
-                    LabeledTextField(title: "Their name", placeholder: "Trusted person", text: $model.contactName, contentType: .name)
-                    FieldDivider()
-                    LabeledTextField(title: "Email address", placeholder: "name@example.com", text: $model.contactEmail, contentType: .emailAddress, keyboard: .emailAddress)
-                }
+            PageHeading(eyebrow: "YOUR PEOPLE", title: "Invite one trusted person.",
+                detail: "They choose whether to join. You approve only after confirming who they are.")
+            ContactEnrollmentPanel(model: model)
+            if model.contactStatus == "confirmed" {
+                PrimaryButton(title: "Continue to rehearsal", symbol: "arrow.right") { model.stage = .rehearse }
             }
-            if let message = model.contactValidationMessage {
-                Text(message).font(.footnote).foregroundStyle(SignalWordColor.secondaryText)
-            }
-            if let message = model.contactMessage {
-                InlineMessage(message, kind: .attention)
-                SecondaryButton(title: "Check invitation status", symbol: "arrow.clockwise") {
-                    Task { await model.checkInvitationStatus() }
-                }.disabled(model.isSavingContact)
-            }
-            if !model.identityReady {
-                InlineMessage("Prepare this iPhone before sending an invitation. Your entries stay here while the device connects.", kind: .attention)
-                SecondaryButton(title: "Prepare this iPhone", symbol: "arrow.clockwise") { Task { await model.recover() } }
-            }
-            Text("Every new confirmation request resets consent and clears earlier TEST evidence, including when you reuse this address. A different person must confirm too.")
-                .font(.footnote)
-                .foregroundStyle(SignalWordColor.mutedText)
-                .fixedSize(horizontal: false, vertical: true)
-            PrimaryButton(title: model.isSavingContact ? "Sending confirmation…" : "Send confirmation", symbol: "arrow.right", isLoading: model.isSavingContact) {
-                Task { await model.saveContact() }
-            }
-            .disabled(model.contactValidationMessage != nil || !model.identityReady || model.isSavingContact)
         }
     }
 

@@ -29,8 +29,8 @@ export interface JoinEmail {
   payloadKeyVersion: number;
 }
 
-/** Not wired to any HTTP route. The future public handler MUST perform its
- * bounded body/origin checks and use a real, hostname/action-bound CAPTCHA
+/** The public handler performs its
+ * bounded body/origin checks and uses a real, hostname/action-bound CAPTCHA
  * verifier. This service independently requires that proof before writes.
  */
 export function createContactJoinService(config: {

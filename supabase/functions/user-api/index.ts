@@ -1,3 +1,4 @@
+import { createContactApprovalGateway } from "../_shared/contact-approval.ts";
 import { journalFromEnvironment } from "../_shared/safety-journal.ts";
 import { createCheckInGateway, parseCheckIn, type CheckInGateway } from "../_shared/check-in.ts";
 import { createContactNetworkGateway, type ContactNetworkGateway } from "../_shared/contact-network.ts";
@@ -15,6 +16,8 @@ import { parseCreateAlert, parseIdempotencyKey } from "../_shared/validation.ts"
 
 export interface UserApiDependencies {
   invitations?: ContactInvitationGateway;
+  approval?: Pick<ReturnType<typeof createContactApprovalGateway>, "review" | "approve">;
+  legacyContactWritesDisabled?: boolean;
   checkIn?: CheckInGateway;
   network?: ContactNetworkGateway;
   wake?: () => void;
@@ -93,7 +96,25 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
       if (path.includes("/v2/") && !dependencies.network) {
         throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact network is unavailable.", true);
       }
-      if (/\/v3\/contact-invitations(?:\/[0-9a-f-]+)?$/i.test(path)) {
+      const approvalRoute = /\/v3\/contact-invitations\/([0-9a-f-]+)\/(candidates|approve)$/i.exec(path);
+      if (approvalRoute) {
+        if (!dependencies.approval) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Contact approval is unavailable.", true);
+        const [, invitationId, action] = approvalRoute;
+        if (!UUID_PATTERN.test(invitationId)) throw new ApiError(404, "NOT_FOUND", "Invitation not found.");
+        if (action === "candidates" && request.method === "GET") {
+          result = await dependencies.approval.review(jwt, invitationId); contract = "contactCandidates";
+        } else if (action === "approve" && request.method === "POST") {
+          const body = await readJson(request) as Record<string, unknown>;
+          if (!body || Array.isArray(body) || Object.keys(body).sort().join(",") !== "attemptId,name"
+            || typeof body.attemptId !== "string" || !UUID_PATTERN.test(body.attemptId)
+            || typeof body.name !== "string" || !body.name.trim() || body.name.trim().length > 80) {
+            throw new ApiError(400, "INVALID_REQUEST", "Choose a verified request and contact label.");
+          }
+          result = await dependencies.approval.approve(jwt, invitationId, body.attemptId, body.name);
+          contract = "approvedContact";
+        } else throw new ApiError(405, "METHOD_NOT_ALLOWED", "Use GET to review or POST to approve.");
+        status = 200;
+      } else if (/\/v3\/contact-invitations(?:\/[0-9a-f-]+)?$/i.test(path)) {
         if (!dependencies.invitations) throw new ApiError(503, "SERVICE_UNAVAILABLE", "Invitations are not available yet.", true);
         if (path.endsWith("/contact-invitations")) {
           if (request.method === "POST") {
@@ -158,6 +179,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         result=await dependencies.network!.recipients(user.id,eventId,jwt);
         contract="recipients"; status=200;
       } else if (request.method === "POST" && /\/v2\/contacts(?:\/[0-9a-f-]+)?$/i.test(path)) {
+        if (dependencies.legacyContactWritesDisabled) throw new ApiError(409, "CONTACT_SETUP_CHANGED", "Update SignalWord and share a private invitation link.");
         dependencies.delivery.assertAvailable("test");
         const contactId=path.endsWith("/contacts") ? null : path.split("/").at(-1)!;
         if (contactId && !UUID_PATTERN.test(contactId)) throw new ApiError(400,"INVALID_REQUEST","Invalid contact.");
@@ -219,6 +241,7 @@ export function createUserApiHandler(dependencies: UserApiDependencies) {
         reused = (result as { reused: boolean }).reused;
         status = reused ? 200 : 201;
       } else if (request.method === "POST" && path.endsWith("/v1/contacts")) {
+        if (dependencies.legacyContactWritesDisabled) throw new ApiError(409, "CONTACT_SETUP_CHANGED", "Update SignalWord and share a private invitation link.");
         dependencies.delivery.assertAvailable("test");
         const input = contactInput(await readJson(request));
         const confirmationToken = dependencies.generateToken();
@@ -335,6 +358,12 @@ if (import.meta.main) {
     contactEncryptionKey, contactFingerprintKey, destinationKeyVersion,
   );
   Deno.serve(createUserApiHandler({
+    legacyContactWritesDisabled: Deno.env.get("LEGACY_CONTACT_WRITES_DISABLED") === "true",
+    approval: Deno.env.get("CONTACT_ENROLLMENT_ENABLED") === "true"
+      ? createContactApprovalGateway({ url, anonKey, serviceRoleKey,
+        authenticate: jwt => createBackendGateway({ url, anonKey, serviceRoleKey }).authenticate(jwt),
+        decryptDestination: (value, version) => contactProtection.decryptDestination(value, version),
+        flushJournal: userId => journalFromEnvironment().flush(userId) }) : undefined,
     invitations: Deno.env.get("CONTACT_ENROLLMENT_ENABLED") === "true"
       ? createContactInvitationGateway({ url, anonKey, serviceRoleKey,
         publicOrigin: Deno.env.get("CONTACT_INVITATION_ORIGIN") ?? "",

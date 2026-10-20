@@ -53,7 +53,7 @@ private final class UITestService {
 
     func profile(_ name: String?) -> String {
         if let name { preferences.set(name, forKey: "fixture.name") }
-        return preferences.string(forKey: "fixture.name") ?? ""
+        return preferences.string(forKey: "fixture.name") ?? "Alex"
     }
     func saveContact(_ name: String) -> TrustedContactProjection {
         preferences.set(name, forKey: "fixture.contact")

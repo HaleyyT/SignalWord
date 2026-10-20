@@ -2,7 +2,7 @@
 import Foundation
 
 /// This service exists only in simulator builds. Its data never leaves the device.
-@MainActor final class UITestNetworkService: ContactNetworkServing {
+@MainActor final class UITestNetworkService: ContactNetworkServing, ContactEnrollmentServing {
     private let preferences = UserDefaults(suiteName: "SignalWord.UIJourney")!
     private let primaryID = UUID(uuidString: "10000000-0000-4000-8000-000000000001")!
 
@@ -27,6 +27,31 @@ import Foundation
         updated.append(.init(contactId: id, name: name, channel: "email", status: "pending", primary: false))
         contacts = updated
         return .init(contactID: id, name: name, status: "pending", confirmationExpiresAt: Date().addingTimeInterval(1800))
+    }
+    private var invitationID: UUID { UUID(uuidString: "20000000-0000-4000-8000-000000000001")! }
+    private var attemptID: UUID { UUID(uuidString: "30000000-0000-4000-8000-000000000001")! }
+    func createInvitation(key: UUID) async throws -> ContactInvitation {
+        preferences.set(true, forKey: "enrollment.open")
+        return .init(invitationId: invitationID, displayName: "Alex", status: "open",
+            expiresAt: Date().addingTimeInterval(3600), shareURL: URL(string: "https://www.signalword.app/join/" + String(repeating: "a", count: 43)))
+    }
+    func listInvitations() async throws -> [ContactInvitation] {
+        guard preferences.bool(forKey: "enrollment.open") else { return [] }
+        return [.init(invitationId: invitationID, displayName: "Alex", status: "open", expiresAt: Date().addingTimeInterval(3600), shareURL: nil)]
+    }
+    func revokeInvitation(_ id: UUID) async throws { preferences.set(false, forKey: "enrollment.open") }
+    func reviewInvitation(_ id: UUID) async throws -> [ContactCandidate] {
+        [.init(attemptId: attemptID, emailHint: "s***@example.test", verifiedAt: Date(), expiresAt: Date().addingTimeInterval(1800))]
+    }
+    func approveInvitation(_ id: UUID, attempt: UUID, name: String) async throws -> ContactApproval {
+        let contactID = preferences.string(forKey: "fixture.contact") == nil ? primaryID : UUID()
+        preferences.set(name, forKey: "fixture.contact")
+        preferences.set("confirmed", forKey: "fixture.contactStatus")
+        preferences.set(false, forKey: "enrollment.open")
+        if !contacts.contains(where: { $0.name == name }) {
+            contacts = contacts + [.init(contactId: contactID, name: name, channel: "email", status: "confirmed", primary: false)]
+        }
+        return .init(contactId: contactID, status: "confirmed")
     }
     func recipientProgress(eventID: UUID) async throws -> [RecipientProgress] {
         contacts.filter { $0.status == "confirmed" }.map {

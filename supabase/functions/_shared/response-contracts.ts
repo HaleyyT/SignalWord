@@ -34,6 +34,7 @@ const shareURL: Validator = (value) => {
   } catch { return false; }
 };
 const shapes = {
+  approvedContact: { required: { contactId: uuid, status: oneOf("confirmed") } },
   profile: { required: { displayName: name } },
   createAlert: { required: { eventId: uuid, state, delivery, serverTriggeredAt: timestamp, reused: boolean } },
   contact,
@@ -45,7 +46,7 @@ const shapes = {
   resolveAlert: { required: { eventId: uuid, state: oneOf("resolved"), resolvedAt: timestamp } },
   deleteData: { required: { deletionId: uuid } },
 } satisfies Record<string, Shape>;
-export type ResponseContract = keyof typeof shapes | "recovery" | "contactNetwork" | "recipients" | "checkIn" | "contactInvitations";
+export type ResponseContract = keyof typeof shapes | "recovery" | "contactNetwork" | "recipients" | "checkIn" | "contactInvitations" | "contactCandidates";
 
 function invalid(): never {
   // Do not echo malformed upstream data, which may contain private fields.
@@ -72,6 +73,12 @@ function project(value: unknown, shape: Shape): Record<string, unknown> {
  * A database change cannot accidentally expose extra columns or report corrupt state.
  */
 export function parseUserResponse(contract: ResponseContract, value: unknown): unknown {
+  if (contract === "contactCandidates") {
+    if (!Array.isArray(value) || value.length > 3) return invalid();
+    return value.map(entry => project(entry, { required: { attemptId: uuid,
+      emailHint: value => typeof value === "string" && /^[^\s@]\*\*\*@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 257,
+      verifiedAt: timestamp, expiresAt: timestamp } }));
+  }
   if (contract === "contactInvitations") {
     if (!Array.isArray(value) || value.length > 20) return invalid();
     return value.map(entry => project(entry, invitation));

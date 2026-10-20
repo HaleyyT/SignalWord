@@ -57,3 +57,39 @@ protocol ContactNetworkServing: Sendable {
     func recipientProgress(eventID: UUID) async throws -> [RecipientProgress]
     func disableContact(contactID: UUID) async throws -> Bool
 }
+
+
+struct ContactInvitation: Codable, Sendable, Identifiable {
+    let invitationId: UUID
+    let displayName: String
+    let status: String
+    let expiresAt: Date
+    let shareURL: URL?
+    var id: UUID { invitationId }
+    var isOpen: Bool { status == "open" && expiresAt > Date() }
+    var safeShareURL: URL? { safeShareURL(origin: URL(string: "https://www.signalword.app")!) }
+    func safeShareURL(origin: URL) -> URL? {
+        guard isOpen, let shareURL, shareURL.scheme == "https", shareURL.user == nil,
+              shareURL.password == nil, shareURL.query == nil, shareURL.fragment == nil,
+              origin.scheme == "https", shareURL.host == origin.host, shareURL.port == origin.port,
+              shareURL.path.range(of: #"^/join/[A-Za-z0-9_-]{43}$"#, options: .regularExpression) != nil else { return nil }
+        return shareURL
+    }
+}
+
+struct ContactCandidate: Codable, Sendable, Identifiable {
+    let attemptId: UUID
+    let emailHint: String
+    let verifiedAt: Date
+    let expiresAt: Date
+    var id: UUID { attemptId }
+}
+struct ContactApproval: Codable, Sendable { let contactId: UUID; let status: String }
+
+protocol ContactEnrollmentServing: Sendable {
+    func createInvitation(key: UUID) async throws -> ContactInvitation
+    func listInvitations() async throws -> [ContactInvitation]
+    func revokeInvitation(_ id: UUID) async throws
+    func reviewInvitation(_ id: UUID) async throws -> [ContactCandidate]
+    func approveInvitation(_ id: UUID, attempt: UUID, name: String) async throws -> ContactApproval
+}

@@ -2,8 +2,9 @@
 
 The backend and recipient browser code implement private invitations, recipient-owned
 email verification, provider delivery/receipt tracking, explicit sender approval,
-and recipient consent management. Native sender screens and the coordinated legacy
-cutover are still incomplete. Keep `CONTACT_ENROLLMENT_ENABLED=false` until the
+and recipient consent management. Native sharing, review and explicit approval are
+implemented. The disabled legacy cutover is prepared locally; hosted acceptance and
+execution remain outstanding. Keep `CONTACT_ENROLLMENT_ENABLED=false` until the
 combined flow and hosted configuration are accepted. This is not yet the complete
 Apple-review fix or a TestFlight-ready native candidate.
 
@@ -25,16 +26,16 @@ status without a URL. A new invitation requires a new idempotency key. Expired
 rows are removed by hourly retention; recovery is only within that lifetime.
 
 The share URL uses the configured `CONTACT_INVITATION_ORIGIN` and `/join/{token}`.
-The browser route is not implemented in this slice: do not expose these links
-to users yet. The origin must be HTTPS without a path, query, credentials or
+The browser and native sharing routes are implemented but remain gated off
+until controlled hosted acceptance. The origin must be HTTPS without a path, query, credentials or
 fragment; loopback HTTP is allowed only in development/test.
 
 ## Capability-scoped preview on contact-invitation-preview
 
 `GET /v3/contact-invitations/{token}` returns only `displayName`, `expiresAt` and
 `consentVersion`. It returns 410 for an unavailable link. Opening the link
-does not create a contact, confirm consent or enqueue a message. All mutations
-return 405. Responses use `Cache-Control: no-store` and `Referrer-Policy:
+does not create a contact, confirm consent or enqueue a message. Explicit begin/verify
+and management POST routes are described below; unsupported mutations return errors. Responses use `Cache-Control: no-store` and `Referrer-Policy:
 no-referrer`. The gateway hashes the raw token before the database lookup; logs
 never contain request paths, capabilities or identifiers.
 
@@ -48,16 +49,15 @@ Three existing contacts/open invitations share a creation capacity, and new
 links are limited to five per sender per hour. Revocation cannot reset that
 budget. Profiles deleted or disabled cannot create/preview invitations.
 
-Existing confirmed contacts, alert/timer APIs and legacy setup behavior are
-unchanged in this gated slice. Pending legacy invitation cleanup and rejecting
-legacy setup writes belong to the coordinated cutover, not this migration.
+Existing confirmed contacts and alert/timer APIs remain available. Legacy setup is
+unchanged until an operator performs the coordinated cutover described below.
 No hosted deployment or migration is performed by these source changes.
 ## Recipient verification implementation status (19 October 2026)
 
 Verification lives in `_shared/contact-join.ts` and the recipient-join migrations.
 It is now connected to the existing public function and scheduled dispatcher when
-the enrollment flag is explicitly enabled. Keep that flag false pending native
-integration, hosted acceptance and legacy cutover.
+the enrollment flag is explicitly enabled. Keep that flag false pending combined
+hosted acceptance and legacy cutover.
 
 - A recipient-owned request requires the current consent version, an explicit
   acceptance and a successful server-validated CAPTCHA before storage. The real
@@ -86,7 +86,7 @@ integration, hosted acceptance and legacy cutover.
 
 `20261019030000_contact_join_approval.sql` and `_shared/contact-approval.ts`
 implement approval/withdrawal. Recipient management routes are now connected as
-described below; the native sender review/approval interface is not implemented.
+described below; the native sender review/approval interface is implemented with explicit intended-person confirmation.
 
 - Recipient-only verification responses now include a private 64-hex-character
   withdrawal capability. It is recovered deterministically using a separate HMAC
@@ -98,7 +98,7 @@ described below; the native sender review/approval interface is not implemented.
   lookup, decrypts only verified pending addresses and returns masked email hints.
   It never returns raw destinations, ciphertext, codes or withdrawal capabilities.
   A hint is not proof of a person's identity: the sender must confirm the intended
-  recipient before approving; the future UI must not auto-approve candidates.
+  recipient before approving; the UI never auto-approves candidates.
 - Approval uses the owner's JWT. It requires a live own invitation, verified and
   unexpired/non-superseded proof, current consent version and withdrawal capability.
   It locks against deletion/contact changes, creates one confirmed contact and a
@@ -119,7 +119,7 @@ described below; the native sender review/approval interface is not implemented.
   governed by the independent journal. An old withdrawal capability cannot disable
   a newer consent generation. The former restore entry point is private.
 
-Keep enrollment disabled until native integration, hosted configuration, legacy
+Keep enrollment disabled until hosted configuration, physical-device acceptance, legacy
 cutover and controlled end-to-end/restore evidence are complete. Local automated
 checks do not establish TestFlight readiness.
 
@@ -177,3 +177,37 @@ server-side token verification, hostname/action checks, bounded token age and
 request-bound widget data. A fresh challenge has an independent validation retry
 key; retrying the same challenge preserves its key. No recipient address, code,
 invitation capability or remote-IP parameter is sent by the server to Siteverify.
+
+
+## Native owner review and rollout controls (20 October 2026)
+
+- `GET /v3/contact-invitations/{invitationId}/candidates`: authenticated owner only,
+  at most three verified requests with `attemptId`, `emailHint`, `verifiedAt` and
+  `expiresAt`. No raw mailbox, ciphertext, code or management capability is exposed.
+- `POST /v3/contact-invitations/{invitationId}/approve`: exact JSON
+  `{ "attemptId": "<UUID>", "name": "<contact label, 1–80 characters>" }`.
+  Returns only `{ "contactId": "<UUID>", "status": "confirmed" }`. The approval
+  write uses the owner's JWT; service-role approval is prohibited. Receipt-bound
+  retries recover the same contact only while that consent generation remains valid.
+- The native app uses private system sharing, shows the pending/verified request,
+  and requires the sender to confirm the intended person through an existing trusted
+  channel. Mailbox verification and a masked hint alone do not prove identity.
+  Creating/sharing and approving never send an invitation email or an alert.
+- `LEGACY_CONTACT_WRITES_DISABLED=true` rejects legacy v1/v2 sender-email writes at
+  the HTTP boundary with 409 `CONTACT_SETUP_CHANGED`. Default remains false for
+  staged compatibility. It does not replace the database guard.
+- The private `contact_setup_policy` defaults to legacy enabled. Only the database
+  owner can run `retire_legacy_contact_setup()`: it serializes contact writes,
+  refuses cleanup during live verification leases, deletes pending legacy contacts/dependent invitation data and blocks future
+  pending writes or pending-to-confirmed activation. Confirmed contacts survive.
+  `pause_legacy_contact_setup()` first stops old verification claims and legacy writes
+  without affecting alerts or recipient-requested join codes. Both operator-only
+  operations have no HTTP endpoint or service-role grant.
+- The independent authority receives an actor classification generated by the
+  database from its verified JWT role. Recipient/service operations still check
+  quarantine and deleted senders, without incorrectly requiring a sender session.
+  Authenticated user sessions still obey the restore epoch. Deploy the authority
+  before the actor-aware database migration; old authorities fail closed.
+- The hosted enrollment probe is read-only and uses random unissued capabilities:
+  `npm run release:hosted -- --enrollment`. Account configuration, delivery, privacy
+  settings and the signed physical-device candidate require separate acceptance.

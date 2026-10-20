@@ -493,6 +493,24 @@ final class AppShellModel {
         apply(await lifecycle.requestLocationAccess())
     }
 
+    func saveInvitationProfile() async -> Bool {
+        let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard identityReady, !isSavingContact, !name.isEmpty, name.count <= 80 else {
+            contactMessage = "Enter your own name (up to 80 characters) so your person recognises you."
+            return false
+        }
+        isSavingContact = true
+        defer { isSavingContact = false }
+        do {
+            displayName = try await lifecycle.profile(name)
+            contactMessage = nil
+            return true
+        } catch {
+            contactMessage = "Your name could not be saved. Retry before creating a private invitation."
+            return false
+        }
+    }
+
     func saveContact() async {
         guard contactValidationMessage == nil, identityReady, !isSavingContact else { return }
         isSavingContact = true

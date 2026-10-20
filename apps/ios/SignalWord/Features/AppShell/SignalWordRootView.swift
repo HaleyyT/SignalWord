@@ -33,6 +33,15 @@ struct SignalWordRootView: View {
         #endif
         return ContactNetworkModel(api: AppCompositionRoot.lifecycleAPI)
     }()
+    @State private var enrollment: ContactEnrollmentModel = {
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            return ContactEnrollmentModel(api: UITestNetworkService())
+        }
+        #endif
+        return ContactEnrollmentModel(api: AppCompositionRoot.lifecycleAPI,
+            origin: SignalWordConfiguration.verificationURL ?? URL(string: "https://www.signalword.app")!)
+    }()
     @State private var timer: CheckInModel = {
         #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
@@ -62,17 +71,19 @@ struct SignalWordRootView: View {
         }
         .disabled(model.isSigningOut)
         .environment(network)
+        .environment(enrollment)
+        .onChange(of: model.needsIdentityVerification) { _, needsIdentity in if needsIdentity { enrollment.clear() } }
         .environment(timer)
         .onChange(of: timer.snapshot?.incidentId) { _, incident in
             if incident != nil { Task { await model.recover() } }
         }
-        .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear(); timer.clear() } }
+        .onChange(of: model.hasEnteredDashboard) { _, entered in if !entered { network.clear(); enrollment.clear(); timer.clear() } }
         .accessibilityValue("Appearance: " + supporter.selectedAppearance)
         .environment(\.signalWordAccent, accent)
         .tint(accent.link)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showContactEditor, onDismiss: { model.cancelContactEdit() }) {
-            ContactEditorSheet(model: model).environment(\.dynamicTypeSize, textSize).environment(\.signalWordAccent, accent)
+            ContactEditorSheet(model: model).environment(enrollment).environment(network).environment(\.dynamicTypeSize, textSize).environment(\.signalWordAccent, accent)
         }
         .task(id: scenePhase) {
             // Restore the saved accent on cold launch, before the purchase screen is opened.
@@ -102,7 +113,7 @@ struct SignalWordRootView: View {
                 Task {
                     defer { isConfirmingSignOut = false }
                     await model.signOut(statusUpdateInProgress: timer.busy || network.busy)
-                    if !model.hasEnteredDashboard { network.clear(); timer.clear(); selectedTab = .home }
+                    if !model.hasEnteredDashboard { network.clear(); enrollment.clear(); timer.clear(); selectedTab = .home }
                 }
             }
             .disabled(!model.canSignOut || timer.busy || network.busy)

@@ -75,3 +75,110 @@ final class ContactNetworkModel {
         }
     }
 }
+
+@MainActor @Observable
+final class ContactEnrollmentModel {
+    private let api: (any ContactEnrollmentServing)?
+    private var generation = 0
+    private let origin: URL
+    private var loaded = false
+    private var createKey: UUID?
+    private(set) var invitations: [ContactInvitation] = []
+    private(set) var candidates: [ContactCandidate] = []
+    private(set) var reviewing: UUID?
+    private(set) var shared: ContactInvitation?
+    private(set) var busy = false
+    private(set) var message: String?
+
+    init(api: (any ContactEnrollmentServing)?, origin: URL = URL(string: "https://www.signalword.app")!) { self.api = api; self.origin = origin }
+
+    var shareURL: URL? { shared?.safeShareURL(origin: origin) }
+
+    func clear() {
+        generation += 1
+        invitations = []; candidates = []; reviewing = nil; shared = nil
+        createKey = nil; loaded = false; message = nil; busy = false
+    }
+
+    private func perform(_ action: () async throws -> Void) async {
+        guard api != nil, !busy else {
+            if api == nil { message = "Private invitations are unavailable in this configuration." }
+            return
+        }
+        let current = generation
+        busy = true
+        defer { if current == generation { busy = false } }
+        do { try await action() }
+        catch {
+            guard current == generation else { return }
+            message = "Could not confirm this change. Refresh and retry when connected. No contact is assumed approved."
+        }
+    }
+
+    func refresh() async {
+        let current = generation
+        await perform {
+            let result = try await api!.listInvitations()
+            guard current == generation else { return }
+            invitations = result; loaded = true; candidates = []; reviewing = nil; message = nil
+            if let shared, !result.contains(where: { $0.id == shared.id && $0.isOpen }) { self.shared = nil; createKey = nil }
+        }
+    }
+
+    func create() async {
+        if !loaded { await refresh() }
+        guard loaded else { return }
+        if createKey == nil && invitations.contains(where: { $0.isOpen }) {
+            message = "An invitation is already open. Review it, or close it before creating a new link."
+            return
+        }
+        if createKey == nil { createKey = UUID() }
+        let key = createKey!, current = generation
+        await perform {
+            let result = try await api!.createInvitation(key: key)
+            guard current == generation else { return }
+            shared = result
+            if !result.isOpen { createKey = nil }
+            invitations.removeAll { $0.id == result.id }; invitations.insert(result, at: 0)
+            message = result.safeShareURL(origin: origin) == nil ? "This link is unavailable. Close it and create a new invitation." : nil
+        }
+    }
+
+    func review(_ id: UUID) async {
+        let current = generation
+        await perform {
+            let result = try await api!.reviewInvitation(id)
+            guard current == generation else { return }
+            candidates = result; reviewing = id; message = nil
+        }
+    }
+
+    func revoke(_ id: UUID) async {
+        let current = generation
+        await perform {
+            try await api!.revokeInvitation(id)
+            guard current == generation else { return }
+            invitations.removeAll { $0.id == id }
+            if shared?.id == id { shared = nil; createKey = nil }
+            if reviewing == id { reviewing = nil; candidates = [] }
+            message = "Invitation closed. This does not withdraw an already approved contact."
+        }
+    }
+
+    func approve(_ candidate: ContactCandidate, name: String, intendedPersonConfirmed: Bool) async -> Bool {
+        guard intendedPersonConfirmed, let invitation = reviewing,
+              candidates.contains(where: { $0.id == candidate.id }), candidate.expiresAt > Date(),
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, name.count <= 80 else { return false }
+        let current = generation
+        var approved = false
+        await perform {
+            let result = try await api!.approveInvitation(invitation, attempt: candidate.id, name: name)
+            guard current == generation, result.status == "confirmed" else { return }
+            approved = true; candidates = []; reviewing = nil
+            invitations.removeAll { $0.id == invitation }
+            if shared?.id == invitation { shared = nil; createKey = nil }
+            message = "Contact approved. Refresh your circle before sending a TEST."
+        }
+        return approved
+    }
+}

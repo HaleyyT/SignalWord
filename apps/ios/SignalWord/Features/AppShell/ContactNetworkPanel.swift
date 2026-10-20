@@ -2,10 +2,6 @@ import SwiftUI
 
 struct ContactNetworkPanel: View {
     @Environment(ContactNetworkModel.self) private var network
-    @State private var editing = false
-    @State private var contactID: UUID?
-    @State private var name = ""
-    @State private var email = ""
     @State private var withdrawing: NetworkContact?
 
     var body: some View {
@@ -13,15 +9,12 @@ struct ContactNetworkPanel: View {
             SignalWordCard {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Your contact network").font(.headline)
-                    Text("Up to three people. Each person confirms their email.").font(.subheadline).foregroundStyle(SignalWordColor.secondaryText)
+                    Text("Up to three people. Each person verifies their own email and is approved by you.").font(.subheadline).foregroundStyle(SignalWordColor.secondaryText)
                     ForEach(snapshot.contacts) { contact in
                         VStack(alignment: .leading) {
                             Text(contact.name + (contact.primary ? " · Primary" : "")).font(.headline)
                             Text(contact.status.capitalized).font(.caption)
                             VStack(alignment: .leading, spacing: 8) {
-                                Button("Replace / invite again") {
-                                    contactID = contact.id; name = contact.name; email = ""; editing = true
-                                }
                                 if !contact.primary && contact.status == "confirmed" {
                                     Button("Make primary") { Task { await network.configure(primary: contact.id) } }
                                 }
@@ -31,9 +24,6 @@ struct ContactNetworkPanel: View {
                             }
                         }
                         Divider()
-                    }
-                    if snapshot.contacts.count < 3 {
-                        Button("Invite another person") { contactID = nil; name = ""; email = ""; editing = true }
                     }
                     Text("Routing for new alerts").font(.headline)
                     ForEach(ContactRoutingPolicy.allCases, id: \.self) { policy in
@@ -51,21 +41,6 @@ struct ContactNetworkPanel: View {
                 .font(.subheadline)
                 .buttonStyle(.bordered).controlSize(.large)
                 .disabled(network.busy)
-            }
-            .sheet(isPresented: $editing) {
-                NavigationStack {
-                    Form {
-                        TextField("Contact name", text: $name)
-                        TextField("Email", text: $email).textInputAutocapitalization(.never).keyboardType(.emailAddress)
-                        Text("This sends an invitation. Replacing a person or inviting again revokes their earlier consent and access.")
-                        if let message = network.message { Text(message) }
-                        Button("Send invitation") {
-                            Task { if await network.save(contactID: contactID, name: name, email: email) { editing = false } }
-                        }.disabled(network.busy || name.trimmingCharacters(in: .whitespaces).isEmpty || !email.contains("@"))
-                    }
-                    .navigationTitle("Invite trusted contact")
-                    .toolbar { Button("Close") { editing = false } }
-                }
             }
             .confirmationDialog("Withdraw this person's consent?", isPresented: Binding(
                 get: { withdrawing != nil }, set: { if !$0 { withdrawing = nil } })) {

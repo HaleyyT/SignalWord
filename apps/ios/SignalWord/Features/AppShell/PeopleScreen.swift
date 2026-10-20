@@ -13,7 +13,7 @@ struct PeopleScreen: View {
                 PageHeading(
                     eyebrow: "YOUR CIRCLE",
                     title: "People",
-                    detail: "Choose who receives your alerts. Each person confirms by email."
+                    detail: "Choose who receives your alerts. Share a private link. Each person enters and verifies their own email before you approve them."
                 )
                 if !model.canEditContact {
                     InlineMessage("Your saved contact is unavailable until account loading succeeds. Retry before making changes.", kind: .attention)
@@ -27,16 +27,6 @@ struct PeopleScreen: View {
                             Task { await model.refreshContact() }
                         }
                     }
-                    SecondaryButton(
-                        title: model.contactStatus == "confirmed" ? "Replace recipient" : "Send confirmation again",
-                        symbol: model.contactStatus == "confirmed" ? "person.crop.circle.badge.plus" : "arrow.clockwise",
-                        action: editContact
-                    )
-                    Text("A new confirmation request resets consent and clears earlier TEST evidence, even if you reuse the address. A different person must confirm too.")
-                        .font(.caption)
-                        .foregroundStyle(SignalWordColor.mutedText)
-                        .fixedSize(horizontal: false, vertical: true)
-
                     if model.contactStatus == "confirmed" {
                         testPanel
                     } else {
@@ -62,6 +52,7 @@ struct PeopleScreen: View {
                         }
                     }
                 }
+                ContactEnrollmentPanel(model: model)
                 ContactNetworkPanel()
                 if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
                 if let message = model.accountMessage { InlineMessage(message, kind: .attention) }
@@ -226,65 +217,102 @@ struct PeopleScreen: View {
 }
 
 struct ContactEditorSheet: View {
-    @Environment(\.dismiss) private var dismiss
     @Bindable var model: AppShellModel
-
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    PageHeading(
-                        eyebrow: "CONSENT BY EMAIL",
-                        title: "Trusted person",
-                        detail: "They must confirm before any TEST or REAL alert can be sent."
-                    )
-                    SignalWordCard {
-                        VStack(spacing: 0) {
-                            LabeledTextField(title: "Your name", placeholder: "Name they’ll recognise", text: $model.displayName, contentType: .name)
-                            FieldDivider()
-                            LabeledTextField(title: "Their name", placeholder: "Trusted person", text: $model.contactName, contentType: .name)
-                            FieldDivider()
-                            LabeledTextField(title: "Email address", placeholder: "name@example.com", text: $model.contactEmail, contentType: .emailAddress, keyboard: .emailAddress)
-                        }
-                    }
-                    if let message = model.contactValidationMessage {
-                        Text(message).font(.footnote).foregroundStyle(SignalWordColor.secondaryText)
-                    }
-                if let message = model.contactMessage { InlineMessage(message, kind: .attention) }
-                    Text("Sending a new confirmation request invalidates the previous confirmation and clears earlier TEST evidence. The recipient must confirm again.")
-                        .font(.caption)
-                        .foregroundStyle(SignalWordColor.mutedText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    PrimaryButton(title: model.isSavingContact ? "Sending confirmation…" : "Send confirmation", symbol: "arrow.right", isLoading: model.isSavingContact) {
-                        Task {
-                            await model.saveContact()
-                            if model.contactMessage == nil { dismiss() }
-                        }
-                    }
-                    .disabled(model.contactValidationMessage != nil || !model.identityReady || model.isSavingContact)
-                }
-                .frame(maxWidth: 560)
-                .padding(.horizontal, SignalWordSpacing.page)
-                .padding(.top, 20)
-                .padding(.bottom, 32)
-                .frame(maxWidth: .infinity)
+                ContactEnrollmentPanel(model: model)
+                    .padding(SignalWordSpacing.page)
             }
-            .scrollDismissesKeyboard(.interactively)
             .background(SignalWordBackground())
-            .navigationTitle("Trusted person")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        model.cancelContactEdit()
-                        dismiss()
-                    }
+            .navigationTitle("Private invitation")
+            .toolbar { Button("Done") { dismiss() } }
+        }
+        .presentationDetents([.large])
+    }
+}
+
+struct ContactEnrollmentPanel: View {
+    @Bindable var model: AppShellModel
+    @Environment(ContactEnrollmentModel.self) private var enrollment
+    @Environment(ContactNetworkModel.self) private var network
+    @State private var selected: ContactCandidate?
+    @State private var label = "Trusted person"
+    @State private var confirmed = false
+    @State private var closing: ContactInvitation?
+
+    var body: some View {
+        SignalWordCard {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Invite someone privately").font(.headline)
+                Text("Share the link yourself with one person you trust. SignalWord does not ask you for their email or send an invitation email. They enter their own email, consent and verify it, then you approve the request.")
+                    .font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                TextField("Your name", text: $model.displayName).textContentType(.name)
+                Text("Your name is shown on new invitations so your person recognises you.").font(.caption)
+                if let url = enrollment.shareURL {
+                    ShareLink(item: url) { Label("Share invitation", systemImage: "square.and.arrow.up") }
+                        .accessibilityIdentifier("enrollment.share")
+                    Text("Keep this link private. Creating or sharing it does not approve a contact. If you lose it, close the invitation before creating another.").font(.caption)
+                } else {
+                    Button("Create private invitation") { Task { if await model.saveInvitationProfile() { await enrollment.create() } } }
+                        .accessibilityIdentifier("enrollment.create")
                 }
+                Button("Refresh invitations") { Task { selected = nil; confirmed = false; await enrollment.refresh(); await model.refreshContact(); await network.refresh(eventID: model.currentAlertEventID) } }
+                    .accessibilityIdentifier("enrollment.refresh")
+                ForEach(enrollment.invitations) { invitation in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(invitation.isOpen ? "Waiting for your person" : "Invitation closed or expired").font(.headline)
+                        Text("Created for \(invitation.displayName) · expires \(invitation.expiresAt.formatted())").font(.caption)
+                        if invitation.isOpen {
+                            Button("Review verified requests") { Task { selected = nil; confirmed = false; await enrollment.review(invitation.id) } }
+                            Button("Close invitation", role: .destructive) { closing = invitation }
+                        }
+                        if enrollment.reviewing == invitation.id {
+                            if enrollment.candidates.isEmpty { Text("No verified request yet. Ask your person to complete the link, then review again.").font(.caption) }
+                            ForEach(enrollment.candidates) { candidate in
+                                Button("Review \(candidate.emailHint)") { label = "Trusted person"; confirmed = false; selected = candidate }
+                            }
+                        }
+                    }
+                    Divider()
+                }
+                if let message = model.contactMessage { Text(message).font(.footnote) }
+                if let message = enrollment.message { Text(message).font(.footnote).accessibilityIdentifier("enrollment.message") }
+                Text("Existing confirmed contacts stay available. Close an unused invitation to free its slot; withdraw an existing contact separately. Up to three contact slots, including open invitations.").font(.caption)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.roundedRectangle)
+            .disabled(enrollment.busy || model.isSavingContact || !model.canEditContact)
+        }
+        .task { await enrollment.refresh() }
+        .sheet(item: $selected) { candidate in
+            NavigationStack {
+                Form {
+                    Text("Verified email: \(candidate.emailHint)")
+                    Text("A verified mailbox and masked hint do not establish identity. Confirm with the person you intended to invite using a channel you already trust. Do not approve an unfamiliar request.")
+                    TextField("Contact label", text: $label).textContentType(.nickname)
+                    Toggle("I confirmed this is my intended person", isOn: $confirmed)
+                        .accessibilityIdentifier("enrollment.confirmPerson")
+                    if let message = enrollment.message { Text(message) }
+                    Button("Approve trusted person") {
+                        Task {
+                            if await enrollment.approve(candidate, name: label, intendedPersonConfirmed: confirmed) {
+                                selected = nil; confirmed = false
+                                await model.refreshContact()
+                                await network.refresh(eventID: model.currentAlertEventID)
+                            }
+                        }
+                    }.disabled(!confirmed || label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || label.count > 80 || candidate.expiresAt <= Date() || enrollment.busy)
+                    Text("Approval enables TEST and REAL alerts. It does not send an alert. Ask before rehearsing.")
+                }
+                .navigationTitle("Review your person")
+                .toolbar { Button("Cancel") { selected = nil; confirmed = false }.disabled(enrollment.busy) }
+                .interactiveDismissDisabled(enrollment.busy)
             }
         }
-        .tint(SignalWordColor.link)
-        .onAppear { model.beginContactEdit() }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
+        .confirmationDialog("Close this invitation?", isPresented: Binding(get: { closing != nil }, set: { if !$0 { closing = nil } })) {
+            if let invitation = closing { Button("Close invitation", role: .destructive) { Task { await enrollment.revoke(invitation.id) }; closing = nil } }
+        } message: { Text("This prevents new approval through this link. Existing approved contacts must be withdrawn separately.") }
     }
 }

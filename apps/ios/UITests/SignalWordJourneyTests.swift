@@ -184,20 +184,23 @@ final class SignalWordJourneyTests: XCTestCase {
 
     private func completeContactSetup(waitForRecovery: Bool = false) {
         tap("Set up SignalWord")
-        let name = app.textFields["Name they’ll recognise"]
-        XCTAssertTrue(name.waitForExistence(timeout: 5))
-        reveal(name); name.tap(); name.typeText("Alex")
-        let contact = app.textFields["Trusted person"]
-        reveal(contact); contact.tap(); contact.typeText("Sam")
-        let email = app.textFields["name@example.com"]
-        reveal(email); email.tap(); email.typeText("sam@example.test\n")
-        if waitForRecovery {
-            // The app reconciles every ten seconds. A slow typist must not lose a draft.
-            Thread.sleep(forTimeInterval: 11)
-            XCTAssertEqual(contact.value as? String, "Sam")
-            XCTAssertEqual(email.value as? String, "sam@example.test")
-        }
-        tap("Send confirmation")
+        XCTAssertTrue(app.buttons["enrollment.create"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.textFields["name@example.com"].exists, "Sender must never enter recipient email")
+        tap("enrollment.create")
+        XCTAssertTrue(app.buttons["enrollment.share"].waitForExistence(timeout: 5))
+        if waitForRecovery { Thread.sleep(forTimeInterval: 11) }
+        tap("Review verified requests")
+        tap("Review s***@example.test")
+        let approve = app.buttons["Approve trusted person"]
+        XCTAssertTrue(approve.waitForExistence(timeout: 5))
+        XCTAssertFalse(approve.isEnabled, "Mailbox proof alone cannot approve a person")
+        let toggle = app.switches["enrollment.confirmPerson"]
+        reveal(toggle); toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        XCTAssertTrue(approve.isEnabled)
+        tap("Approve trusted person")
+        XCTAssertTrue(app.navigationBars["Review your person"].waitForNonExistence(timeout: 5))
+        tap("Continue to rehearsal")
         XCTAssertTrue(app.buttons["Continue to home"].waitForExistence(timeout: 5))
         tap("Continue to home")
     }
@@ -256,17 +259,20 @@ final class SignalWordJourneyTests: XCTestCase {
         app.launch()
         completeContactSetup()
         app.buttons["navigation.People"].tap()
-        tap("Invite another person")
-        let name = app.textFields["Contact name"]
+        tap("enrollment.create")
+        tap("Review verified requests")
+        tap("Review s***@example.test")
+        let name = app.textFields["Contact label"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
-        name.tap(); name.typeText("Taylor")
-        let email = app.textFields["Email"]
-        email.tap(); email.typeText("taylor@example.test\n")
-        tap("Send invitation")
-        // Underlying page controls can enter the accessibility tree while the
-        // invitation sheet and its keyboard are still dismissing.
-        XCTAssertTrue(name.waitForNonExistence(timeout: 5), "Invitation editor must close before changing routing")
-        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Invitation keyboard must dismiss before changing routing")
+        name.tap()
+        name.press(forDuration: 1.2)
+        if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
+        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20) + "Taylor\n")
+        let toggle = app.switches["enrollment.confirmPerson"]
+        reveal(toggle); toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        tap("Approve trusted person")
+        XCTAssertTrue(name.waitForNonExistence(timeout: 5))
         let routing = app.buttons["Primary now, others after 2 minutes"]
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: routing)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, "Invitation save must finish before changing routing")

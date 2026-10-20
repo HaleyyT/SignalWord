@@ -254,3 +254,37 @@ test('public preview gateway uses anonymous privileges and rejects arbitrary has
   assert.equal(calls[0].headers.Authorization, 'Bearer public-fixture');
   assert.equal(JSON.parse(calls[0].body).p_token_hash, `\\x${await sha256Hex(TOKEN)}`);
 });
+
+test('owner review and approval routes enforce authentication, method, body and projection', async () => {
+  const candidate = { attemptId: REQUEST_KEY, emailHint: 's***@example.test', verifiedAt: base.expiresAt, expiresAt: base.expiresAt };
+  const calls = [];
+  const make = (enabled = true) => createUserApiHandler({ backend: { authenticate: async jwt => { calls.push(['auth', jwt]); return { id: USER }; } },
+    lifecycle: {}, delivery: {}, logger: { write() {} }, now: () => NOW,
+    approval: enabled ? { review: async (...args) => { calls.push(['review', ...args]); return [{ ...candidate, email: 'private@example.test' }]; },
+      approve: async (...args) => { calls.push(['approve', ...args]); return { contactId: INVITATION, status: 'confirmed', owner: USER }; } } : undefined });
+  const review = request({ method: 'GET', path: `/${INVITATION}/candidates` });
+  assert.deepEqual(await (await make()(review)).json(), [candidate]);
+  const good = { attemptId: REQUEST_KEY, name: 'Sam' };
+  const approved = await make()(request({ path: `/${INVITATION}/approve`, body: good }));
+  assert.deepEqual(await approved.json(), { contactId: INVITATION, status: 'confirmed' });
+  assert.deepEqual(calls.at(-1), ['approve', 'sender-jwt', INVITATION, REQUEST_KEY, 'Sam']);
+  for (const body of [{ ...good, email: 'other@example.test' }, { ...good, userId: USER }, [], null, { ...good, name: ' ' }, { ...good, attemptId: 'bad' }]) {
+    assert.equal((await make()(request({ path: `/${INVITATION}/approve`, body }))).status, 400);
+  }
+  assert.equal((await make()(request({ method: 'GET', path: `/${INVITATION}/approve` }))).status, 405);
+  assert.equal((await make()(request({ path: `/${INVITATION}/candidates` }))).status, 405);
+  assert.equal((await make()(request({ method: 'GET', path: `/${INVITATION}/candidates`, authenticated: false }))).status, 401);
+  assert.equal((await make(false)(review)).status, 503);
+});
+
+test('legacy cutover rejects both sender-entered email paths before encryption or mail work', async () => {
+  const h = createUserApiHandler({ backend: { authenticate: async () => ({ id: USER }) }, lifecycle: {}, network: {}, delivery: {},
+    legacyContactWritesDisabled: true, logger: { write() {} }, now: () => NOW });
+  for (const path of ['/v1/contacts', '/v2/contacts', `/v2/contacts/${INVITATION}`]) {
+    const result = await h(new Request('https://api.example.test' + path, { method: 'POST',
+      headers: { Authorization: 'Bearer sender-jwt', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'unconsented@example.test', name: 'Third party' }) }));
+    assert.equal(result.status, 409);
+    assert.equal((await result.json()).error.code, 'CONTACT_SETUP_CHANGED');
+  }
+});

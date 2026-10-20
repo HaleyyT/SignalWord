@@ -2,7 +2,7 @@ import Foundation
 import Security
 
 
-struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
+struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing, ContactEnrollmentServing {
     let baseURL: URL
     let sessionManager: SupabaseSessionManager
     let session: URLSession
@@ -16,6 +16,30 @@ struct RemoteUserLifecycleAPI: ContactNetworkServing, CheckInServing {
         configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         configuration.urlCache = nil
         session = URLSession(configuration: configuration)
+    }
+
+    func createInvitation(key: UUID) async throws -> ContactInvitation {
+        try await send(path: "/v3/contact-invitations", method: "POST", body: EmptyBody(),
+            response: ContactInvitation.self, extraHeaders: ["Idempotency-Key": key.uuidString])
+    }
+    func listInvitations() async throws -> [ContactInvitation] {
+        try await send(path: "/v3/contact-invitations", method: "GET", body: Optional<EmptyBody>.none,
+            response: [ContactInvitation].self)
+    }
+    func revokeInvitation(_ id: UUID) async throws {
+        struct Result: Decodable, Sendable { let revoked: Bool }
+        let result = try await send(path: "/v3/contact-invitations/" + id.uuidString.lowercased(),
+            method: "DELETE", body: Optional<EmptyBody>.none, response: Result.self)
+        guard result.revoked else { throw UserAPIError.invalidResponse }
+    }
+    func reviewInvitation(_ id: UUID) async throws -> [ContactCandidate] {
+        try await send(path: "/v3/contact-invitations/" + id.uuidString.lowercased() + "/candidates",
+            method: "GET", body: Optional<EmptyBody>.none, response: [ContactCandidate].self)
+    }
+    func approveInvitation(_ id: UUID, attempt: UUID, name: String) async throws -> ContactApproval {
+        struct Input: Encodable, Sendable { let attemptId: UUID; let name: String }
+        return try await send(path: "/v3/contact-invitations/" + id.uuidString.lowercased() + "/approve",
+            method: "POST", body: Input(attemptId: attempt, name: name), response: ContactApproval.self)
     }
 
     func recoverCheckIn(command: UUID? = nil) async throws -> CheckInSnapshot? {
