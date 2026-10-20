@@ -286,7 +286,7 @@ final class SignalWordJourneyTests: XCTestCase {
         app.launchArguments = ["--ui-testing", "--network-ui-testing"]
         app.launch()
         app.buttons["navigation.People"].tap()
-        let invited = app.staticTexts["Taylor"]
+        let invited = app.staticTexts["Taylor"].firstMatch
         reveal(invited)
         XCTAssertTrue(invited.exists, "Server contact snapshot should recover on relaunch")
         reveal(routing)

@@ -1,3 +1,8 @@
+import { createContactApprovalGateway } from "../supabase/functions/_shared/contact-approval.ts";
+import { createContactJoinService, runContactJoinEmail } from "../supabase/functions/_shared/contact-join.ts";
+import { createContactInvitationGateway, createInvitationPreviewGateway } from "../supabase/functions/_shared/contact-invitations.ts";
+import { createInvitationPreviewHandler } from "../supabase/functions/contact-invitation-preview/index.ts";
+import { createInvitationTokenCipher } from "../supabase/functions/_shared/encryption.ts";
 import { createServer as createViteServer } from "vite";
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
@@ -233,6 +238,8 @@ async function journey() {
   let api;
   let originalTrust;
   const fingerprints = [];
+  const enrollmentHashes = [];
+  const enrollmentAttempts = [];
   const sent = [];
   const providerIds = new Map();
   try {
@@ -304,12 +311,22 @@ async function journey() {
         "base64url",
       );
     const cipher = createDeliveryPayloadCipher(randomKey(), 1);
-    const contacts = createContactDataProtection(randomKey(), randomKey(), 1);
+    const encryptionKey = randomKey(), fingerprintKey = randomKey();
+    const contacts = createContactDataProtection(encryptionKey, fingerprintKey, 1);
+    const approval = createContactApprovalGateway({ ...config, authenticate: jwt => backend.authenticate(jwt),
+      decryptDestination: contacts.decryptDestination, flushJournal: id => journal.flush(id) });
+    const invitations = createContactInvitationGateway({ ...config, publicOrigin: "https://www.signalword.app",
+      generateToken: generateViewerToken, cipher: createInvitationTokenCipher(randomKey(), 1) });
+    const joinService = createContactJoinService({ ...config, encryptionKey, fingerprintKey, keyVersion: 1,
+      provider: "resend", environment: "test", verifyCaptcha: async token => token === "local-fixture-challenge" });
+    const enrollment = createInvitationPreviewHandler({ enabled: true, preview: createInvitationPreviewGateway(config),
+      logger: { write() {} }, now: Date.now, origin: "https://www.signalword.app", join: joinService, management: approval });
     const common = { logger: { write() {} }, now: Date.now };
     const user = createUserApiHandler({
       ...common,
       backend,
       lifecycle,
+      invitations, approval,
       network: createContactNetworkGateway({ ...config, journal }),
       checkIn: createCheckInGateway(config),
       delivery: createDeliveryPolicy("test", "resend"),
@@ -461,15 +478,65 @@ async function journey() {
     await request("/v1/profile", "PUT", {
       displayName: "Local journey fixture",
     });
-    await request("/v2/contacts", "POST", {
-      name: "Fixture A",
-      email: "fixture-a@example.test",
+    // Real recipient-owned enrollment and sender approval through the same HTTP
+    // handlers used by the native app. Only CAPTCHA/provider transport is fake.
+    const key = crypto.randomUUID();
+    const invitation = await request("/v3/contact-invitations", "POST", {}, { "Idempotency-Key": key });
+    for (const subject of ["contact_invitation:" + userId, "contact_join:sender:" + userId, "contact_join:invitation:" + invitation.invitationId]) {
+      enrollmentHashes.push(createHash("sha256").update(subject).digest("hex"));
+    }
+    enrollmentHashes.push(createHash("sha256").update("contact_join:destination:" + await contacts.fingerprintDestination("fixture-a@example.test")).digest("hex"));
+    const retry = await request("/v3/contact-invitations", "POST", {}, { "Idempotency-Key": key });
+    assert.equal(invitation.shareURL, retry.shareURL);
+    assert.equal(sent.length, 0, "Creating/sharing never emails anyone");
+    const invitationToken = new URL(invitation.shareURL).pathname.split("/").at(-1);
+    let attemptId;
+    let management;
+    viewerServer = await createViteServer({ root: fileURLToPath(new URL("../apps/viewer/", import.meta.url)), server: { host: "127.0.0.1", port: 0 } });
+    await viewerServer.listen();
+    browser = await chromium.launch({ headless: true, ...(process.env.SIGNALWORD_CHROME_PATH ? { executablePath: process.env.SIGNALWORD_CHROME_PATH } : {}) });
+    const recipientPage = await browser.newPage();
+    await recipientPage.route("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit", route => route.fulfill({ contentType: "text/javascript",
+      body: "window.turnstile={render:(node,options)=>{setTimeout(()=>options.callback('local-fixture-challenge'),0);return 'widget'},remove:()=>{},reset:()=>{}};" }));
+    await recipientPage.route("**/api/enrollment/*", async route => {
+      const r = route.request(), token = new URL(r.url()).pathname.split("/").at(-1);
+      if (token === "config") return route.fulfill({ json: { enabled: true, siteKey: "local-fixture" } });
+      const data = r.postDataJSON();
+      const intent = r.headers()["x-signalword-action"];
+      const path = token.length === 64 ? `/v3/contact-management/${token}` : `/v3/contact-invitations/${token}${intent ? "/" + intent : ""}`;
+      const body = intent === "verify" ? { attemptId: data.attemptId, code: data.code } : data;
+      if (intent === "begin") { body.intent = "join"; attemptId = body.attemptId; enrollmentAttempts.push(attemptId); }
+      const response = await enrollment(new Request("https://api.example.test" + path, { method: r.method(),
+        headers: { Origin: "https://www.signalword.app", "Content-Type": "application/json" },
+        ...(r.method() === "POST" ? { body: JSON.stringify(body) } : {}) }));
+      const result = await response.json();
+      if (intent === "begin" && response.ok) {
+        management = result.withdrawalToken;
+        assert.equal(await runContactJoinEmail({ leaseId: crypto.randomUUID(), service: joinService,
+          adapter: { provider: "resend", sendJoinCode: async message => { sent.push(message); return { providerMessageId: crypto.randomUUID() }; } } }), "sent");
+      }
+      await route.fulfill({ status: response.status, json: result });
     });
-    await confirmWorker();
-    assert.equal(sent.length, 1);
-    await request(`/v1/contacts/confirm/${sent[0].confirmationToken}`, "POST");
-    // Recover a lost confirmation response through the same public API.
-    await request(`/v1/contacts/confirm/${sent[0].confirmationToken}`, "POST");
+    await recipientPage.goto(viewerServer.resolvedUrls.local[0] + "join/" + invitationToken);
+    await recipientPage.getByRole("heading", { name: "Be there for Local journey fixture." }).waitFor();
+    await recipientPage.getByLabel("Your email", { exact: true }).fill("fixture-a@example.test");
+    await recipientPage.getByRole("checkbox").check();
+    await recipientPage.getByRole("button", { name: "Email my verification code" }).click();
+    await recipientPage.getByLabel("Verification code", { exact: true }).waitFor();
+    assert.equal(sent.length, 1, "A recipient-requested code was dispatched once");
+    await recipientPage.getByLabel("Verification code", { exact: true }).fill(sent[0].code);
+    await recipientPage.getByRole("button", { name: "Verify my email" }).click();
+    await recipientPage.getByRole("heading", { name: "Your email is verified" }).waitFor();
+    const candidates = await request(`/v3/contact-invitations/${invitation.invitationId}/candidates`);
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].emailHint, "f***@example.test");
+    const approved = await request(`/v3/contact-invitations/${invitation.invitationId}/approve`, "POST", { attemptId, name: "Fixture A" });
+    assert.equal((await request(`/v3/contact-invitations/${invitation.invitationId}/approve`, "POST", { attemptId, name: "Fixture A" })).contactId, approved.contactId);
+    assert.equal(sent.length, 1, "Approval sends no alert or extra verification email");
+    await recipientPage.getByRole("button", { name: "Refresh status" }).click();
+    await recipientPage.getByRole("heading", { name: "Your connection is confirmed" }).waitFor();
+    await browser.close(); browser = undefined;
+    await viewerServer.close(); viewerServer = undefined;
     const command = crypto.randomUUID();
     const input = {
       kind: "test",
@@ -696,6 +763,11 @@ async function journey() {
     assert.equal(sent.at(-1).cause, "missed_check_in");
     await request(`/v1/alerts/${expired.incidentId}/resolve`, "POST");
     await alertWorker();
+    const statusBeforeDelete = await approval.status(management);
+    assert.equal(statusBeforeDelete.status, "approved");
+    assert.deepEqual(await approval.withdraw(management), { withdrawn: true });
+    assert.equal((await approval.status(management)).status, "withdrawn");
+    assert.deepEqual(await approval.withdraw(management), { withdrawn: true }, "withdrawal retry is safe and journal durable");
     receipt = generateViewerToken();
     await request("/v1/data", "DELETE", undefined, {
       "X-Deletion-Receipt": receipt,
@@ -705,9 +777,10 @@ async function journey() {
         .trim(),
       "0",
     );
+    await assert.rejects(() => approval.status(management), /unavailable/);
     assert.ok(objects.size >= 1);
     console.log(
-      "PASS: real local Auth/API/database/React browser; three contacts; duplicate workers; provider rejection/retry/lost response; signed/duplicate/out-of-order callbacks; acknowledgement/escalation; withdrawal; timer cancellation/expiry; resolution; durable deletion. No messages sent.",
+      "PASS: real local Auth/API/database/React browser; recipient-owned joining, sender approval/retry, existing-contact upgrade; three contacts; duplicate workers; provider rejection/retry/lost response; signed/duplicate/out-of-order callbacks; acknowledgement/escalation; withdrawal; timer cancellation/expiry; resolution; durable deletion. No messages sent.",
     );
   } finally {
     try {
@@ -723,10 +796,13 @@ async function journey() {
           });`,
         );
       }
+      for (const attempt of enrollmentAttempts) {
+        await sql(`delete from public.contact_join_delivery_evidence where attempt_id='${attempt}';`);
+      }
       if (userId) {
         const hashes = [
           createHash("sha256").update("contact_setup:" + userId).digest("hex"),
-          ...fingerprints,
+          ...fingerprints, ...enrollmentHashes,
         ];
         for (const d of sent) {
           if (d.viewerToken) {

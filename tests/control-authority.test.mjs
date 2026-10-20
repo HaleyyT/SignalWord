@@ -196,3 +196,24 @@ test("pre-restore access tokens are denied after quarantine is released", async 
   );
   assert.equal(response.status, 503);
 });
+
+test('trusted recipient and service operations check quarantine and deletion without borrowing a sender session', async () => {
+  const f = fixture();
+  await f.call('/gate', null, 'reader');
+  await f.call('/quarantine', { backupAt: new Date().toISOString() });
+  const service = new ControlService({ get: async k => f.data.get(k) }, null, secrets);
+  const gate = (actor, subject = entry.id, authorized = true) => service.handle(new Request('https://authority.test/gate', {
+    headers: { ...(authorized ? { Authorization: `Bearer ${secrets.reader}` } : {}),
+      'X-SignalWord-Subject': subject, 'X-SignalWord-Issued-At': '1', 'X-SignalWord-Actor': actor } }));
+  assert.equal((await gate('recipient')).status, 503, 'quarantine remains closed');
+  const snapshot = await (await f.call('/snapshot')).json();
+  await f.call('/release', { restoreId: snapshot.state.restoreId, version: snapshot.state.version, digest: snapshot.digest });
+  for (const actor of ['recipient', 'service']) {
+    assert.equal((await gate(actor)).status, 200);
+    assert.notEqual((await gate(actor, entry.id, false)).status, 200, 'untrusted header cannot bypass authentication');
+  }
+  assert.equal((await gate('session')).status, 503, 'old user sessions remain blocked');
+  assert.equal((await gate('unknown')).status, 503);
+  await f.call('/journal', entry, 'writer');
+  for (const actor of ['recipient', 'service']) assert.equal((await gate(actor, entry.userId)).status, 503, 'deleted sender remains blocked');
+});

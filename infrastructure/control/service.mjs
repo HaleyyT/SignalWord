@@ -115,7 +115,11 @@ export class ControlService {
           ? await this.storage.get(`deleted/${subject}`)
           : false;
         const issued = request.headers.get("X-SignalWord-Issued-At");
-        const stale = subject && state.sessionEpoch &&
+        // This header is accepted only behind the independent reader/writer/admin
+        // credential. The database derives it from the verified JWT role.
+        const actor = request.headers.get("X-SignalWord-Actor");
+        const sessionRequired = !["service", "recipient"].includes(actor);
+        const stale = sessionRequired && subject && state.sessionEpoch &&
           (!issued || !Number.isFinite(Number(issued)) ||
             Number(issued) < state.sessionEpoch);
         const allowed = !state.quarantined && !deleted && !stale;

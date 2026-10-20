@@ -54,3 +54,27 @@ test('network errors redact capability-bearing URLs', async () => {
   assert.ok(!JSON.stringify(results).includes('https://'));
   await assert.rejects(checkHostedViewer('http://viewer.example'), /HTTPS origin/);
 });
+
+test('enrollment probes are read-only, reject disabled setup and redact capability failures', async () => {
+  const { checkHostedEnrollment } = await import('../scripts/hosted-preflight.mjs');
+  const requests = [];
+  const headers = { 'referrer-policy': 'no-referrer', 'x-content-type-options': 'nosniff',
+    'strict-transport-security': 'max-age=31536000', 'cache-control': 'no-store', 'x-robots-tag': 'noindex',
+    'content-security-policy': "frame-ancestors 'none'; script-src 'self' https://challenges.cloudflare.com" };
+  const results = await checkHostedEnrollment('https://beta.example.test', async (url, options) => {
+    requests.push({ url, options });
+    if (url.pathname.startsWith('/api/')) return Response.json(url.pathname.endsWith('/config')
+      ? { siteKey: 'public_fixture_sitekey' } : { error: { code: 'LINK_UNAVAILABLE' } },
+      { status: url.pathname.endsWith('/config') ? 200 : 410, headers });
+    return new Response('<html></html>', { headers: { ...headers, 'content-type': 'text/html' } });
+  });
+  assert.equal(results.length, 5);
+  assert.ok(results.every(result => result.passed));
+  assert.ok(requests.every(({ options }) => options.method === 'GET' && !options.body));
+  assert.equal(new Set(requests.map(({ url }) => url.pathname)).size, 5);
+  const disabled = await checkHostedEnrollment('https://beta.example.test', async () => Response.json({ error: { code: 'SERVICE_UNAVAILABLE' } }, { status: 503, headers }));
+  assert.ok(disabled.every(result => !result.passed));
+  const failed = await checkHostedEnrollment('https://beta.example.test', async url => { throw new Error(url.href); });
+  assert.ok(failed.every(result => result.problems.join() === 'request failed or timed out'));
+  assert.ok(!JSON.stringify(failed).includes('/join/'));
+});
