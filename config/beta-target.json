@@ -1,0 +1,11 @@
+{
+  "environment": "beta",
+  "status": "unprovisioned",
+  "projectRef": null,
+  "viewerOrigin": null,
+  "turnstileSiteKey": null,
+  "vercelProjectId": "prj_PgsRJyPYMJmpMUULlAS5jnMrAmv2",
+  "authorityName": "signalword-beta-safety-authority",
+  "journalBucket": "signalword-beta-deletion-journal",
+  "monitorName": "signalword-beta-monitor"
+}

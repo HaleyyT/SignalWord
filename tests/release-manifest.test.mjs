@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  releaseManifest,
   backendSecrets,
   configurationProblems,
   functions,
@@ -9,6 +10,8 @@ import {
   schedules,
   vaultSecrets,
 } from "../scripts/release-manifest.mjs";
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 const config = JSON.parse(
   readFileSync(
     new URL("../config/development.release.json", import.meta.url),
@@ -61,4 +64,11 @@ test("preflight reports missing names and service evidence without secret values
   assert.ok(problems.includes("UNVERIFIED_AUTHORITY"));
   assert.ok(problems.includes("INVENTORY_PROJECT_MISMATCH"));
   assert.ok(problems.every((p) => !p.includes("https://")));
+});
+
+test('candidate manifest fingerprints the native environment validator', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const manifest = releaseManifest(root, config, { allowDirty: true });
+  const path = 'apps/ios/Config/validate-build-environment.py';
+  assert.equal(manifest.files[path], createHash('sha256').update(readFileSync(new URL('../' + path, import.meta.url))).digest('hex'));
 });

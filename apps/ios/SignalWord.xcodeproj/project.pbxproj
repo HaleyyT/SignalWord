@@ -106,8 +106,8 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-        500000000000000000000001 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py",); name = "Validate environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\""; showEnvVarsInLog = 0; };
-        500000000000000000000002 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py", "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",); name = "Verify bundled environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\" --plist \"$TARGET_BUILD_DIR/$INFOPLIST_PATH\""; showEnvVarsInLog = 0; };
+        500000000000000000000001 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py", "$(SRCROOT)/../../config/beta-target.json",); name = "Validate environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\""; showEnvVarsInLog = 0; };
+        500000000000000000000002 = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Config/validate-build-environment.py", "$(SRCROOT)/../../config/beta-target.json", "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",); name = "Verify bundled environment"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/Config/validate-build-environment.py\" --plist \"$TARGET_BUILD_DIR/$INFOPLIST_PATH\""; showEnvVarsInLog = 0; };
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
