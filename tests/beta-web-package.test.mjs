@@ -21,6 +21,12 @@ test('beta package excludes private files and production connections', () => {
     const config = readFileSync(join(output, 'apps/viewer/api/auth/config.mjs'), 'utf8');
     assert.ok(config.includes(options.projectRef));
     assert.ok(config.includes(options.siteKey));
+    // Hosting must retain capability routing and privacy headers in the upload.
+    const hosting = JSON.parse(readFileSync(join(output, 'apps/viewer/vercel.json'), 'utf8'));
+    assert.ok(hosting.rewrites.some(route => route.source === '/join/:token' && route.destination === '/enrollment.html'));
+    assert.ok(hosting.headers.some(route => route.source === '/join/(.*)'
+      && route.headers.some(header => header.key === 'Cache-Control' && header.value === 'no-store')));
+    assert.ok(JSON.stringify(hosting).includes(options.projectRef));
     assert.ok(readFileSync(join(output, 'apps/viewer/public/auth/recovery-client.js'), 'utf8').includes(options.origin));
     assert.equal(existsSync(output + '.manifest.json'), true);
     assert.throws(() => prepareBetaWeb({ ...options, output }), /new directory/);

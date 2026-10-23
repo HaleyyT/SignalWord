@@ -1,9 +1,9 @@
 {
   "environment": "beta",
-  "status": "backend-provisioned",
+  "status": "configured",
   "projectRef": "gadussazfnmmmjgjktpc",
   "viewerOrigin": "https://signalword-beta.vercel.app",
-  "turnstileSiteKey": null,
+  "turnstileSiteKey": "0x4AAAAAAFiuZUlbOtkBvM6p",
   "vercelProjectId": "prj_PgsRJyPYMJmpMUULlAS5jnMrAmv2",
   "authorityName": "signalword-beta-safety-authority",
   "journalBucket": "signalword-beta-deletion-journal",

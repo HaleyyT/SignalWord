@@ -25,7 +25,7 @@ export function prepareBetaWeb({ output, projectRef, origin, siteKey }) {
   if (existsSync(target)) throw Error('Output must be a new directory.');
   const files = execFileSync('git', ['ls-files', '-z'], { cwd: sourceRoot, encoding: 'utf8' }).split('\0').filter(Boolean)
     .filter(path => ['package.json', 'package-lock.json', '.vercelignore'].includes(path)
-      || /^apps\/viewer\/(?:src\/|public\/|api\/|(?:index|enrollment)\.html$|package\.json$|tsconfig[^/]*\.json$|vite\.config\.ts$)/.test(path))
+      || /^apps\/viewer\/(?:src\/|public\/|api\/|(?:index|enrollment)\.html$|(?:package|vercel)\.json$|tsconfig[^/]*\.json$|vite\.config\.ts$)/.test(path))
     .filter(path => !/(?:^|\/)(?:\.env[^/]*|node_modules|dist|e2e)(?:\/|$)|\.test\.[^/]+$/.test(path))
     // Developer acceptance fixtures must never become beta account entry points.
     .filter(path => !/^apps\/viewer\/public\/onboarding\/(?:acceptance\.|invited-session\.)/.test(path));
