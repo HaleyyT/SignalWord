@@ -1,5 +1,23 @@
 import SwiftUI
 
+struct TestRehearsalGuide: View {
+    let presentation: TestRehearsalPresentationModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(presentation.title, systemImage: presentation.isComplete ? "checkmark.message" : "list.bullet.clipboard")
+                .font(.subheadline.weight(.semibold))
+                .accessibilityIdentifier("rehearsal.nextStep")
+            Text(presentation.detail)
+                .font(.caption)
+                .foregroundStyle(SignalWordColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("rehearsal.guide")
+    }
+}
+
 struct CapabilityRow: View {
     let title: String
     let detail: String

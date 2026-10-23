@@ -2,6 +2,37 @@ import XCTest
 @testable import SignalWordCore
 
 final class PresentationModelsTests: XCTestCase {
+    func testRehearsalNeedsAcknowledgementAndResolutionForTheSameTest() {
+        func guide(_ state: String, acknowledged: Bool, delivery: String = "sent") -> TestRehearsalPresentationModel? {
+            TestRehearsalPresentationModel(alert: .init(eventID: UUID(), kind: "test", eventState: state,
+                initialDelivery: delivery, resolutionDelivery: "failed", isAcknowledged: acknowledged))
+        }
+        XCTAssertEqual(guide("active", acknowledged: false)?.step, .acknowledgement)
+        XCTAssertEqual(guide("active", acknowledged: true)?.step, .resolve)
+        XCTAssertEqual(guide("resolved", acknowledged: false)?.step, .incomplete)
+        XCTAssertEqual(guide("resolved", acknowledged: true)?.step, .complete)
+        XCTAssertEqual(guide("resolved", acknowledged: true)?.isComplete, true)
+        // A failed resolution email does not erase acknowledgement/resolution;
+        // nor does the guide claim that notification was delivered.
+        XCTAssertTrue(guide("resolved", acknowledged: true)?.detail.contains("resolution email status separately") == true)
+        XCTAssertEqual(guide("expired", acknowledged: true)?.step, .incomplete)
+        XCTAssertEqual(guide("unknown", acknowledged: true)?.step, .unavailable)
+        XCTAssertEqual(guide("active", acknowledged: false, delivery: "delivered")?.step, .acknowledgement)
+        XCTAssertEqual(guide("active", acknowledged: false, delivery: "failed")?.step, .delivery)
+        XCTAssertEqual(guide("active", acknowledged: false, delivery: "queued")?.step, .delivery)
+        XCTAssertEqual(guide("active", acknowledged: false, delivery: "unknown")?.step, .delivery)
+    }
+
+    func testUnconfirmedCommandsAndRealAlertsCannotBecomeCompletedRehearsals() {
+        for lifecycle: AlertLifecycleDisplayState in [.savedLocally, .submitting, .delayedConfirmation, .accepted, .pending] {
+            let guide = TestRehearsalPresentationModel(alert: .init(kind: .test, lifecycle: lifecycle))
+            XCTAssertEqual(guide?.step, .confirmServer)
+            XCTAssertEqual(guide?.isComplete, false)
+        }
+        XCTAssertNil(TestRehearsalPresentationModel(alert: .init(kind: .real, lifecycle: .resolved)))
+        XCTAssertNil(TestRehearsalPresentationModel(alert: .init(kind: nil, lifecycle: .resolved)))
+    }
+
     func testAlertKindAndLifecycleRemainVisibleInPresentation() {
         let test = AlertPresentationModel(
             eventID: UUID(), kind: "test", eventState: "active",

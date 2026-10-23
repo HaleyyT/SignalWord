@@ -215,40 +215,8 @@ struct SignalWordSetupFlow: View {
                 title: "Try it before you need it.",
                 detail: "A TEST is clearly labelled and does not imply an emergency. Rehearsal evidence is useful, but it does not block a manual REAL alert."
             )
-            SignalWordCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    Label("Set up your Vocal Shortcuts", systemImage: "waveform")
-                        .font(.headline)
-                    Text("First save SignalWord actions in Apple’s Shortcuts app, then assign your phrases in iOS Vocal Shortcuts. SignalWord does not detect danger automatically.")
-                        .font(.subheadline)
-                        .foregroundStyle(SignalWordColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    VocalShortcutSetupInstructions()
-                    Toggle("I added both Vocal Shortcuts", isOn: Binding(
-                        get: { model.shortcutConfigured },
-                        set: { model.setShortcutConfigured($0) }
-                    ))
-                    .tint(SignalWordColor.action)
-                    Text("This is your report. SignalWord cannot inspect iOS Shortcut settings.")
-                        .font(.caption)
-                        .foregroundStyle(SignalWordColor.mutedText)
-                }
-            }
-            SignalWordCard {
-                VStack(alignment: .leading, spacing: 10) {
-                    Label("Location is optional", systemImage: "location.circle")
-                        .font(.headline)
-                    Text(model.locationState.summary)
-                        .font(.subheadline)
-                        .foregroundStyle(SignalWordColor.secondaryText)
-                    if model.locationState == .notRequested {
-                        Button("Allow location while using SignalWord") { Task { await model.requestLocationAccess() } }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                }
-            }
             if model.contactStatus != "confirmed" {
-                InlineMessage("Waiting for your trusted person to confirm their email. Alerts cannot be sent until consent is confirmed.", kind: .attention)
+                InlineMessage("Your trusted person must verify their own email and you must approve their request. Return to the trusted-person step if either is unfinished.", kind: .attention)
                 SecondaryButton(title: "Check confirmation", symbol: "arrow.clockwise") { Task { await model.refreshContact() } }
             } else {
                 SignalWordCard {
@@ -263,7 +231,8 @@ struct SignalWordSetupFlow: View {
                         PrimaryButton(title: "Send a safe TEST alert", symbol: "paperplane") {
                             Task { await model.runRehearsal() }
                         }
-                        .disabled(!model.canStartNewRealAlert)
+                        .disabled(!model.canTriggerManually || !model.canStartNewRealAlert)
+                        .accessibilityIdentifier("rehearsal.sendTest")
                     }
                 }
             }
@@ -272,6 +241,11 @@ struct SignalWordSetupFlow: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(SignalWordColor.primaryText)
                 AlertProgressCard(model: model)
+                if model.canResolveCurrentAlert {
+                    HoldConfirmControl(action: .resolveAlert, isEnabled: true, identifier: "rehearsal.resolve") {
+                        await model.requestResolution()
+                    }
+                }
                 if model.canReportLockedTestForCurrentEvent {
                     SecondaryButton(title: "I used the locked TEST shortcut", symbol: "lock.iphone") {
                         model.recordLockedTestReport()
@@ -281,6 +255,48 @@ struct SignalWordSetupFlow: View {
                         .foregroundStyle(SignalWordColor.mutedText)
                 }
             }
+            DisclosureGroup("Optional: voice setup and location") {
+                VStack(alignment: .leading, spacing: 16) {
+                    SignalWordCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Label("Set up your Vocal Shortcuts", systemImage: "waveform")
+                                .font(.headline)
+                            Text("First save SignalWord actions in Apple’s Shortcuts app, then assign your phrases in iOS Vocal Shortcuts. SignalWord does not detect danger automatically.")
+                                .font(.subheadline)
+                                .foregroundStyle(SignalWordColor.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                            VocalShortcutSetupInstructions()
+                            Toggle("I added both Vocal Shortcuts", isOn: Binding(
+                                get: { model.shortcutConfigured },
+                                set: { model.setShortcutConfigured($0) }
+                            ))
+                            .tint(SignalWordColor.action)
+                            Text("This is your report. SignalWord cannot inspect iOS Shortcut settings.")
+                                .font(.caption)
+                                .foregroundStyle(SignalWordColor.mutedText)
+                        }
+                    }
+                    SignalWordCard {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Location is optional", systemImage: "location.circle")
+                                .font(.headline)
+                            Text(model.locationState.summary)
+                                .font(.subheadline)
+                                .foregroundStyle(SignalWordColor.secondaryText)
+                            if model.locationState == .notRequested {
+                                Button("Allow location while using SignalWord") { Task { await model.requestLocationAccess() } }
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                        }
+                    }
+                }
+                .padding(.top, 12)
+            }
+            .accessibilityIdentifier("rehearsal.optionalSetup")
+            Text("Start with a manual TEST together. Voice setup and location are optional; you can also practise them later in Settings.")
+                .font(.caption)
+                .foregroundStyle(SignalWordColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
             PrimaryButton(title: "Continue to home", symbol: "arrow.right") {
                 model.enterDashboard()
             }

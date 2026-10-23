@@ -262,6 +262,9 @@ struct AlertProgressCard: View {
                     }
                     if let message = model.resolveMessage { InlineMessage(message, kind: .attention) }
                     if let message = model.recoveryMessage { InlineMessage(message, kind: .attention) }
+                    if let guide = TestRehearsalPresentationModel(alert: presentation) {
+                        TestRehearsalGuide(presentation: guide)
+                    }
                     VStack(alignment: .leading, spacing: 8) {
                         Button(model.isRecovering ? "Checking…" : model.currentAlertEventID == nil ? "Check saved command" : "Refresh status") {
                             Task {

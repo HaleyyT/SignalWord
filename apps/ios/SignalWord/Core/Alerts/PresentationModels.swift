@@ -83,6 +83,58 @@ enum AlertDeliveryDisplayState: Equatable {
     }
 }
 
+/// Guides a single TEST from current server evidence. No local completion flag
+/// can turn delivery, acknowledgement or resolution into one another.
+struct TestRehearsalPresentationModel: Equatable {
+    enum Step: Equatable { case confirmServer, delivery, acknowledgement, resolve, complete, incomplete, unavailable }
+    let step: Step
+    let title: String
+    let detail: String
+    var isComplete: Bool { step == .complete }
+
+    init?(alert: AlertPresentationModel) {
+        guard alert.kind == .test else { return nil }
+        switch alert.lifecycle {
+        case .resolved:
+            if alert.isAcknowledged {
+                step = .complete
+                title = "TEST acknowledged and resolved"
+                detail = "You practised both sides of this TEST. This does not guarantee future delivery or assistance. Check the resolution email status separately."
+            } else {
+                step = .incomplete
+                title = "Resolved without acknowledgement"
+                detail = "This TEST is closed, but no recipient acknowledgement is recorded. Refresh its status; if none arrives, arrange another TEST together."
+            }
+        case .active:
+            if alert.isAcknowledged {
+                step = .resolve
+                title = "Next: resolve this TEST"
+                detail = "An acknowledgement is recorded. Resolve this TEST on your iPhone to finish the practice. Acknowledgement alone does not close it."
+            } else if [.providerAccepted, .delivered].contains(alert.initialDelivery) {
+                step = .acknowledgement
+                title = "Next: recipient acknowledgement"
+                detail = "Ask your trusted person to open their TEST email and acknowledge its link, then refresh status here. Provider delivery does not mean someone read it."
+            } else {
+                step = .delivery
+                title = alert.initialDelivery == .failed ? "TEST delivery failed" : "Check TEST delivery"
+                detail = alert.initialDelivery.detail + " Refresh this TEST rather than sending another. You can resolve it even without acknowledgement."
+            }
+        case .savedLocally, .submitting, .delayedConfirmation, .accepted, .pending:
+            step = .confirmServer
+            title = "Confirm this TEST’s status"
+            detail = "The TEST is not yet confirmed active. Check the saved command or refresh status before assuming an email was sent."
+        case .expired, .rejected:
+            step = .incomplete
+            title = "This TEST did not complete"
+            detail = "An expired or rejected TEST is not a completed rehearsal. Review its status before arranging another practice with your trusted person."
+        case .unknown:
+            step = .unavailable
+            title = "TEST status unavailable"
+            detail = "Refresh status when connected. No completed rehearsal is assumed."
+        }
+    }
+}
+
 /// A single display projection keeps event kind, server lifecycle, and each
 /// delivery channel distinct. Unknown wire values never become success copy.
 struct AlertPresentationModel: Equatable {

@@ -182,7 +182,7 @@ final class SignalWordJourneyTests: XCTestCase {
         confirm.tap()
     }
 
-    private func completeContactSetup(waitForRecovery: Bool = false) {
+    private func completeContactSetup(waitForRecovery: Bool = false, enterHome: Bool = true) {
         tap("Set up SignalWord")
         XCTAssertTrue(app.buttons["enrollment.create"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.textFields["name@example.com"].exists, "Sender must never enter recipient email")
@@ -202,7 +202,25 @@ final class SignalWordJourneyTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Review your person"].waitForNonExistence(timeout: 5))
         tap("Continue to rehearsal")
         XCTAssertTrue(app.buttons["Continue to home"].waitForExistence(timeout: 5))
+        if enterHome { tap("Continue to home") }
+    }
+
+    func testManualRehearsalResolvesWithoutOptionalSetup() {
+        launchFresh()
+        completeContactSetup(enterHome: false)
+        XCTAssertFalse(app.switches["I added both Vocal Shortcuts"].exists)
+        tap("rehearsal.sendTest")
+        XCTAssertTrue(app.staticTexts["Next: recipient acknowledgement"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["TEST acknowledged and resolved"].exists)
+        tap("rehearsal.resolve.review")
+        let confirm = app.buttons["Resolve alert"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(app.staticTexts["Resolved without acknowledgement"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["TEST acknowledged and resolved"].exists)
+        XCTAssertFalse(app.switches["I added both Vocal Shortcuts"].exists)
         tap("Continue to home")
+        XCTAssertTrue(app.buttons["home.test"].waitForExistence(timeout: 5))
     }
 
     func testSupporterAppearanceDoesNotGateSafety() {
