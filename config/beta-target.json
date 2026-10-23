@@ -2,7 +2,7 @@
   "environment": "beta",
   "status": "backend-provisioned",
   "projectRef": "gadussazfnmmmjgjktpc",
-  "viewerOrigin": null,
+  "viewerOrigin": "https://signalword-beta.vercel.app",
   "turnstileSiteKey": null,
   "vercelProjectId": "prj_PgsRJyPYMJmpMUULlAS5jnMrAmv2",
   "authorityName": "signalword-beta-safety-authority",
