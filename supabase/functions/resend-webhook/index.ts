@@ -5,10 +5,15 @@ const MAX_WEBHOOK_BYTES = 128 * 1024;
 
 interface WebhookDependencies {
   webhookSecret: string;
+  expectedSender?: string;
   apply(event: ResendWebhookEvent): Promise<boolean>;
 }
 
 export function createResendWebhookHandler(dependencies: WebhookDependencies) {
+  const expectedSender = dependencies.expectedSender;
+  if (expectedSender !== undefined && !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(expectedSender)) {
+    throw new Error("Invalid webhook sender configuration");
+  }
   return async (request: Request): Promise<Response> => {
     if (request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
     let rawBody: Uint8Array;
@@ -27,6 +32,16 @@ export function createResendWebhookHandler(dependencies: WebhookDependencies) {
       secret: dependencies.webhookSecret,
     });
     if (!verified || !providerEventId) return new Response(null, { status: 401 });
+    if (expectedSender !== undefined) {
+      let sender: unknown;
+      try { sender = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(rawBody))?.data?.from; }
+      catch { return new Response(null, { status: 400 }); }
+      // Only signed, exact sender matches may reach reconciliation. This does
+      // not replace provider-side isolation: the body has already reached ingress.
+      const address = typeof sender === "string"
+        ? (/^[^<>\r\n]*<([^<>\s]+)>$/.exec(sender)?.[1] ?? sender) : "";
+      if (address !== expectedSender) return new Response(null, { status: 202 });
+    }
     let event: ResendWebhookEvent;
     try { event = parseResendWebhook(rawBody, providerEventId); }
     catch { return new Response(null, { status: 400 }); }
@@ -44,10 +59,15 @@ if (import.meta.main) {
   const url = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const webhookSecret = Deno.env.get("RESEND_WEBHOOK_SECRET");
+  const expectedSender = Deno.env.get("RESEND_EXPECTED_SENDER");
   if (!url || !serviceRoleKey || !webhookSecret) throw new Error("Webhook configuration is required");
+  if (Deno.env.get("SIGNALWORD_DEPLOYMENT_TARGET") === "beta" && !expectedSender) {
+    throw new Error("Beta webhook sender configuration is required");
+  }
   const rpcUrl = `${url.replace(/\/$/, "")}/rest/v1/rpc/reconcile_resend_webhook`;
   Deno.serve(createResendWebhookHandler({
     webhookSecret,
+    expectedSender,
     async apply(event) {
       const response = await fetch(rpcUrl, {
         method: "POST",

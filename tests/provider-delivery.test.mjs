@@ -256,3 +256,25 @@ test('signed correlation reaches reconciliation; storage failures request retry'
   payload.data.tags.signalword_delivery = 'invalid';
   assert.equal((await invalid(await signedWebhookRequest(JSON.stringify(payload), Buffer.alloc(32, 7)))).status, 400);
 });
+
+
+test('scoped signed callbacks ignore foreign, missing and ambiguous senders before storage', async () => {
+  const bytes = Buffer.alloc(32, 11), applied = [];
+  const handler = createResendWebhookHandler({ webhookSecret: `whsec_${bytes.toString('base64')}`,
+    expectedSender: 'beta-alerts@example.test', apply: async event => { applied.push(event); return true; } });
+  for (const from of [undefined, 'production@example.test', 'beta-alerts@example.test.evil',
+    ['beta-alerts@example.test'], 'Name\n<beta-alerts@example.test>', 'a@example.test,beta-alerts@example.test']) {
+    const body = JSON.stringify({type:'email.delivered',data:{email_id:'synthetic-message',from}});
+    assert.equal((await handler(await signedWebhookRequest(body,bytes))).status,202);
+  }
+  assert.equal(applied.length,0);
+  for (const from of ['beta-alerts@example.test','SignalWord Beta <beta-alerts@example.test>']) {
+    const body = JSON.stringify({type:'email.delivered',data:{email_id:'synthetic-message',from}});
+    assert.equal((await handler(await signedWebhookRequest(body,bytes))).status,202);
+  }
+  assert.equal(applied.length,2);
+  const invalid = new Request('https://example.test',{method:'POST',body:JSON.stringify({data:{from:'beta-alerts@example.test'}})});
+  assert.equal((await handler(invalid)).status,401);
+  assert.equal(applied.length,2);
+  assert.throws(()=>createResendWebhookHandler({webhookSecret:'fixture',expectedSender:'Name <beta@example.test>',apply:async()=>true}),/configuration/);
+});
