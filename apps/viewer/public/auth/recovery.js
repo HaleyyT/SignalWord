@@ -36,7 +36,8 @@ reset.addEventListener('submit',async event=>{
 });
 try{
   const response=await fetch('/api/auth/config',{cache:'no-store'});if(!response.ok)throw Error('UNAVAILABLE');client=recoveryClient(await response.json());
-  if(tokenHash){reset.hidden=false;status.textContent='Choose a new password with at least 8 characters. Your link is verified only when you submit.';}
+  for(const id of ['password','confirmation'])document.getElementById(id).minLength=client.minimumPasswordLength;
+  if(tokenHash){reset.hidden=false;status.textContent=`Choose a new password with at least ${client.minimumPasswordLength} characters. Your link is verified only when you submit.`;}
   else if(hadFragment){status.textContent='This recovery link is invalid or expired. Request a fresh link.';fresh.hidden=false;}
   else await startRequest();
 }catch(error){status.textContent=message(error);}

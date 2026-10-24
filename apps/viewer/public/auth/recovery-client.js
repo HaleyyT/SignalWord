@@ -6,6 +6,8 @@ export function recoveryToken(fragment) {
 }
 export function recoveryClient(configuration, fetchImpl = fetch) {
   if (configuration.backend !== 'https://voepalyamwgenceawdvl.supabase.co' || !configuration.publicKey) throw Error('CONFIGURATION');
+  const minimumPasswordLength = configuration.minimumPasswordLength ?? 8;
+  if (!Number.isInteger(minimumPasswordLength) || minimumPasswordLength < 8 || minimumPasswordLength > 128) throw Error('CONFIGURATION');
   async function call(path, body, token, method='POST') {
     const response = await fetchImpl(configuration.backend + path, {method, redirect:'error',cache:'no-store',
       signal:AbortSignal.timeout(20000), headers:{apikey:configuration.publicKey,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body)});
@@ -19,12 +21,14 @@ export function recoveryClient(configuration, fetchImpl = fetch) {
     return data;
   }
   return {
+    minimumPasswordLength,
     request: (email,captchaToken) => {
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !captchaToken)throw Error('INPUT');
       return call('/auth/v1/recover?redirect_to='+encodeURIComponent(recoveryOrigin),{email:email.trim().toLowerCase(),gotrue_meta_security:{captcha_token:captchaToken}});
     },
     update: async (tokenHash,password) => {
-      if(!/^[a-f0-9]{40,128}$/i.test(tokenHash??'') || password.length<8 || password.length>4096)throw Error('INPUT');
+      if(!/^[a-f0-9]{40,128}$/i.test(tokenHash??'') || typeof password!=='string'
+        || Array.from(password).length<minimumPasswordLength || password.length>4096)throw Error('INPUT');
       const session=await call('/auth/v1/verify',{token_hash:tokenHash,type:'recovery'});
       if(!session?.access_token)throw Error('UNAVAILABLE');
       try { await call('/auth/v1/user',{password},session.access_token,'PUT'); }
