@@ -38,6 +38,9 @@ export function prepareBetaEnvironment({ target, output, publicKey }) {
       content = JSON.stringify(worker, null, 2) + '\n';
     } else if (path.startsWith('infrastructure/')) {
       content = content.replaceAll('signalword-dev', 'signalword-beta');
+      if (path === 'infrastructure/monitor/worker.mjs') {
+        content = content.replace('../../supabase/functions/', '../backend/supabase/functions/');
+      }
     }
     if (content.includes('voepalyamwgenceawdvl') || content.includes('https://www.signalword.app') || content.includes('signalword-dev')) {
       throw Error('BETA_SOURCE_HAS_PRODUCTION_CONNECTION');
@@ -55,7 +58,8 @@ export function prepareBetaEnvironment({ target, output, publicKey }) {
   const reader = secret(), writer = secret(), admin = secret(), dispatch = secret(), monitor = secret();
   const env = entries => Object.entries(entries).map(([key, value]) => `${key}=${value}`).join('\n') + '\n';
   write('private/.env.authority', env({ READER_SECRET: reader, WRITER_SECRET: writer, ADMIN_SECRET: admin }));
-  write('private/.env.backend', env({ APP_ENV: 'production', DELIVERY_PROVIDER: 'none',
+  write('private/.env.backend', env({ APP_ENV: 'production', SIGNALWORD_DEPLOYMENT_TARGET: 'beta',
+    RESEND_EXPECTED_SENDER: 'beta-alerts@mail.signalword.app', DELIVERY_PROVIDER: 'none',
     CONTACT_ENROLLMENT_ENABLED: 'false', LEGACY_CONTACT_WRITES_DISABLED: 'false',
     CONTACT_INVITATION_ORIGIN: config.viewerOrigin, PUBLIC_VIEWER_BASE_URL: config.viewerOrigin,
     PUBLIC_CONFIRMATION_BASE_URL: config.viewerOrigin, DISPATCH_SECRET: dispatch, MONITOR_SECRET: monitor,

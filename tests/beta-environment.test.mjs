@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, exis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { validateBetaTarget } from '../scripts/beta-target.mjs';
 import { prepareBetaEnvironment } from '../scripts/prepare-beta-environment.mjs';
 import { proxyEnrollment } from '../apps/viewer/api/enrollment/[token].mjs';
@@ -75,6 +76,12 @@ test('packages use independent keys, separate resources and disabled delivery/en
     assert.equal(control.workers_dev, false);
     assert.deepEqual(monitor.triggers.crons, []);
     assert.equal(monitor.name, target.monitorName);
+    // Import the generated artifact: source-string checks missed its broken relative path.
+    const packagedMonitor = await import(pathToFileURL(join(output, 'monitor/worker.mjs')).href);
+    assert.equal(typeof packagedMonitor.Monitor, 'function');
+    assert.equal((await packagedMonitor.default.fetch()).status, 404);
+    assert.equal(backend.SIGNALWORD_DEPLOYMENT_TARGET, 'beta');
+    assert.equal(backend.RESEND_EXPECTED_SENDER, 'beta-alerts@mail.signalword.app');
     for (const { path } of manifest.files) {
       assert.doesNotMatch(path, /(?:^|\/)(?:docs|draft|\.git|\.env[^/]*|\.temp)(?:\/|$)/);
       const contents = readFileSync(join(output, path), 'utf8');
