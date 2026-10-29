@@ -211,3 +211,11 @@ invitation capability or remote-IP parameter is sent by the server to Siteverify
 - The hosted enrollment probe is read-only and uses random unissued capabilities:
   `npm run release:hosted -- --enrollment`. Account configuration, delivery, privacy
   settings and the signed physical-device candidate require separate acceptance.
+
+## Disabled beta configuration checks
+
+Before enabling enrollment, run `node scripts/check-beta-standby.mjs`. It checks the beta auth identity, public CAPTCHA key, ten-character recovery policy and deliberately disabled enrollment response using GET requests only. For protected Vercel deployments, supply the existing owner automation credential through `SIGNALWORD_BETA_VERCEL_BYPASS`; never commit or paste it into output.
+
+Run `node scripts/check-beta-monitor.mjs` with `CLOUDFLARE_ACCOUNT_ID` and an existing appropriately scoped `CLOUDFLARE_API_TOKEN` in the environment to inspect only the configured beta monitor. It checks the backend binding, credential presence and absence of schedules. It neither invokes the monitor nor sends notifications.
+
+These are standby configuration checks. A pass does not establish callback isolation, successful delivery, operator notification receipt, hosted lifecycle acceptance or TestFlight readiness. Missing notification destinations are reported separately. After deliberate activation, use the enabled hosted preflight and complete the controlled acceptance checklist; an active environment should fail these standby expectations.
