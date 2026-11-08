@@ -43,6 +43,15 @@ final class InvitedSignInTests: XCTestCase {
             } catch { XCTAssertEqual(error as? SessionError, expected) }
         }
     }
+    func testExpiredCodeAndNetworkFailuresRemainDistinct() async {
+        let expired = manager(SessionBox()) { request in
+            (Data(#"{"code":403,"error_code":"otp_expired"}"#.utf8), HTTPURLResponse(url: request.url!, statusCode: 403, httpVersion: nil, headerFields: nil)!)
+        }
+        do { try await expired.verifyInvitedCode(email: "a@example.com", code: "01234567"); XCTFail() }
+        catch { XCTAssertEqual(error as? SessionError, .verificationCodeExpired) }
+        XCTAssertNotEqual(SessionError.verificationCodeExpired.message, SessionError.unavailable.message)
+    }
+
     func testRequestDoesNotPersistIdentityAndVerificationSurvivesRelaunch() async throws {
         let box = SessionBox(); let payload = success
         let m = manager(box) { request in

@@ -324,7 +324,7 @@ final class AppShellModel {
             invitedCodeRequested = false
             await prepare()
         } catch {
-            accountMessage = "Code not accepted. It may be incorrect, expired or already used. Try again or request a new code."
+            accountMessage = (error as? SessionError)?.message ?? "Sign-in could not be confirmed. Check your connection before requesting another code."
         }
     }
 

@@ -25,6 +25,7 @@ struct SignalWordSetupFlow: View {
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .disabled(model.isSigningIn || model.invitedCodeRequested)
+                                .frame(minHeight: 44)
                                 .accessibilityIdentifier("onboarding.invitedEmail")
                             if usePassword && !model.isCreatingAccount {
                                 SecureField("Password", text: $password)
@@ -37,6 +38,7 @@ struct SignalWordSetupFlow: View {
                                 SecureField("Email sign-in code", text: $model.invitedCode)
                                     .textContentType(.oneTimeCode)
                                     .keyboardType(.numberPad)
+                                    .frame(minHeight: 44)
                                     .accessibilityIdentifier("onboarding.invitedCode")
                                 Button("Change email address") { model.changeInvitedEmail() }
                                     .disabled(model.isSigningIn)

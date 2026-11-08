@@ -248,7 +248,13 @@ struct ContactEnrollmentPanel: View {
                 Text("Invite someone privately").font(.headline)
                 Text("Share the link yourself with one person you trust. SignalWord does not ask you for their email or send an invitation email. They enter their own email, consent and verify it, then you approve the request.")
                     .font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                Text("Your name or nickname").font(.caption.weight(.semibold))
                 TextField("Your name", text: $model.displayName).textContentType(.name)
+                    .frame(minHeight: 44)
+                    .padding(.horizontal, 12)
+                    .background(SignalWordColor.action.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                    .accessibilityLabel("Your name or nickname")
+                    .accessibilityIdentifier("enrollment.senderName")
                 Text("Your name is shown on new invitations so your person recognises you.").font(.caption)
                 if let url = enrollment.shareURL {
                     ShareLink(item: url) { Label("Share invitation", systemImage: "square.and.arrow.up") }

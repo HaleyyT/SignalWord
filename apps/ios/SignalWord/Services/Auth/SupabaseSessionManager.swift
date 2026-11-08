@@ -6,7 +6,7 @@ import OSLog
 enum SessionError: RetryClassifiableError {
     var isRetryable: Bool { self == .unavailable || self == .invalidResponse }
     case invalidCredentials, captchaFailed, rateLimited, sessionExpired, differentAccount
-    case emailSignInDisabled, registrationClosed
+    case emailSignInDisabled, registrationClosed, verificationCodeExpired
 
     var message: String {
         switch self {
@@ -14,6 +14,7 @@ enum SessionError: RetryClassifiableError {
         case .captchaFailed: "Verification was not accepted. Complete a new CAPTCHA and try again."
         case .rateLimited: "Too many attempts. Wait a few minutes before trying again."
         case .emailSignInDisabled: "Email sign-in is temporarily unavailable. Contact support and try again later."
+        case .verificationCodeExpired: "This code is incorrect, expired or already used. Enter the newest email code, or request a new one."
         case .registrationClosed: "New account registration is currently closed. Use Sign in if you already have an account."
         case .differentAccount: "Sign in to the same account to recover this device’s alerts and timers."
         case .sessionExpired, .verificationRequired: "Sign in again to recover your account. Server check-in timers continue while you are signed out."
@@ -254,6 +255,7 @@ actor SupabaseSessionManager {
         if code == "captcha_failed" { throw SessionError.captchaFailed }
         if code == "email_provider_disabled" { throw SessionError.emailSignInDisabled }
         if code == "signup_disabled" { throw SessionError.registrationClosed }
+        if code == "otp_expired" { throw SessionError.verificationCodeExpired }
         if refreshing && [400, 401, 403].contains(http.statusCode) { throw SessionError.sessionExpired }
         if code == "invalid_credentials" || http.statusCode == 401 { throw SessionError.invalidCredentials }
         throw SessionError.unavailable
