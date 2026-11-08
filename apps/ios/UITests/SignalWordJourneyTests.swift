@@ -4,6 +4,30 @@ import XCTest
 final class SignalWordJourneyTests: XCTestCase {
     private var app: XCUIApplication!
 
+    func testVoiceGuideResumesWithoutStoringPhraseOrSkippingPractice() {
+        launchFresh()
+        completeContactSetup()
+        app.buttons["navigation.Settings"].tap()
+        tap("shortcut.setup.instructions")
+        XCTAssertTrue(app.staticTexts["Save the practice action"].waitForExistence(timeout: 5))
+        tap("Continue setup")
+        tap("Suggest four words")
+        XCTAssertTrue(app.staticTexts["shortcut.phraseSuggestion"].exists)
+        app.buttons["Done"].tap()
+        tap("shortcut.setup.instructions")
+        XCTAssertTrue(app.staticTexts["Choose your practice phrase"].exists)
+        XCTAssertFalse(app.staticTexts["shortcut.phraseSuggestion"].exists)
+        tap("Continue setup")
+        tap("Continue setup")
+        XCTAssertTrue(app.staticTexts["Practise with your phone unlocked"].exists)
+        reveal(app.buttons["Continue setup"])
+        XCTAssertFalse(app.buttons["Continue setup"].isEnabled)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Voice guide practice gate"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testExistingPasswordSignInKeepsEmailCodeOption() {
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-invited-login"]

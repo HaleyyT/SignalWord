@@ -106,6 +106,9 @@ final class AppShellModel {
     }
     private func restoreReadiness(for identity: String?) {
         guard let identity, readinessIdentityID != identity else { return }
+        if let previous = preferences.string(forKey: "readinessIdentityID"), previous != identity {
+            VoiceSetupStorage.clear(in: preferences)
+        }
         readinessIdentityID = identity
         if preferences.string(forKey: "readinessIdentityID") == identity { return }
         guard let data = preferences.data(forKey: "accountReadiness." + identity),
@@ -768,6 +771,7 @@ final class AppShellModel {
     }
 
     private func clearRehearsalEvidence(startingAt: Date = .now) {
+        VoiceSetupStorage.clear(in: preferences)
         lockedTestReports = []
         currentAcknowledgedTestID = nil
         canReportLockedTestForCurrentEvent = false

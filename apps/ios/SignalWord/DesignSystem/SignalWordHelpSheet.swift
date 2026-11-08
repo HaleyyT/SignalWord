@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SignalWordHelpSheet: View {
+    @Bindable var model: AppShellModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var textSize
 
@@ -11,12 +12,12 @@ struct SignalWordHelpSheet: View {
                     Text("A phrase. A person. A way to reach them.")
                         .font(.title2.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
-                    step("1", "Choose your person", "Add someone you trust. They must confirm their email before receiving alerts.", "person.crop.circle.badge.checkmark")
-                    step("2", "Connect your phrase", "Save a SignalWord action in Apple Shortcuts, then teach iOS Vocal Shortcuts your phrase. SignalWord does not detect danger itself.", "waveform")
-                    step("3", "Send a TEST", "Use Send TEST Alert. Ask your person to open the email and acknowledge it. Resolve the test in SignalWord.", "checkmark.message")
+                    step("1", "Choose your person", "Share a private invitation. Your person enters their own email and verifies it, then you approve them.", "person.crop.circle.badge.checkmark")
+                    step("2", "Practise together", "Send a manual TEST. Your person acknowledges it, then you resolve it.", "checkmark.message")
+                    step("3", "Connect your phrase", "Follow voice setup to save the TEST action and train Apple Vocal Shortcuts. Practise unlocked and locked.", "waveform")
                     step("4", "Use REAL when needed", "Trigger Alert sends a REAL alert. Give it a different phrase. Your person sees an alert page and any available location.", "exclamationmark.bubble")
                     DisclosureGroup("Connect Vocal Shortcuts, step by step") {
-                        VocalShortcutSetupInstructions(expanded: true).padding(.top, 12)
+                        VocalShortcutSetupInstructions(model: model).padding(.top, 12)
                     }
                     DisclosureGroup("Location, acknowledgement & check-ins") {
                         VStack(alignment: .leading, spacing: 12) {

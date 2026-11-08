@@ -4,7 +4,7 @@ import AppIntents
 @available(iOS 18.0, *)
 struct TriggerAlertIntent: AppIntent {
     static let title: LocalizedStringResource = "Trigger Alert"
-    static let description = IntentDescription("Send an alert to your confirmed trusted contact.")
+    static let description = IntentDescription("Send a REAL alert to your consenting, approved trusted contact. Use Send TEST Alert for practice.")
     static let openAppWhenRun = false
     static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
@@ -21,7 +21,7 @@ struct TestAlertIntent: AppIntent {
     static let openAppWhenRun = false
     static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
     func perform() async throws -> some IntentResult {
-        _ = await AppCompositionRoot.trigger(kind: .test, method: .vocalShortcut)
+        _ = await IntentAlertRunner.run(kind: .test)
         return .result()
     }
 }

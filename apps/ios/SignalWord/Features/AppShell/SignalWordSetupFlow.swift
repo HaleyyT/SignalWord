@@ -265,15 +265,7 @@ struct SignalWordSetupFlow: View {
                                 .font(.subheadline)
                                 .foregroundStyle(SignalWordColor.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
-                            VocalShortcutSetupInstructions()
-                            Toggle("I added both Vocal Shortcuts", isOn: Binding(
-                                get: { model.shortcutConfigured },
-                                set: { model.setShortcutConfigured($0) }
-                            ))
-                            .tint(SignalWordColor.action)
-                            Text("This is your report. SignalWord cannot inspect iOS Shortcut settings.")
-                                .font(.caption)
-                                .foregroundStyle(SignalWordColor.mutedText)
+                            VocalShortcutSetupInstructions(model: model)
                         }
                     }
                     SignalWordCard {

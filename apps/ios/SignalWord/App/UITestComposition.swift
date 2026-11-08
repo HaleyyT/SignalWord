@@ -11,6 +11,7 @@ enum UITestComposition {
         let preferences = UserDefaults(suiteName: "SignalWord.UIJourney")!
         if arguments.contains("--reset-ui-state") {
             preferences.removePersistentDomain(forName: "SignalWord.UIJourney")
+            VoiceSetupStorage.clear()
         }
         if arguments.contains("--ui-layout-ready") {
             preferences.set(true, forKey: "onboardingComplete")
