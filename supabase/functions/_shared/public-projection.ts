@@ -57,6 +57,12 @@ export function parsePublicProjection(value: unknown): Record<string, unknown> {
     ...(isTimestamp(value.serverNow) ? { serverNow: value.serverNow } : {}),
     ...(isTimestamp(value.clientTriggeredAt) ? { clientTriggeredAt: value.clientTriggeredAt } : {}),
     ...(safeLocation ? { location: safeLocation } : {}),
-    guidance: { summary: guidance.summary },
+    guidance: { summary: kind === "test"
+      ? state === "resolved"
+        ? "This TEST rehearsal was resolved. No action is required. Do not contact emergency services because of this test message."
+        : state === "expired"
+        ? "This TEST rehearsal has expired. No action is required. Do not contact emergency services because of this test message."
+        : "This is a TEST rehearsal, not an emergency. Acknowledge this TEST, then tell the sender so they can resolve it. Do not contact emergency services because of this test message."
+      : guidance.summary },
   };
 }

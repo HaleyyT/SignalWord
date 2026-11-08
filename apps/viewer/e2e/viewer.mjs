@@ -28,8 +28,10 @@ try {
     } else await route.fulfill({ json: event });
   });
   await page.goto(`${process.env.SIGNALWORD_VIEWER_TEST_URL ?? 'http://127.0.0.1:4174'}/events#token=${token}`);
-  await page.getByRole('heading', { name: 'Alex sent an alert' }).waitFor();
+  await page.getByRole('heading', { name: 'Alex sent a TEST' }).waitFor();
   assert.equal(posts, 0, 'opening or rendering an alert must not acknowledge');
+  await page.getByText('Do not contact emergency services because of this test message.', {exact:false}).waitFor();
+  assert.equal(await page.getByText('Contact them directly to arrange help.', {exact:false}).count(),0,'TEST must not show REAL-alert instructions');
   await page.getByRole('button', { name: 'Acknowledge this alert' }).click();
   await page.getByRole('alert').waitFor();
   assert.equal(posts, 1);

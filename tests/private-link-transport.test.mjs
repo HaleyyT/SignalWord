@@ -39,3 +39,14 @@ test('backend rejects cross-handler kinds and oversized transport bodies',async(
   const response=await handler(new Request('https://beta.test/private-links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}));assert.notEqual(response.status,200);
  }
 });
+
+// Older database projections may contain REAL guidance for TEST records.
+// The public boundary must prevent that copy from reaching any client.
+test('TEST guidance is rehearsal-specific, and REAL guidance is preserved', async()=>{
+ const {parsePublicProjection}=await import('../supabase/functions/_shared/public-projection.ts');
+ const fixture={kind:'test',displayName:'Sender',state:'active',triggeredAt:'2026-11-09T00:00:00Z',lastUpdatedAt:'2026-11-09T00:00:00Z',guidance:{summary:'Contact Sender now. Call emergency services.'}};
+ assert.match(parsePublicProjection(fixture).guidance.summary,/not an emergency/);
+ assert.match(parsePublicProjection({...fixture,state:'resolved'}).guidance.summary,/No action is required/);
+ assert.match(parsePublicProjection({...fixture,state:'expired'}).guidance.summary,/expired/);
+ assert.deepEqual(parsePublicProjection({...fixture,kind:'real'}).guidance,fixture.guidance);
+});
