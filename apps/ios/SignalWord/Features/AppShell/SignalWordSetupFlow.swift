@@ -71,7 +71,8 @@ struct SignalWordSetupFlow: View {
                         if model.requiresSessionRecovery {
                             Button("Sign in again") { Task { await model.signInAgain() } }
                         } else if model.accountLoadState == .unavailable {
-                            Button("Retry account loading") { Task { await model.recover() } }
+                            Button("Retry account loading") { Task { await model.prepare() } }
+                            Button("Sign in again") { Task { await model.signInAgain() } }
                         } else {
                             switch model.stage {
                             case .understand: introduction

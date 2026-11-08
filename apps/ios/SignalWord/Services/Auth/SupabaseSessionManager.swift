@@ -248,7 +248,7 @@ actor SupabaseSessionManager {
         guard !(200..<300).contains(http.statusCode) else { return }
         // Match only allowlisted provider codes; never expose a response body or token.
         let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let code = (object?["code"] ?? object?["error_code"]) as? String
+        let code = (object?["error_code"] as? String) ?? (object?["code"] as? String)
         if http.statusCode == 429 { throw SessionError.rateLimited }
         if http.statusCode >= 500 { throw SessionError.unavailable }
         if code == "captcha_failed" { throw SessionError.captchaFailed }

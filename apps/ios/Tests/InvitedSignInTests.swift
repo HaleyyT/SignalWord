@@ -33,7 +33,7 @@ final class InvitedSignInTests: XCTestCase {
         for (code, expected) in [("email_provider_disabled", SessionError.emailSignInDisabled),
                                  ("signup_disabled", SessionError.registrationClosed)] {
             let m = manager(SessionBox()) { request in
-                let data = try JSONSerialization.data(withJSONObject: ["error_code": code])
+                let data = try JSONSerialization.data(withJSONObject: ["code": 400, "error_code": code])
                 return (data, HTTPURLResponse(url: request.url!, statusCode: 400,
                                               httpVersion: nil, headerFields: nil)!)
             }

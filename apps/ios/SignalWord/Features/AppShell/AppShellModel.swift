@@ -319,6 +319,7 @@ final class AppShellModel {
         defer { isSigningIn = false; invitedCode = "" }
         do {
             try await lifecycle.verifyInvitedCode(invitedEmail, invitedCode)
+            needsIdentityVerification = false
             invitedEmail = ""
             invitedCodeRequested = false
             await prepare()
@@ -333,6 +334,7 @@ final class AppShellModel {
         defer { isSigningIn = false }
         do {
             try await lifecycle.signInWithPassword(invitedEmail, password, captchaToken)
+            needsIdentityVerification = false
             invitedEmail = ""
             invitedCode = ""
             invitedCodeRequested = false
