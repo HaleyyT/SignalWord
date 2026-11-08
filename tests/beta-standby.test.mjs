@@ -7,7 +7,9 @@ const target = JSON.parse(readFileSync(new URL('../config/beta-target.json', imp
 const publicKey = 'eyJhbGciOiJIUzI1NiJ9.' + Buffer.from(JSON.stringify({ role: 'anon', ref: target.projectRef })).toString('base64url') + '.fixture';
 const headers = { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer', 'x-content-type-options': 'nosniff' };
 const auth = { backend: `https://${target.projectRef}.supabase.co`, siteKey: target.turnstileSiteKey, minimumPasswordLength: 10, publicKey };
-const reply = (url, overrides = {}) => url.pathname.includes('/auth/')
+const reply = (url, overrides = {}) => url.pathname === '/auth/v1/settings'
+  ? Response.json({ external: { email: true }, disable_signup: true })
+  : url.pathname.includes('/auth/')
   ? Response.json({ ...auth, ...overrides }, { headers })
   : Response.json({ error: { code: 'SERVICE_UNAVAILABLE' } }, { status: 503, headers });
 
@@ -19,9 +21,20 @@ test('standby acceptance only reads config and never declares TestFlight readine
   assert.equal(result.standbyConfigurationPassed, true);
   assert.equal(result.hostedLifecycleAccepted, false);
   assert.equal(result.testFlightReady, false);
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
   assert.ok(calls.every(({ options }) => options.method === 'GET' && options.redirect === 'error' && !options.body));
   assert.ok(!JSON.stringify(result).includes(publicKey));
+  assert.equal(calls[2].options.headers.apikey, publicKey);
+});
+
+test('closed signup must still permit existing-user email login', async () => {
+  for (const settings of [{ external: { email: false }, disable_signup: true },
+    { external: { email: true }, disable_signup: false }]) {
+    const result = await checkBetaStandby(target, url => url.pathname === '/auth/v1/settings'
+      ? Response.json(settings) : reply(url));
+    assert.equal(result.standbyConfigurationPassed, false);
+    assert.equal(result.results.at(-1).passed, false);
+  }
 });
 
 test('wrong backend, widget, password policy or public key fails standby acceptance', async () => {

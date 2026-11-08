@@ -1,14 +1,20 @@
 import Foundation
+#if DEBUG
+import OSLog
+#endif
 
 enum SessionError: RetryClassifiableError {
     var isRetryable: Bool { self == .unavailable || self == .invalidResponse }
     case invalidCredentials, captchaFailed, rateLimited, sessionExpired, differentAccount
+    case emailSignInDisabled, registrationClosed
 
     var message: String {
         switch self {
         case .invalidCredentials: "The email or password was not accepted. Try again or use Forgot password."
         case .captchaFailed: "Verification was not accepted. Complete a new CAPTCHA and try again."
         case .rateLimited: "Too many attempts. Wait a few minutes before trying again."
+        case .emailSignInDisabled: "Email sign-in is temporarily unavailable. Contact support and try again later."
+        case .registrationClosed: "New account registration is currently closed. Use Sign in if you already have an account."
         case .differentAccount: "Sign in to the same account to recover this device’s alerts and timers."
         case .sessionExpired, .verificationRequired: "Sign in again to recover your account. Server check-in timers continue while you are signed out."
         case .configuration: "Account verification is unavailable in this build. Contact support."
@@ -108,7 +114,29 @@ actor SupabaseSessionManager {
         request.httpMethod = "POST"
         guard !createAccount || reauthenticationUserID == nil else { throw SessionError.configuration }
         request.httpBody = try InvitedSignIn.requestBody(email: email, captchaToken: captchaToken, createAccount: createAccount)
-        let (data, response) = try await send(request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await send(request)
+        } catch {
+            #if DEBUG
+            let code = (error as? URLError)?.errorCode ?? 0
+            Logger(subsystem: "com.signalword.app", category: "AuthDiagnostics")
+                .error("Code request transport error: \(code, privacy: .public)")
+            #endif
+            throw error
+        }
+        #if DEBUG
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let providerCode = body?["error_code"] as? String
+            let knownCodes = ["captcha_failed", "email_address_invalid", "signup_disabled",
+                              "over_email_send_rate_limit", "unexpected_failure", "validation_failed",
+                              "user_not_found", "email_provider_disabled"]
+            let reason = knownCodes.first { $0 == providerCode } ?? "other"
+            Logger(subsystem: "com.signalword.app", category: "AuthDiagnostics")
+                .error("Code request rejected: HTTP \(http.statusCode, privacy: .public), \(reason, privacy: .public)")
+        }
+        #endif
         guard generation == requestGeneration, !Task.isCancelled else { throw CancellationError() }
         try Self.validate(response, data: data, refreshing: false)
     }
@@ -224,6 +252,8 @@ actor SupabaseSessionManager {
         if http.statusCode == 429 { throw SessionError.rateLimited }
         if http.statusCode >= 500 { throw SessionError.unavailable }
         if code == "captcha_failed" { throw SessionError.captchaFailed }
+        if code == "email_provider_disabled" { throw SessionError.emailSignInDisabled }
+        if code == "signup_disabled" { throw SessionError.registrationClosed }
         if refreshing && [400, 401, 403].contains(http.statusCode) { throw SessionError.sessionExpired }
         if code == "invalid_credentials" || http.statusCode == 401 { throw SessionError.invalidCredentials }
         throw SessionError.unavailable
