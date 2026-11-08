@@ -27,7 +27,8 @@ export function createConfirmationUrl(baseUrl: string, token: string, environmen
     throw new Error("Production confirmation URL must use HTTPS");
   }
   if (!["https:", "http:"].includes(base.protocol)) throw new Error("Confirmation URL must use HTTP or HTTPS");
-  base.pathname = `${base.pathname.replace(/\/$/, "")}/confirm/${token}`;
+  base.pathname = `${base.pathname.replace(/\/$/, "")}/confirm`;
+  base.hash = `token=${token}`;
   return base.toString();
 }
 
@@ -47,7 +48,8 @@ export function createViewerUrl(baseUrl: string, viewerToken: string, environmen
   if (base.username || base.password || base.search || base.hash) throw new Error("Viewer base URL must not contain credentials, query, or fragment");
   if (environment === "production" && base.protocol !== "https:") throw new Error("Production viewer URL must use HTTPS");
   if (!['https:', 'http:'].includes(base.protocol)) throw new Error("Viewer URL must use HTTP or HTTPS");
-  base.pathname = `${base.pathname.replace(/\/$/, "")}/events/${viewerToken}`;
+  base.pathname = `${base.pathname.replace(/\/$/, "")}/events`;
+  base.hash = `token=${viewerToken}`;
   return base.toString();
 }
 
@@ -112,7 +114,8 @@ export function createJoinManagementUrl(baseUrl: string, token: string, environm
   // Reuse the configured public link's HTTPS/credential checks.
   createConfirmationUrl(baseUrl, "a".repeat(43), environment);
   const base = new URL(baseUrl);
-  base.pathname = `${base.pathname.replace(/\/$/, "")}/manage-contact/${token}`;
+  base.pathname = `${base.pathname.replace(/\/$/, "")}/manage-contact`;
+  base.hash = `token=${token}`;
   return base.toString();
 }
 

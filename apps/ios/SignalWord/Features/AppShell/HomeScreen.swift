@@ -20,13 +20,12 @@ struct HomeScreen: View {
                 if hasCurrentAlert {
                     AlertProgressCard(model: model)
                 }
-                if timer.snapshot?.state == .active { CheckInPanel() }
+                CheckInPanel()
                 primaryAction
                 if !canStartManualAlert { helpButton }
                 if hasCurrentAlert { RecipientProgressPanel(eventID: model.currentAlertEventID) }
                 DisclosureGroup("Setup & readiness") { setupSummary.padding(.top, 12) }
                     .accessibilityIdentifier("home.readiness")
-                if timer.snapshot?.state != .active { CheckInPanel() }
                 if !hasCurrentAlert, model.currentAlertPresentation != nil {
                     DisclosureGroup("Last alert details") {
                         AlertProgressCard(model: model).padding(.top, 12)

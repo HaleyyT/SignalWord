@@ -4,7 +4,7 @@ import { confirmationTokenFromPath, confirmTrustedContact, withdrawTrustedContac
 type State = 'ready' | 'submitting' | 'confirmed' | 'unavailable' | 'temporary' | 'withdrawn'
 
 export function ContactConfirmationPage() {
-  const token = confirmationTokenFromPath(window.location.pathname)
+  const token = confirmationTokenFromPath(window.location.pathname, window.location.hash)
   const [state, setState] = useState<State>(token ? 'ready' : 'unavailable')
 
   // Keep the user's choice across uncertain responses; a retry must never

@@ -56,6 +56,19 @@ final class ContactEnrollmentTests: XCTestCase {
         XCTAssertNotEqual(api.keys[1], api.keys[2])
     }
 
+    func testPrivateFragmentShareLinkIsBoundToTheConfiguredOrigin() {
+        let origin = URL(string: "https://beta.example.test")!
+        let token = String(repeating: "a", count: 43)
+        for url in ["https://beta.example.test/join#token=" + token, "https://beta.example.test/join/" + token] {
+            let invitation = ContactInvitation(invitationId: UUID(), displayName: "Sender", status: "open", expiresAt: .distantFuture, shareURL: URL(string: url))
+            XCTAssertNotNil(invitation.safeShareURL(origin: origin))
+        }
+        for url in ["https://evil.test/join#token=" + token, "https://beta.example.test/join?token=" + token, "https://beta.example.test/join#token=short"] {
+            let invitation = ContactInvitation(invitationId: UUID(), displayName: "Sender", status: "open", expiresAt: .distantFuture, shareURL: URL(string: url))
+            XCTAssertNil(invitation.safeShareURL(origin: origin))
+        }
+    }
+
     func testVerifiedMailboxRequiresExplicitIntendedPersonConfirmationAndReview() async {
         let api = EnrollmentFixture(), model = ContactEnrollmentModel(api: nil)
         await model.create()

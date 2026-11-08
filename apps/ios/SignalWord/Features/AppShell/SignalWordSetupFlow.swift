@@ -33,6 +33,7 @@ struct SignalWordSetupFlow: View {
                                 Text("Use the password for your existing account.")
                                     .font(.footnote)
                             } else if model.invitedCodeRequested {
+                                Text("Use the newest SignalWord email code. Requesting another code replaces the earlier one.").font(.footnote)
                                 SecureField("Email sign-in code", text: $model.invitedCode)
                                     .textContentType(.oneTimeCode)
                                     .keyboardType(.numberPad)
@@ -48,7 +49,9 @@ struct SignalWordSetupFlow: View {
                                 .accessibilityIdentifier("onboarding.verifyIdentity")
                                 .disabled(model.isSigningIn || model.invitedEmail.isEmpty || (usePassword && !model.isCreatingAccount && password.isEmpty))
                             if !model.isCreatingAccount {
-                            Link("Forgot password", destination: URL(string: "https://www.signalword.app/auth/recovery")!)
+                            if let recoveryURL = SignalWordConfiguration.accountRecoveryURL {
+                                Link("Forgot password", destination: recoveryURL)
+                            }
                             Button(usePassword ? "Use an email code" : "Use an existing password") {
                                 model.changeInvitedEmail()
                                 password = ""

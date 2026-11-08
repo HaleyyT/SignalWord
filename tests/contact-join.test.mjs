@@ -218,7 +218,7 @@ test('Resend join adapter uses existing idempotency and sanitized correlation ta
     assert.deepEqual(message.to, ['recipient@example.test']);
     assert.match(message.text, /012345/);
     assert.doesNotMatch(JSON.stringify(message.tags), /012345|recipient@example/);
-    assert.match(message.html, /manage-contact\//);
+    assert.match(message.html, /manage-contact#token=/);
     return response({ id: 'provider-receipt' });
   });
   assert.deepEqual(await adapter.sendJoinCode({ recipient: 'recipient@example.test', code: '012345', withdrawalToken: 'a'.repeat(64), senderName: 'Sender',
@@ -226,7 +226,7 @@ test('Resend join adapter uses existing idempotency and sanitized correlation ta
 });
 
 test('management links reject invalid capability, credentials, query, fragment and production HTTP', () => {
-  assert.equal(createJoinManagementUrl('https://example.test', 'a'.repeat(64), 'production'), `https://example.test/manage-contact/${'a'.repeat(64)}`);
+  assert.equal(createJoinManagementUrl('https://example.test', 'a'.repeat(64), 'production'), `https://example.test/manage-contact#token=${'a'.repeat(64)}`);
   for (const url of ['http://example.test', 'https://user:pass@example.test', 'https://example.test?tracking=1', 'https://example.test#fragment']) {
     assert.throws(() => createJoinManagementUrl(url, 'a'.repeat(64), 'production'));
   }

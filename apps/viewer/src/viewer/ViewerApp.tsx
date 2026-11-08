@@ -8,7 +8,7 @@ function formatTime(timestamp: string): string {
 }
 
 export function ViewerApp() {
-  const token = viewerTokenFromPath(window.location.pathname)
+  const token = viewerTokenFromPath(window.location.pathname, window.location.hash)
   const state = usePublicEvent(token)
   const [ack, setAck] = useState<'idle' | 'sending' | 'done' | 'failed'>('idle')
   const [elapsed, setElapsed] = useState(0)

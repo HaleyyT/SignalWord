@@ -1,6 +1,22 @@
 {
   "rewrites": [
     {
+      "source": "/confirm",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/events",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/manage-contact",
+      "destination": "/enrollment.html"
+    },
+    {
+      "source": "/join",
+      "destination": "/enrollment.html"
+    },
+    {
       "source": "/auth/recovery",
       "destination": "/auth/recovery.html"
     },
@@ -52,7 +68,7 @@
       ]
     },
     {
-      "source": "/((?!join/|manage-contact/|enrollment\\.html$|onboarding/(?:verify|acceptance)\\.html$|auth/recovery(?:\\.html)?$).*)",
+      "source": "/((?!join(?:/|$)|manage-contact(?:/|$)|enrollment\\.html$|onboarding/(?:verify|acceptance)\\.html$|auth/recovery(?:\\.html)?$).*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
@@ -143,6 +159,40 @@
     },
     {
       "source": "/enrollment.html",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/join",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/manage-contact",
       "headers": [
         {
           "key": "Content-Security-Policy",
