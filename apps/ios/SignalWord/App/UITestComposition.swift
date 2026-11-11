@@ -19,6 +19,12 @@ enum UITestComposition {
             preferences.set(arguments.contains("--ui-long-name") ? "Alexandria Charlotte Nguyen Montgomery" : "Hoa", forKey: "fixture.contact")
             preferences.set(arguments.contains("--ui-contact-pending") ? "pending" : "confirmed", forKey: "fixture.contactStatus")
         }
+        if arguments.contains("--ui-voice-practice-complete") {
+            UserDefaults.standard.set(VoiceSetupStep.unlockedTest.rawValue, forKey: VoiceSetupStorage.stepKey)
+            UserDefaults.standard.set(Date.now.timeIntervalSince1970 - 60, forKey: VoiceSetupStorage.startedKey)
+            preferences.set(UUID().uuidString, forKey: "fixture.event")
+            preferences.set(Date.now.timeIntervalSince1970 - 30, forKey: "fixture.completedPracticeAt")
+        }
         let service = UITestService(preferences: preferences)
         return AppShellModel(backendConfigured: true, trigger: { kind, _ in
             await service.trigger(kind)
@@ -91,6 +97,12 @@ private final class UITestService {
     }
     func status(_ id: UUID) throws -> AlertStatusProjection {
         guard preferences.string(forKey: "fixture.event") == id.uuidString else { throw UserAPIError.invalidResponse }
+        let completedPracticeAt = preferences.double(forKey: "fixture.completedPracticeAt")
+        if completedPracticeAt > 0 {
+            let date = Date(timeIntervalSince1970: completedPracticeAt)
+            return .init(eventID: id, kind: "test", triggeredAt: date, acknowledgedAt: date,
+                         resolutionDelivery: nil, state: "resolved", delivery: "sent", resolvedAt: date)
+        }
         return .init(eventID: id, kind: preferences.string(forKey: "fixture.kind") ?? "test", triggeredAt: Date(),
                      acknowledgedAt: nil, resolutionDelivery: nil,
                      state: preferences.string(forKey: "fixture.state") ?? "active", delivery: "sent", resolvedAt: nil)

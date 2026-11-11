@@ -57,6 +57,8 @@ enum VoiceSetupStorage {
     static let configurationKey = "voiceSetup.realConfigured"
     static let unlockedKey = "voiceSetup.unlockedEvent"
     static let lockedKey = "voiceSetup.lockedEvent"
+    static let lockedStartedKey = "voiceSetup.lockedStartedAt"
+    static let unlockRequiredKey = "voiceSetup.unlockRequired"
     static let startedKey = "voiceSetup.startedAt"
     private static let attemptKey = "voiceSetup.lastAttempt"
     private static let generationKey = "voiceSetup.generation"
@@ -96,7 +98,7 @@ enum VoiceSetupStorage {
         lock.lock()
         defer { lock.unlock() }
         preferences.set(preferences.integer(forKey: generationKey) + 1, forKey: generationKey)
-        for key in [stepKey, configurationKey, unlockedKey, lockedKey, startedKey, attemptKey] {
+        for key in [stepKey, configurationKey, unlockedKey, lockedKey, lockedStartedKey, unlockRequiredKey, startedKey, attemptKey] {
             preferences.removeObject(forKey: key)
         }
     }

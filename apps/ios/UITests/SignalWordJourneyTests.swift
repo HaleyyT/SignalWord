@@ -28,6 +28,27 @@ final class SignalWordJourneyTests: XCTestCase {
         add(screenshot)
     }
 
+    func testVoiceGuideRecordsUnlockRequirementWithoutClaimingLockedSuccess() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-voice-practice-complete"]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
+        app.buttons["navigation.Settings"].tap()
+        tap("shortcut.setup.instructions")
+        tap("Refresh TEST status")
+        tap("I used my phrase with the phone unlocked")
+        tap("Continue setup")
+        XCTAssertFalse(app.buttons["I used my phrase with the phone locked"].exists)
+        XCTAssertFalse(app.buttons["Continue setup"].isEnabled)
+
+        tap("iOS asked me to unlock")
+        XCTAssertFalse(app.staticTexts["Practice report saved"].exists)
+        tap("Continue setup")
+        XCTAssertTrue(app.staticTexts["Your locked practice required an unlock. Use your unlocked phone for voice actions."].exists)
+    }
+
     func testExistingPasswordSignInKeepsEmailCodeOption() {
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-invited-login"]

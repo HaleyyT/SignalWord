@@ -8,23 +8,26 @@ struct VoiceSetupGuide: View {
     @AppStorage(VoiceSetupStorage.configurationKey) private var realConfigured = false
     @AppStorage(VoiceSetupStorage.unlockedKey) private var unlockedEvent = ""
     @AppStorage(VoiceSetupStorage.lockedKey) private var lockedEvent = ""
+    @AppStorage(VoiceSetupStorage.lockedStartedKey) private var lockedStartedAt = 0.0
+    @AppStorage(VoiceSetupStorage.unlockRequiredKey) private var unlockRequired = false
     @AppStorage(VoiceSetupStorage.startedKey) private var startedAt = 0.0
     @State private var suggestion: String?
     @State private var copied = false
 
     private var step: VoiceSetupStep { VoiceSetupStep(rawValue: savedStep) ?? .savePractice }
     private var completedTest: AlertStatusProjection? {
-        model.availableAlerts.first {
+        let cutoff = step == .lockedTest ? max(startedAt, lockedStartedAt) : startedAt
+        return model.availableAlerts.first {
             $0.kind.lowercased() == "test" && $0.state.lowercased() == "resolved"
                 && $0.acknowledgedAt != nil
-                && $0.triggeredAt.timeIntervalSince1970 >= startedAt
+                && $0.triggeredAt.timeIntervalSince1970 >= cutoff
                 && (step != .lockedTest || $0.eventID.uuidString != unlockedEvent)
         }
     }
     private var canContinue: Bool {
         switch step {
         case .unlockedTest: !unlockedEvent.isEmpty
-        case .lockedTest: !lockedEvent.isEmpty
+        case .lockedTest: !lockedEvent.isEmpty || unlockRequired
         default: true
         }
     }
@@ -47,6 +50,9 @@ struct VoiceSetupGuide: View {
                     }.frame(minHeight: 44)
                     if step != .realAction {
                         Button("Continue setup") {
+                            if step == .unlockedTest && lockedStartedAt == 0 {
+                                lockedStartedAt = Date.now.timeIntervalSince1970
+                            }
                             savedStep = min(step.rawValue + 1, 5)
                             copied = false
                             suggestion = nil
@@ -75,7 +81,12 @@ struct VoiceSetupGuide: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .tint(SignalWordColor.action)
-        .onAppear { if startedAt == 0 { startedAt = Date.now.timeIntervalSince1970 } }
+        .onAppear {
+            if startedAt == 0 { startedAt = Date.now.timeIntervalSince1970 }
+            if step == .lockedTest && lockedStartedAt == 0 {
+                lockedStartedAt = Date.now.timeIntervalSince1970
+            }
+        }
         .accessibilityIdentifier("shortcut.guide")
     }
 
@@ -101,16 +112,41 @@ struct VoiceSetupGuide: View {
                 Text("Server record available: acknowledged and resolved TEST from \(test.triggeredAt.formatted(date: .abbreviated, time: .shortened)).")
                     .font(.subheadline)
                 Button(step == .unlockedTest ? "I used my phrase with the phone unlocked" : "I used my phrase with the phone locked") {
-                    if step == .unlockedTest { unlockedEvent = test.eventID.uuidString }
-                    else { lockedEvent = test.eventID.uuidString }
+                    if step == .unlockedTest {
+                        if unlockedEvent != test.eventID.uuidString {
+                            lockedEvent = ""
+                            unlockRequired = false
+                            lockedStartedAt = 0
+                        }
+                        unlockedEvent = test.eventID.uuidString
+                    } else {
+                        unlockRequired = false
+                        lockedEvent = test.eventID.uuidString
+                    }
                 }.frame(minHeight: 44)
+            }
+            if step == .lockedTest {
+                Button("iOS asked me to unlock") {
+                    lockedEvent = ""
+                    unlockRequired = true
+                }.frame(minHeight: 44)
+                if unlockRequired {
+                    Label("Unlock requirement reported. Use your unlocked phone for voice actions.", systemImage: "lock.open")
+                        .font(.subheadline)
+                }
             }
             Text("Phone condition and use of a phrase are your report. SignalWord observes the server TEST outcome separately.")
                 .font(.caption)
-            if canContinue { Label("Practice report saved", systemImage: "checkmark.circle") }
+            if canContinue && !(step == .lockedTest && unlockRequired) {
+                Label("Practice report saved", systemImage: "checkmark.circle")
+            }
             if let message = model.recoveryMessage { Text(message).font(.caption) }
         case .realAction:
             Text("Trigger Alert sends a REAL alert. Create another shortcut using that SignalWord action, name it SignalWord REAL and connect it through Vocal Shortcuts using a different phrase.")
+            if unlockRequired {
+                Label("Your locked practice required an unlock. Use your unlocked phone for voice actions.", systemImage: "lock.open")
+                    .font(.subheadline)
+            }
             Text("Choose different opening words and sounds for TEST and REAL. Keep your REAL phrase private. Practise recognition through TEST before relying on voice use.")
             Text("Internet access, valid sign-in and an approved contact are required. Keychain access requires an initial unlock after restarting your phone. Device and OS behavior can require additional interaction.")
         }
