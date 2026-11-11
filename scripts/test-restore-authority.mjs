@@ -44,11 +44,17 @@ assert.equal(
   "Use an empty local account fixture database",
 );
 // Restore reconciliation affects application state globally; refuse every occupied
-// application/auth table, preserving Supabase's schema version bookkeeping.
+// application/auth table, apart from Supabase's schema version bookkeeping
+// and the unmodified singleton inserted by the contact policy migration.
 await sql(`do $$ declare r record; n bigint; begin
  for r in select schemaname,tablename from pg_tables where schemaname in ('public','auth') and not(schemaname='auth' and tablename='schema_migrations') loop
  execute format('select count(*) from %I.%I',r.schemaname,r.tablename) into n;
- if n>0 then raise exception 'Drill requires empty application tables'; end if;
+ if r.schemaname='public' and r.tablename='contact_setup_policy'
+    and n=1 and exists (
+      select 1 from public.contact_setup_policy
+      where singleton and not legacy_disabled and retired_at is null
+    ) then continue; end if;
+ if n>0 then raise exception 'Drill requires empty application tables (%.%)',r.schemaname,r.tablename; end if;
  end loop; end $$;`);
 const data = new Map(), objects = new Map();
 let storageFailure = false;
