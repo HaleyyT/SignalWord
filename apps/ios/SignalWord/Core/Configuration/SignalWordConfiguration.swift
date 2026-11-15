@@ -26,6 +26,9 @@ enum SignalWordConfiguration {
         return components.url
     }
 
+    static let privacyPolicyURL = URL(string: "https://www.signalword.app/privacy")!
+    static let supportURL = URL(string: "https://www.signalword.app/support")!
+
     static var accountRecoveryURL: URL? {
         guard let verification = verificationURL,
               var components = URLComponents(url: verification, resolvingAgainstBaseURL: false) else { return nil }

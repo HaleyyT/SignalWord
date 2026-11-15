@@ -72,6 +72,10 @@ struct SignalWordSetupFlow: View {
                                 .font(.footnote)
                         }
                     }
+                    if model.needsIdentityVerification {
+                        Link("Privacy policy", destination: SignalWordConfiguration.privacyPolicyURL)
+                            .frame(minHeight: 44)
+                    }
                     if !model.needsIdentityVerification {
                         if model.requiresSessionRecovery {
                             Button("Sign in again") { Task { await model.signInAgain() } }

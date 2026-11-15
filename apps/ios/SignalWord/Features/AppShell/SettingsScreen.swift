@@ -70,6 +70,14 @@ struct SettingsScreen: View {
                     PrivacyLine(symbol: "lock.fill", title: "Private by default", detail: "A recent point-in-time location may be shared with an alert. SignalWord does not track movement.")
                     Divider().overlay(SignalWordColor.separator)
                     PrivacyLine(symbol: "waveform.slash", title: "No continuous recording", detail: "Your chosen phrase is managed by iOS Vocal Shortcuts.")
+                    Link(destination: SignalWordConfiguration.privacyPolicyURL) {
+                        Label("Privacy policy", systemImage: "hand.raised")
+                            .frame(minHeight: 44)
+                    }
+                    Link(destination: SignalWordConfiguration.supportURL) {
+                        Label("SignalWord support", systemImage: "questionmark.circle")
+                            .frame(minHeight: 44)
+                    }
                 }
 
                 settingsGroup(title: "Make it yours") {
