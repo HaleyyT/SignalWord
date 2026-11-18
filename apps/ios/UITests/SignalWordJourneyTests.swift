@@ -368,8 +368,8 @@ final class SignalWordJourneyTests: XCTestCase {
         XCTAssertTrue(warning.exists)
         XCTAssertFalse(app.buttons["Check in now"].exists)
         let resolve = app.buttons["alert.resolve"]
-        // Return to the persistent incident card above the timer panel.
-        reveal(resolve, scrollingUp: false, useMargin: true)
+        // The resolution control follows the timer panel on Home.
+        reveal(resolve, useMargin: true)
         resolve.press(forDuration: 1.8)
         XCTAssertTrue(app.buttons["alert.trigger"].waitForExistence(timeout: 5))
     }
