@@ -12,9 +12,43 @@ import XCTest
             disableContact: { _ in false }, getAlertStatus: { _ in throw SessionError.configuration },
             authenticateResolution: { false }, resolve: { _ in throw SessionError.configuration },
             locationAuthorization: { .denied }, requestLocationAccess: { .denied }, deleteAccount: {},
-            identityID: { await state.identity }, beginReauthentication: { await state.reauthenticate() }, signOut: { try await state.signOut() },
+            identityID: { await state.identity }, beginReauthentication: { await state.reauthenticate() },
+            verifyInvitedCode: { _, _ in try await state.verifyCode() },
+            signOut: { try await state.signOut() },
             signInWithPassword: { _, _, _ in await state.signIn() }
         ), preferences: defaults)
+    }
+
+    func testSuccessfulAuthenticationOffersAccountRetryAfterReadFailure() async {
+        for useCode in [true, false] {
+            let state = AccountFixture(); await state.reauthenticate()
+            let app = model(state); await app.prepare()
+            XCTAssertTrue(app.needsIdentityVerification)
+            await state.failContactRead(true)
+            app.invitedEmail = "fixture@example.test"
+            if useCode {
+                app.invitedCode = "123456"
+                await app.verifyInvitedCode()
+            } else {
+                await app.signInWithPassword(password: "fixture", captchaToken: "proof")
+            }
+            XCTAssertFalse(app.needsIdentityVerification, "Accepted credentials must not leave the code form visible")
+            XCTAssertEqual(app.accountLoadState, .unavailable)
+            XCTAssertFalse(app.identityReady)
+            await state.failContactRead(false)
+            await app.prepare()
+            XCTAssertTrue(app.identityReady, "Retry must reuse the authenticated session")
+        }
+    }
+
+    func testVerificationServiceFailureDoesNotClaimTheCodeWasWrong() async {
+        let state = AccountFixture(); await state.reauthenticate(); await state.failVerification()
+        let app = model(state); await app.prepare()
+        app.invitedEmail = "fixture@example.test"; app.invitedCode = "01234567"
+        await app.verifyInvitedCode()
+        XCTAssertTrue(app.needsIdentityVerification)
+        XCTAssertEqual(app.accountMessage, SessionError.unavailable.message)
+        XCTAssertEqual(app.invitedEmail, "fixture@example.test")
     }
 
     func testReturningAccountGoesHomeWithConfirmedContactAfterPasswordLogin() async {
@@ -136,6 +170,12 @@ import XCTest
 private actor AccountFixture {
     var signedOut = false; var expired = false; var failedRead = false; var recoveryExpired = false
     private var signOutFailed = false
+    private var verificationFailed = false
+    func failVerification() { verificationFailed = true }
+    func verifyCode() throws {
+        if verificationFailed { throw SessionError.unavailable }
+        signIn()
+    }
     private var contactReadPaused = false
     private var contactReadStarted = false
     private var startedContinuation: CheckedContinuation<Void, Never>?

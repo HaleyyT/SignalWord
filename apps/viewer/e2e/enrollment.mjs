@@ -1,4 +1,6 @@
 import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
@@ -6,7 +8,7 @@ const root = new URL('../dist/', import.meta.url);
 const server = createServer(async (request, response) => {
   try {
     const path = new URL(request.url, 'http://localhost').pathname;
-    const file = /^\/(join|manage-contact)\//.test(path) ? 'enrollment.html' : path === '/' ? 'index.html' : path.slice(1);
+    const file = /^\/(join|manage-contact)(?:\/|$)/.test(path) ? 'enrollment.html' : path === '/' ? 'index.html' : path.slice(1);
     if (file.includes('..')) throw Error('invalid path');
     response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html');
     response.setHeader('Referrer-Policy', 'no-referrer');
@@ -21,31 +23,36 @@ try {
   browser = await chromium.launch({ headless: true, ...(process.env.SIGNALWORD_CHROME_PATH ? { executablePath: process.env.SIGNALWORD_CHROME_PATH } : {}) });
   for (const width of [320,390,768]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
+    page.setDefaultTimeout(10000);
     const errors = [], mutations = [];
     let status = 'pending_email';
     page.on('pageerror', error => errors.push(error.message));
+    page.on('request', request => { assert.ok(!request.url().includes(token) && !request.url().includes(management), 'capability must not enter any network URL'); });
     await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', route => route.fulfill({ contentType: 'text/javascript', body:
       `window.turnstile={render:(node,options)=>{setTimeout(()=>options.callback('mocked-challenge'),0);return 'widget'},remove:()=>{},reset:()=>{}};` }));
-    await page.route('**/api/enrollment/*', async route => {
-      const request = route.request(), id = new URL(request.url()).pathname.split('/').pop();
+    const intercept = async route => {
+      const request = route.request(), envelope = request.method() === 'POST' ? request.postDataJSON() : null;
+      const id = envelope?.token ?? new URL(request.url()).pathname.split('/').pop();
       let result;
-      if (request.method() === 'GET') result = id === 'config' ? { siteKey: 'mock-site-key-12345' } : id === management ? { status }
+      if (!envelope || envelope.action === 'read') result = id === 'config' ? { siteKey: 'mock-site-key-12345' } : id === management ? { status }
         : { displayName: 'Alice', consentVersion: '2026-10-19', expiresAt: new Date(Date.now()+86400000).toISOString() };
       else {
-        const action = request.headers()['x-signalword-action']; mutations.push(action);
+        const action = envelope.action; mutations.push(action);
         if (action === 'begin') {
-          const body = request.postDataJSON(); assert.equal(body.consent, true); assert.equal(body.captchaToken, 'mocked-challenge');
+          const body = envelope.payload; assert.equal(body.consent, true); assert.equal(body.captchaToken, 'mocked-challenge');
           assert.equal(body.email, 'recipient@example.test'); assert.equal(body.code, undefined);
           result = { attemptId: body.attemptId, withdrawalToken: management, expiresAt: new Date(Date.now()+600000).toISOString() };
-        } else if (action === 'verify') { assert.equal(request.postDataJSON().code, '012345'); status='pending_approval'; result={verified:true}; }
+        } else if (action === 'verify') { assert.equal(envelope.payload.code, '012345'); status='pending_approval'; result={verified:true}; }
         else if (action === 'withdraw') { status='withdrawn'; result={withdrawn:true}; }
         else throw Error('Unexpected mutation');
       }
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify(result) });
-    });
-    await page.goto(`${origin}/join/${token}`);
+    };
+    await page.route('**/api/enrollment/*', intercept);
+    await page.route('**/api/private-links', intercept);
+    await page.goto(`${origin}/join#token=${token}`);
     await page.getByRole('heading', { name: 'Be there for Alice.' }).waitFor();
-    await page.screenshot({ path: `/private/tmp/signalword-enrollment-form-${width}.png`, fullPage: true });
+    await page.screenshot({ path: join(tmpdir(), `signalword-enrollment-form-${width}.png`), fullPage: true });
     assert.equal(mutations.length, 0, 'opening invitation must not change consent');
     await page.getByLabel('Your email', { exact: true }).fill('recipient@example.test');
     await page.getByRole('checkbox').check();
@@ -54,13 +61,13 @@ try {
     await page.getByRole('button', { name: 'Verify my email' }).click();
     await page.getByRole('heading', { name: 'Your email is verified' }).waitFor();
     assert.deepEqual([...new URL(page.url()).searchParams.keys()], [], 'private recovery does not use URL query parameters');
-    assert.deepEqual([...new URLSearchParams(new URL(page.url()).hash.slice(1)).keys()].sort(), ['attemptId','expiresAt','withdrawalToken']);
+    assert.deepEqual([...new URLSearchParams(new URL(page.url()).hash.slice(1)).keys()].sort(), ['attemptId','expiresAt','token','withdrawalToken']);
     await page.reload();
     await page.getByRole('heading', { name: 'Your email is verified' }).waitFor();
     assert.deepEqual(mutations, ['begin','verify'], 'reload is read-only and recovers pending state');
     status='approved'; await page.getByRole('button', { name: 'Refresh status' }).click();
     await page.getByRole('heading', { name: 'Your connection is confirmed' }).waitFor();
-    await page.goto(`${origin}/manage-contact/${management}`);
+    await page.goto(`${origin}/manage-contact#token=${management}`);
     await page.getByRole('heading', { name: 'Your connection is confirmed' }).waitFor();
     assert.deepEqual(mutations, ['begin','verify'], 'opening email management link must not withdraw');
     await page.getByRole('button', { name: 'Withdraw consent', exact: true }).click();
@@ -68,7 +75,8 @@ try {
     await page.getByRole('button', { name: 'Confirm withdrawal' }).click();
     await page.getByRole('heading', { name: 'Consent withdrawn' }).waitFor();
     status='withdrawal_pending';
-    await page.goto(`${origin}/manage-contact/${management}`);
+    await page.goto(`${origin}/manage-contact#token=${management}`);
+    await page.reload();
     await page.getByRole('heading', { name: 'Withdrawal is not confirmed yet' }).waitFor();
     assert.deepEqual(mutations, ['begin','verify','withdraw'], 'pending journal status never repeats withdrawal on GET');
     await page.getByRole('button', { name: 'Retry withdrawal' }).click();
@@ -76,7 +84,7 @@ try {
     const viewport = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth }));
     assert.ok(viewport.content<=viewport.width, 'no horizontal overflow');
     assert.deepEqual(errors, [], 'no runtime errors');
-    await page.screenshot({ path: `/private/tmp/signalword-enrollment-${width}.png`, fullPage: true });
+    await page.screenshot({ path: join(tmpdir(), `signalword-enrollment-${width}.png`), fullPage: true });
     await page.close();
     console.log(`PASS: production enrollment journey at ${width}px (mocked CAPTCHA/provider, real CSP)`);
   }

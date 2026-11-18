@@ -119,7 +119,7 @@ export function createContactInvitationGateway(config: BackendConfig & {
       try { recovered = await config.cipher.decrypt(row.tokenCiphertext, row.tokenKeyVersion); }
       catch { return unavailable(); }
       if (!TOKEN.test(recovered) || await sha256Hex(recovered) !== row.tokenHash) return unavailable();
-      return { ...projection, shareURL: `${origin}/join/${recovered}` };
+      return { ...projection, shareURL: `${origin}/join#token=${recovered}` };
     },
     async list(userId, jwt) {
       const result = await rpc("list_contact_invitations", { p_user_id: userId }, config.anonKey, jwt);

@@ -42,7 +42,7 @@ struct SupporterScreen: View {
                 Button("Refresh purchase status") { Task { await model.refresh() } }.disabled(model.busy)
                 Text("Purchases use your store account and RevenueCat. Your safety account and contact details are not sent to RevenueCat. Deleting your safety account does not refund a store purchase.")
                     .font(.footnote).foregroundStyle(.secondary)
-                Link("Privacy and purchase information", destination: URL(string: "https://www.signalword.app/privacy")!)
+                Link("Privacy and purchase information", destination: SignalWordConfiguration.privacyPolicyURL)
             }.padding(24).frame(maxWidth: 600).frame(maxWidth: .infinity)
         }
         .navigationTitle("Supporter appearance")

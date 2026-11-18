@@ -29,8 +29,9 @@ const shareURL: Validator = (value) => {
   try {
     const url = new URL(value);
     const local = url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-    return (url.protocol === "https:" || local) && !url.username && !url.password && !url.search && !url.hash
-      && /^\/join\/[A-Za-z0-9_-]{43}$/.test(url.pathname);
+    return (url.protocol === "https:" || local) && !url.username && !url.password && !url.search
+      && ((url.pathname === "/join" && /^#token=[A-Za-z0-9_-]{43}$/.test(url.hash))
+        || (!url.hash && /^\/join\/[A-Za-z0-9_-]{43}$/.test(url.pathname)));
   } catch { return false; }
 };
 const shapes = {

@@ -70,9 +70,10 @@ struct ContactInvitation: Codable, Sendable, Identifiable {
     var safeShareURL: URL? { safeShareURL(origin: URL(string: "https://www.signalword.app")!) }
     func safeShareURL(origin: URL) -> URL? {
         guard isOpen, let shareURL, shareURL.scheme == "https", shareURL.user == nil,
-              shareURL.password == nil, shareURL.query == nil, shareURL.fragment == nil,
+              shareURL.password == nil, shareURL.query == nil,
               origin.scheme == "https", shareURL.host == origin.host, shareURL.port == origin.port,
-              shareURL.path.range(of: #"^/join/[A-Za-z0-9_-]{43}$"#, options: .regularExpression) != nil else { return nil }
+              ((shareURL.path == "/join" && (shareURL.fragment ?? "").range(of: #"^token=[A-Za-z0-9_-]{43}$"#, options: .regularExpression) != nil)
+                || (shareURL.fragment == nil && shareURL.path.range(of: #"^/join/[A-Za-z0-9_-]{43}$"#, options: .regularExpression) != nil)) else { return nil }
         return shareURL
     }
 }

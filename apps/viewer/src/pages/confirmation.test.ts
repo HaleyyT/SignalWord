@@ -8,6 +8,8 @@ afterEach(() => vi.unstubAllGlobals())
 describe('trusted-contact confirmation', () => {
   it('accepts only one opaque path token', () => {
     expect(confirmationTokenFromPath(`/confirm/${token}`)).toBe(token)
+    expect(confirmationTokenFromPath('/confirm', '#token=' + token)).toBe(token)
+    expect(confirmationTokenFromPath('/confirm', '#token=short')).toBeNull()
     expect(confirmationTokenFromPath('/confirm/short')).toBeNull()
     expect(confirmationTokenFromPath(`/confirm/${token}/extra`)).toBeNull()
   })
@@ -16,7 +18,7 @@ describe('trusted-contact confirmation', () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json({ confirmed: true }))
     vi.stubGlobal('fetch', fetchMock)
     await expect(confirmTrustedContact(token)).resolves.toBe('confirmed')
-    expect(fetchMock).toHaveBeenCalledWith(`/api/v1/contacts/confirm/${token}`, expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith('/api/private-links', expect.objectContaining({
       method: 'POST', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
     }))
   })
@@ -32,8 +34,9 @@ describe('trusted-contact confirmation', () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json({ withdrawn: true }))
     vi.stubGlobal('fetch', fetchMock)
     await expect(withdrawTrustedContact(token)).resolves.toBe('withdrawn')
-    expect(fetchMock).toHaveBeenCalledWith(`/api/v1/contacts/confirm/${token}`, expect.objectContaining({
-      method: 'POST', headers: { Accept: 'application/json', 'X-SignalWord-Action': 'withdraw' },
+    expect(fetchMock).toHaveBeenCalledWith('/api/private-links', expect.objectContaining({
+      method: 'POST', headers: { Accept: 'application/json', 'Content-Type':'application/json' },
+      body: JSON.stringify({kind:'confirmation',token,action:'withdraw'}),
     }))
   })
 })

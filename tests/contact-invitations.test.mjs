@@ -79,12 +79,12 @@ test('creation uses authenticated identity and returns an allowlisted result', a
   const calls = [], logs = [];
   const response = await handler({ create: async (...args) => {
     calls.push(args);
-    return { ...base, shareURL: `https://www.example.test/join/${TOKEN}`,
+    return { ...base, shareURL: `https://www.example.test/join#token=${TOKEN}`,
       tokenHash: 'private-hash', tokenCiphertext: 'private-ciphertext', userId: USER, email: 'private@example.test' };
   } }, logs)(request());
   assert.equal(response.status, 200);
   assert.deepEqual(calls, [[USER, REQUEST_KEY]]);
-  assert.deepEqual(await response.json(), { ...base, shareURL: `https://www.example.test/join/${TOKEN}` });
+  assert.deepEqual(await response.json(), { ...base, shareURL: `https://www.example.test/join#token=${TOKEN}` });
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
   assert.doesNotMatch(JSON.stringify(logs), new RegExp(`${TOKEN}|${USER}|${REQUEST_KEY}|private`));
 });
@@ -93,7 +93,7 @@ test('listing hides recovery material and share links even if upstream returns t
   let args;
   const response = await handler({ list: async (...value) => {
     args = value;
-    return [{ ...base, shareURL: `https://www.example.test/join/${TOKEN}`, tokenCiphertext: 'private' }];
+    return [{ ...base, shareURL: `https://www.example.test/join#token=${TOKEN}`, tokenCiphertext: 'private' }];
   } })(request({ method: 'GET' }));
   assert.equal(response.status, 200);
   assert.deepEqual(args, [USER, 'sender-jwt']);
@@ -155,7 +155,7 @@ test('lost-response retry recovers original invitation capability, not the unuse
   } }));
   const first = await gateway.create(USER, REQUEST_KEY);
   const second = await gateway.create(USER, REQUEST_KEY);
-  assert.deepEqual(first, { ...base, shareURL: `https://www.example.test/join/${TOKEN}` });
+  assert.deepEqual(first, { ...base, shareURL: `https://www.example.test/join#token=${TOKEN}` });
   assert.deepEqual(first, second);
   assert.equal(JSON.parse(calls[0].body).p_token_hash, `\\x${await sha256Hex(OTHER_TOKEN)}`);
   assert.equal(calls[0].headers.Authorization, 'Bearer service-fixture');

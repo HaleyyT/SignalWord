@@ -1,3 +1,4 @@
+import { withPrivateLinkTransport } from "../_shared/private-link-transport.ts";
 import { journalFromEnvironment } from "../_shared/safety-journal.ts";
 import { ApiError, asApiError, errorResponse, jsonResponse, requestId } from "../_shared/http.ts";
 import { createLifecycleGateway, type LifecycleGateway } from "../_shared/lifecycle.ts";
@@ -17,7 +18,7 @@ export function createContactConfirmHandler(dependencies: {
   logger: SafeLogger;
   now: () => number;
 }) {
-  return async (request: Request): Promise<Response> => {
+  return withPrivateLinkTransport(async (request: Request): Promise<Response> => {
     const startedAt = dependencies.now();
     const id = requestId(request);
     let status = 500;
@@ -55,7 +56,7 @@ export function createContactConfirmHandler(dependencies: {
         ...(code ? { code } : {}),
       });
     }
-  };
+  }, ["confirmation"]);
 }
 
 if (import.meta.main) {

@@ -423,7 +423,7 @@ test('public API hashes the token and returns only the viewer projection', async
     state: 'active',
     triggeredAt: '2026-09-24T00:00:01Z',
     lastUpdatedAt: '2026-09-24T00:00:01Z',
-    guidance: { summary: 'Contact Sample user now.' },
+    guidance: { summary: 'This is a TEST rehearsal, not an emergency. Acknowledge this TEST, then tell the sender so they can resolve it. Do not contact emergency services because of this test message.' },
   });
   assert.equal(receivedHash, await sha256Hex(TOKEN));
   assert.equal(receivedHash.includes(TOKEN), false);

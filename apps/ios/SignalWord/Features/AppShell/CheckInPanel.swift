@@ -31,6 +31,8 @@ struct CheckInPanel: View {
                         Text("Check in by \(current.deadline.formatted(date: .abbreviated, time: .shortened))")
                         Text("Server grace ends \(current.graceEndsAt.formatted(date: .omitted, time: .shortened))").font(.caption)
                         Button("Check in now") { Task { await timer.change(.checkIn) } }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("timer.checkInNow")
                         Button("Cancel check-in timer", role: .destructive) { Task { await timer.change(.cancel) } }
                         ForEach([15,30,60], id: \.self) { minutes in
                             Button("Extend by \(minutes) minutes") { Task { await timer.change(.extend, minutes: minutes) } }

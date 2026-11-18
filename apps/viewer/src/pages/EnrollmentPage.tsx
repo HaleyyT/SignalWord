@@ -9,7 +9,10 @@ const invitePattern = /^[A-Za-z0-9_-]{43}$/
 const managementPattern = /^[a-f0-9]{64}$/
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-export function enrollmentPath(path: string) {
+export function enrollmentPath(path: string, hash = '') {
+  const fragment = new URLSearchParams(hash.replace(/^#/, '')).get('token')
+  if (path === '/join' && fragment && invitePattern.test(fragment)) return {token: fragment, management: false}
+  if (path === '/manage-contact' && fragment && managementPattern.test(fragment)) return {token: fragment, management: true}
   const join = /^\/join\/([A-Za-z0-9_-]{43})$/.exec(path)
   const manage = /^\/manage-contact\/([a-f0-9]{64})$/.exec(path)
   return join ? { token: join[1], management: false } : manage ? { token: manage[1], management: true } : null
@@ -22,10 +25,9 @@ export function parseEnrollmentSession(value: unknown): Session | null {
     ? { attemptId: row.attemptId, withdrawalToken: row.withdrawalToken, expiresAt: row.expiresAt } : null
 }
 async function call(token: string, action?: string, body?: unknown) {
-  const response = await fetch(`/api/enrollment/${encodeURIComponent(token)}`, { method: action ? 'POST' : 'GET',
-    credentials: 'same-origin', referrerPolicy: 'no-referrer', cache: 'no-store', signal: AbortSignal.timeout(10000),
-    headers: action ? { 'Content-Type': 'application/json', 'X-SignalWord-Action': action } : {},
-    ...(action ? { body: JSON.stringify(body) } : {}) })
+  const response = await fetch(token === 'config' ? '/api/enrollment/config' : '/api/private-links', {
+    method: token === 'config' ? 'GET' : 'POST', credentials: 'same-origin', referrerPolicy: 'no-referrer', cache: 'no-store', signal: AbortSignal.timeout(10000),
+    ...(token !== 'config' ? {headers: {'Content-Type':'application/json'}, body: JSON.stringify({kind: managementPattern.test(token) ? 'management' : 'invitation', token, action: action ?? 'read', payload: body ?? {}})} : {}) })
   if (!response.ok) throw new Error(response.status === 429 ? 'Please wait before requesting another code.'
     : response.status === 410 ? 'This link or request is no longer available.'
       : 'The request is not confirmed yet. Check your connection and retry, or refresh its status.')
@@ -60,7 +62,7 @@ function Captcha({ siteKey, attemptId, reset, onToken, onError }: { siteKey: str
 }
 
 export function EnrollmentPage() {
-  const path = enrollmentPath(window.location.pathname)
+  const path = enrollmentPath(window.location.pathname, window.location.hash)
   const [view, setView] = useState<View>('loading')
   const [sender, setSender] = useState('your trusted person')
   const [siteKey, setSiteKey] = useState('')
@@ -77,7 +79,7 @@ export function EnrollmentPage() {
   function recoveryFragment(value: Partial<Session>) {
     // Fragments never travel in HTTP requests. Keep this page URL private;
     // the independent email management link remains available after tab close.
-    const fragment = new URLSearchParams(value as Record<string,string>).toString()
+    const fragment = new URLSearchParams({...(path ? {token: path.token} : {}), ...value} as Record<string,string>).toString()
     history.replaceState(null, '', `${location.pathname}#${fragment}`)
   }
   function save(value: Session) { setSession(value); recoveryFragment(value) }

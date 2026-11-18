@@ -1,3 +1,4 @@
+import { withPrivateLinkTransport } from "../_shared/private-link-transport.ts";
 import { ApiError, asApiError, errorResponse, jsonResponse, requestId } from "../_shared/http.ts";
 import { structuredLogger, writeSafely, type SafeLogger } from "../_shared/logging.ts";
 import { parsePublicProjection } from "../_shared/public-projection.ts";
@@ -22,7 +23,7 @@ const SECURITY_HEADERS = {
 const unavailable = () => new ApiError(404, "NOT_FOUND", "This alert is unavailable.");
 
 export function createPublicEventHandler(dependencies: PublicEventDependencies) {
-  return async (request: Request): Promise<Response> => {
+  return withPrivateLinkTransport(async (request: Request): Promise<Response> => {
     const startedAt = dependencies.now();
     const id = requestId(request);
     let status = 500;
@@ -63,7 +64,7 @@ export function createPublicEventHandler(dependencies: PublicEventDependencies) 
         ...(code ? { code } : {}),
       });
     }
-  };
+  }, ["event"]);
 }
 
 if (import.meta.main) {

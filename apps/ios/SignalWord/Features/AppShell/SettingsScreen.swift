@@ -29,16 +29,7 @@ struct SettingsScreen: View {
                         detail: "iOS recognises the phrase you teach it and runs your chosen action. SignalWord does not detect danger or configure your phrase automatically."
                     )
                     Divider().overlay(SignalWordColor.separator)
-                    VocalShortcutSetupInstructions()
-                    Divider().overlay(SignalWordColor.separator)
-                    Toggle(isOn: Binding(get: { model.shortcutConfigured }, set: { model.setShortcutConfigured($0) })) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("I added both shortcuts").font(.subheadline.weight(.medium))
-                            Text("Self-reported. SignalWord cannot inspect iOS settings.")
-                                .font(.caption).foregroundStyle(SignalWordColor.secondaryText)
-                        }
-                    }
-                    .tint(SignalWordColor.action)
+                    VocalShortcutSetupInstructions(model: model)
                     Divider().overlay(SignalWordColor.separator)
                     CapabilityRow(
                         title: model.rehearsalReadiness.title,
@@ -79,6 +70,14 @@ struct SettingsScreen: View {
                     PrivacyLine(symbol: "lock.fill", title: "Private by default", detail: "A recent point-in-time location may be shared with an alert. SignalWord does not track movement.")
                     Divider().overlay(SignalWordColor.separator)
                     PrivacyLine(symbol: "waveform.slash", title: "No continuous recording", detail: "Your chosen phrase is managed by iOS Vocal Shortcuts.")
+                    Link(destination: SignalWordConfiguration.privacyPolicyURL) {
+                        Label("Privacy policy", systemImage: "hand.raised")
+                            .frame(minHeight: 44)
+                    }
+                    Link(destination: SignalWordConfiguration.supportURL) {
+                        Label("SignalWord support", systemImage: "questionmark.circle")
+                            .frame(minHeight: 44)
+                    }
                 }
 
                 settingsGroup(title: "Make it yours") {
@@ -154,7 +153,7 @@ struct SettingsScreen: View {
         }
         .background(SignalWordBackground())
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showHelp) { SignalWordHelpSheet().environment(\.dynamicTypeSize, textSize) }
+        .sheet(isPresented: $showHelp) { SignalWordHelpSheet(model: model).environment(\.dynamicTypeSize, textSize) }
     }
 
     private func settingsGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -170,29 +169,32 @@ struct SettingsScreen: View {
 
 /// Shared by onboarding and Settings; these steps never run an alert themselves.
 struct VocalShortcutSetupInstructions: View {
-    var expanded = false
+    @Bindable var model: AppShellModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var showGuide = false
+    @State private var latest: VoiceActionAttempt?
+    @AppStorage(VoiceSetupStorage.stepKey) private var step = 0
+
     var body: some View {
-        if expanded { instructions } else {
-            DisclosureGroup("How to connect your phrase") { instructions }
+        VStack(alignment: .leading, spacing: 12) {
+            Button(step == 0 ? "Set up voice triggering" : "Continue voice setup") { showGuide = true }
+                .frame(minHeight: 44)
                 .accessibilityIdentifier("shortcut.setup.instructions")
-        }
-    }
-    private var instructions: some View {
-            VStack(alignment: .leading, spacing: 14) {
-                ShortcutsLink()
-                    .accessibilityIdentifier("shortcut.openAppleShortcuts")
-                Text("Open the SignalWord actions above. Save the TEST action as a shortcut before choosing it in Vocal Shortcuts. Opening this list does not send an alert.")
-                Text("1. Open Apple's Shortcuts app (Phím tắt). Tap +, search actions for SignalWord, and add Send TEST Alert. Name this shortcut SignalWord TEST and save it.")
-                Text("2. Open iPhone Settings › Accessibility › Vocal Shortcuts (Phím tắt giọng nói). Tap Add Action and choose your saved SignalWord TEST shortcut. If you see a blue Done checkmark, finish editing first.")
-                Text("3. Choose a practice phrase and repeat it as iOS requests. Keep Vocal Shortcuts enabled. Saying that phrase runs the TEST action; no new recording is needed each time.")
-                Text("4. With your contact confirmed, resolve any existing alert, then try the TEST phrase. Check the TEST email, recipient acknowledgement and resolution in SignalWord. Repeat with the phone locked before relying on that setup.")
-                Text("5. For a REAL alert, create another shortcut using SignalWord's Trigger Alert action. Name it SignalWord REAL and assign a different private phrase in Vocal Shortcuts. Trigger Alert sends a REAL alert; do not run it for rehearsal.")
-                Text("If SignalWord is missing, open SignalWord once, then return to Shortcuts and search its actions again. Choose the SignalWord action, not an unrelated sample shortcut or a Siri request. If it is still missing, stop and report it.")
-                Text("The setup switch is only your report. It does not connect or verify either shortcut. SignalWord does not continuously record audio, infer danger, or contact emergency services. Voice recognition, network access and delivery can fail.")
+            if let latest {
+                Text("Latest voice action attempt").font(.subheadline.weight(.semibold))
+                Text("\(latest.kind == .test ? "TEST" : "REAL") · \(latest.date.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.caption)
+                Text(latest.outcome.description).font(.caption)
+            } else {
+                Text("No voice action attempt recorded on this device.").font(.caption)
             }
-            .font(.subheadline)
-            .foregroundStyle(SignalWordColor.secondaryText)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, 10)
+            Text("Apple manages phrase recognition. Review actual delivery and acknowledgement in SignalWord.")
+                .font(.caption).foregroundStyle(SignalWordColor.secondaryText)
+        }
+        .task { latest = VoiceSetupStorage.latest() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { latest = VoiceSetupStorage.latest() }
+        }
+        .sheet(isPresented: $showGuide) { VoiceSetupGuide(model: model) }
     }
 }

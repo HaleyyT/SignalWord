@@ -130,16 +130,25 @@ final class SignalWordLayoutTests: XCTestCase {
         XCTAssertFalse(app.buttons["home.test"].exists)
         capture("16-recovery-failure")
     }
-    func testEditorKeyboardAndCancellationPreserveContact() {
+    func testInvitationReviewKeyboardAndCancellationPreserveContact() {
         launch()
         app.buttons["navigation.People"].tap()
-        let replace = app.buttons["Replace recipient"]
-        reveal(replace); replace.tap()
-        let email = app.textFields["name@example.com"]
-        XCTAssertTrue(email.waitForExistence(timeout: 5)); email.tap()
-        capture("17-contact-keyboard")
-        XCTAssertTrue(app.buttons["Cancel"].isHittable)
-        app.buttons["Cancel"].tap()
+        let create = app.buttons["enrollment.create"]
+        reveal(create); create.tap()
+        let reviewRequests = app.buttons["Review verified requests"]
+        reveal(reviewRequests); reviewRequests.tap()
+        let reviewPerson = app.buttons["Review s***@example.test"]
+        reveal(reviewPerson); reviewPerson.tap()
+        let label = app.textFields["Contact label"]
+        XCTAssertTrue(label.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.textFields["name@example.com"].exists)
+        label.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        capture("17-invitation-review-keyboard")
+        let cancel = app.buttons["Cancel"]
+        XCTAssertTrue(cancel.isHittable)
+        cancel.tap()
+        XCTAssertTrue(label.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Hoa"].firstMatch.waitForExistence(timeout: 5))
     }
     func testLandscapeNavigationAndHelpRemainReachable() {

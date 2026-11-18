@@ -248,7 +248,13 @@ struct ContactEnrollmentPanel: View {
                 Text("Invite someone privately").font(.headline)
                 Text("Share the link yourself with one person you trust. SignalWord does not ask you for their email or send an invitation email. They enter their own email, consent and verify it, then you approve the request.")
                     .font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                Text("Your name or nickname").font(.caption.weight(.semibold))
                 TextField("Your name", text: $model.displayName).textContentType(.name)
+                    .frame(minHeight: 44)
+                    .padding(.horizontal, 12)
+                    .background(SignalWordColor.action.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                    .accessibilityLabel("Your name or nickname")
+                    .accessibilityIdentifier("enrollment.senderName")
                 Text("Your name is shown on new invitations so your person recognises you.").font(.caption)
                 if let url = enrollment.shareURL {
                     ShareLink(item: url) { Label("Share invitation", systemImage: "square.and.arrow.up") }
@@ -292,8 +298,17 @@ struct ContactEnrollmentPanel: View {
                     Text("Verified email: \(candidate.emailHint)")
                     Text("A verified mailbox and masked hint do not establish identity. Confirm with the person you intended to invite using a channel you already trust. Do not approve an unfamiliar request.")
                     TextField("Contact label", text: $label).textContentType(.nickname)
-                    Toggle("I confirmed this is my intended person", isOn: $confirmed)
-                        .accessibilityIdentifier("enrollment.confirmPerson")
+                    Button {
+                        confirmed.toggle()
+                    } label: {
+                        Label("I confirmed this is my intended person",
+                              systemImage: confirmed ? "checkmark.square.fill" : "square")
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(confirmed ? .isSelected : [])
+                    .accessibilityIdentifier("enrollment.confirmPerson")
                     if let message = enrollment.message { Text(message) }
                     Button("Approve trusted person") {
                         Task {

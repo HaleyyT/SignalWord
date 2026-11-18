@@ -1,3 +1,4 @@
+import { withPrivateLinkTransport } from "../_shared/private-link-transport.ts";
 import { createInvitationPreviewGateway, invitationPreview, type InvitationPreview } from "../_shared/contact-invitations.ts";
 import { ApiError, asApiError, errorResponse, jsonResponse, requestId } from "../_shared/http.ts";
 import { structuredLogger, writeSafely, type SafeLogger } from "../_shared/logging.ts";
@@ -21,7 +22,7 @@ export function createInvitationPreviewHandler(deps: {
   management?: Pick<ReturnType<typeof createContactApprovalGateway>, "status" | "withdraw">;
   wake?: () => Promise<void>;
 }) {
-  return async (request: Request): Promise<Response> => {
+  return withPrivateLinkTransport(async (request: Request): Promise<Response> => {
     const startedAt = deps.now();
     const id = requestId(request);
     let status = 500;
@@ -74,7 +75,7 @@ export function createInvitationPreviewHandler(deps: {
       writeSafely(deps.logger, { requestId: id, route: "contact-invitation-preview", method: request.method,
         status, durationMs: Math.max(0, deps.now() - startedAt), ...(code ? { code } : {}) });
     }
-  };
+  }, ["invitation", "management"]);
 }
 
 if (import.meta.main) {

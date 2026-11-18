@@ -25,6 +25,7 @@ struct SignalWordSetupFlow: View {
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .disabled(model.isSigningIn || model.invitedCodeRequested)
+                                .frame(minHeight: 44)
                                 .accessibilityIdentifier("onboarding.invitedEmail")
                             if usePassword && !model.isCreatingAccount {
                                 SecureField("Password", text: $password)
@@ -33,9 +34,11 @@ struct SignalWordSetupFlow: View {
                                 Text("Use the password for your existing account.")
                                     .font(.footnote)
                             } else if model.invitedCodeRequested {
+                                Text("Use the newest SignalWord email code. Requesting another code replaces the earlier one.").font(.footnote)
                                 SecureField("Email sign-in code", text: $model.invitedCode)
                                     .textContentType(.oneTimeCode)
                                     .keyboardType(.numberPad)
+                                    .frame(minHeight: 44)
                                     .accessibilityIdentifier("onboarding.invitedCode")
                                 Button("Change email address") { model.changeInvitedEmail() }
                                     .disabled(model.isSigningIn)
@@ -48,7 +51,9 @@ struct SignalWordSetupFlow: View {
                                 .accessibilityIdentifier("onboarding.verifyIdentity")
                                 .disabled(model.isSigningIn || model.invitedEmail.isEmpty || (usePassword && !model.isCreatingAccount && password.isEmpty))
                             if !model.isCreatingAccount {
-                            Link("Forgot password", destination: URL(string: "https://www.signalword.app/auth/recovery")!)
+                            if let recoveryURL = SignalWordConfiguration.accountRecoveryURL {
+                                Link("Forgot password", destination: recoveryURL)
+                            }
                             Button(usePassword ? "Use an email code" : "Use an existing password") {
                                 model.changeInvitedEmail()
                                 password = ""
@@ -67,11 +72,16 @@ struct SignalWordSetupFlow: View {
                                 .font(.footnote)
                         }
                     }
+                    if model.needsIdentityVerification {
+                        Link("Privacy policy", destination: SignalWordConfiguration.privacyPolicyURL)
+                            .frame(minHeight: 44)
+                    }
                     if !model.needsIdentityVerification {
                         if model.requiresSessionRecovery {
                             Button("Sign in again") { Task { await model.signInAgain() } }
                         } else if model.accountLoadState == .unavailable {
-                            Button("Retry account loading") { Task { await model.recover() } }
+                            Button("Retry account loading") { Task { await model.prepare() } }
+                            Button("Sign in again") { Task { await model.signInAgain() } }
                         } else {
                             switch model.stage {
                             case .understand: introduction
@@ -265,15 +275,7 @@ struct SignalWordSetupFlow: View {
                                 .font(.subheadline)
                                 .foregroundStyle(SignalWordColor.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
-                            VocalShortcutSetupInstructions()
-                            Toggle("I added both Vocal Shortcuts", isOn: Binding(
-                                get: { model.shortcutConfigured },
-                                set: { model.setShortcutConfigured($0) }
-                            ))
-                            .tint(SignalWordColor.action)
-                            Text("This is your report. SignalWord cannot inspect iOS Shortcut settings.")
-                                .font(.caption)
-                                .foregroundStyle(SignalWordColor.mutedText)
+                            VocalShortcutSetupInstructions(model: model)
                         }
                     }
                     SignalWordCard {

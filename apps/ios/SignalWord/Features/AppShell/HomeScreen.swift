@@ -4,6 +4,7 @@ import Observation
 struct HomeScreen: View {
     @Environment(\.signalWordAccent) private var accent
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(CheckInModel.self) private var timer
     @Bindable var model: AppShellModel
     let openPeople: () -> Void
     let openSettings: () -> Void
@@ -19,12 +20,12 @@ struct HomeScreen: View {
                 if hasCurrentAlert {
                     AlertProgressCard(model: model)
                 }
+                CheckInPanel()
                 primaryAction
                 if !canStartManualAlert { helpButton }
                 if hasCurrentAlert { RecipientProgressPanel(eventID: model.currentAlertEventID) }
                 DisclosureGroup("Setup & readiness") { setupSummary.padding(.top, 12) }
                     .accessibilityIdentifier("home.readiness")
-                CheckInPanel()
                 if !hasCurrentAlert, model.currentAlertPresentation != nil {
                     DisclosureGroup("Last alert details") {
                         AlertProgressCard(model: model).padding(.top, 12)
@@ -43,7 +44,7 @@ struct HomeScreen: View {
         .background(SignalWordBackground())
         .toolbar(.hidden, for: .navigationBar)
         .refreshable { await model.recover() }
-        .sheet(isPresented: $showHelp) { SignalWordHelpSheet().environment(\.dynamicTypeSize, textSize) }
+        .sheet(isPresented: $showHelp) { SignalWordHelpSheet(model: model).environment(\.dynamicTypeSize, textSize) }
         .accessibilityIdentifier("home.screen")
     }
 
@@ -115,10 +116,16 @@ struct HomeScreen: View {
                 await model.requestResolution()
             }
         } else if model.canStartNewRealAlert && model.canTriggerManually {
-            PrimaryButton(title: "Send TEST alert", symbol: "checkmark.message") {
-                Task { await model.runRehearsal() }
+            if timer.snapshot?.state == .active {
+                Button("Send TEST alert") { Task { await model.runRehearsal() } }
+                    .buttonStyle(.bordered).frame(minHeight: 44)
+                    .accessibilityIdentifier("home.test")
+            } else {
+                PrimaryButton(title: "Send TEST alert", symbol: "checkmark.message") {
+                    Task { await model.runRehearsal() }
+                }
+                .accessibilityIdentifier("home.test")
             }
-            .accessibilityIdentifier("home.test")
             Text("Practice only · sends a labelled TEST email")
                 .font(.caption).foregroundStyle(SignalWordColor.secondaryText)
             helpButton

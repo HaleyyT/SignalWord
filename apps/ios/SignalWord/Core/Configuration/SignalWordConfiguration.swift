@@ -26,6 +26,18 @@ enum SignalWordConfiguration {
         return components.url
     }
 
+    static let privacyPolicyURL = URL(string: "https://www.signalword.app/privacy")!
+    static let supportURL = URL(string: "https://www.signalword.app/support")!
+
+    static var accountRecoveryURL: URL? {
+        guard let verification = verificationURL,
+              var components = URLComponents(url: verification, resolvingAgainstBaseURL: false) else { return nil }
+        components.path = "/auth/recovery"
+        components.query = nil
+        components.fragment = nil
+        return components.url
+    }
+
     static var supabasePublishableKey: String? {
         guard let value = Bundle.main.object(forInfoDictionaryKey: publishableKeyInfoKey) as? String,
               !value.isEmpty, !value.contains("$(") else { return nil }

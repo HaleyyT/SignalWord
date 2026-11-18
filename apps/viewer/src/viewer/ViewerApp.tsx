@@ -8,7 +8,7 @@ function formatTime(timestamp: string): string {
 }
 
 export function ViewerApp() {
-  const token = viewerTokenFromPath(window.location.pathname)
+  const token = viewerTokenFromPath(window.location.pathname, window.location.hash)
   const state = usePublicEvent(token)
   const [ack, setAck] = useState<'idle' | 'sending' | 'done' | 'failed'>('idle')
   const [elapsed, setElapsed] = useState(0)
@@ -75,7 +75,7 @@ export function ViewerApp() {
       <section className="card" aria-labelledby="alert-title">
         {state.status === 'error' && <p className="refresh-warning" role="status">The information shown may not be current. Retrying…</p>}
         <p className="eyebrow">{event.kind === 'test' ? 'TEST · NO EMERGENCY' : 'REAL ALERT'}</p>
-        <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? 'resolved the alert' : event.cause === 'missed_check_in' ? 'missed a check-in' : 'sent an alert'}</h1>
+        <h1 id="alert-title">{event.displayName} {event.state === 'resolved' ? (event.kind === 'test' ? 'resolved the TEST' : 'resolved the alert') : event.kind === 'test' ? 'sent a TEST' : event.cause === 'missed_check_in' ? 'missed a check-in' : 'sent an alert'}</h1>
         {event.cause === 'missed_check_in' && <p>A scheduled check-in was not completed within its grace period. This does not confirm danger. Contact the person directly.{event.checkInDeadline && ` Check-in was due ${formatTime(event.checkInDeadline)}.`}</p>}
         <p className="timestamp">Sent {formatTime(event.triggeredAt)}</p>
         <p className={`state state-${event.state}`} role="status" aria-live="polite" aria-atomic="true">
@@ -99,14 +99,18 @@ export function ViewerApp() {
 
       <section className="card guidance" aria-labelledby="guidance-title">
         <h2 id="guidance-title">What to do</h2>
-        <p>{event.guidance.summary}</p>
+        <p>{event.kind === 'test'
+          ? event.state === 'active'
+            ? 'This is a rehearsal, not an emergency. Acknowledge the TEST and tell the sender so they can resolve it. Do not contact emergency services because of this test message.'
+            : 'This TEST rehearsal has ended. No action is required. Do not contact emergency services because of this test message.'
+          : event.guidance.summary}</p>
         {event.acknowledgedAt || ack === 'done'
-          ? <p role="status">Acknowledged through this recipient link. This does not confirm help is coming.</p>
+          ? <p role="status">{event.kind === 'test' ? (event.state === 'resolved' ? 'This TEST was acknowledged and resolved.' : 'Acknowledged through this recipient link. The sender still needs to resolve this TEST.') : 'Acknowledged through this recipient link. This does not confirm help is coming.'}</p>
           : event.state !== 'expired' && <>
             <button className="primary-button" disabled={ack === 'sending'} onClick={() => void acknowledge()}>
               {ack === 'sending' ? 'Acknowledging…' : 'Acknowledge this alert'}
             </button>
-            <p>Let the sender know this link has been acknowledged. Contact them directly to arrange help.</p>
+            <p>{event.kind === 'test' ? 'Let the sender know you received this rehearsal.' : 'Let the sender know this link has been acknowledged. Contact them directly to arrange help.'}</p>
             {ack === 'failed' && <p role="alert">Acknowledgement was not confirmed. Check your connection and try again.</p>}
           </>}
         <p className="timestamp">Last server update {formatTime(event.lastUpdatedAt)}</p>

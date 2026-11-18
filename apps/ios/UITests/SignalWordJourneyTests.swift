@@ -4,6 +4,51 @@ import XCTest
 final class SignalWordJourneyTests: XCTestCase {
     private var app: XCUIApplication!
 
+    func testVoiceGuideResumesWithoutStoringPhraseOrSkippingPractice() {
+        launchFresh()
+        completeContactSetup()
+        app.buttons["navigation.Settings"].tap()
+        tap("shortcut.setup.instructions")
+        XCTAssertTrue(app.staticTexts["Save the practice action"].waitForExistence(timeout: 5))
+        tap("Continue setup")
+        tap("Suggest four words")
+        XCTAssertTrue(app.staticTexts["shortcut.phraseSuggestion"].exists)
+        app.buttons["Done"].tap()
+        tap("shortcut.setup.instructions")
+        XCTAssertTrue(app.staticTexts["Choose your practice phrase"].exists)
+        XCTAssertFalse(app.staticTexts["shortcut.phraseSuggestion"].exists)
+        tap("Continue setup")
+        tap("Continue setup")
+        XCTAssertTrue(app.staticTexts["Practise with your phone unlocked"].exists)
+        reveal(app.buttons["Continue setup"])
+        XCTAssertFalse(app.buttons["Continue setup"].isEnabled)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Voice guide practice gate"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    func testVoiceGuideRecordsUnlockRequirementWithoutClaimingLockedSuccess() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-layout-ready", "--ui-voice-practice-complete"]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["navigation.Settings"].waitForExistence(timeout: 5))
+        app.buttons["navigation.Settings"].tap()
+        tap("shortcut.setup.instructions")
+        tap("Refresh TEST status")
+        tap("I used my phrase with the phone unlocked")
+        tap("Continue setup")
+        XCTAssertFalse(app.buttons["I used my phrase with the phone locked"].exists)
+        XCTAssertFalse(app.buttons["Continue setup"].isEnabled)
+
+        tap("iOS asked me to unlock")
+        XCTAssertFalse(app.staticTexts["Practice report saved"].exists)
+        tap("Continue setup")
+        XCTAssertTrue(app.staticTexts["Your locked practice required an unlock. Use your unlocked phone for voice actions."].exists)
+    }
+
     func testExistingPasswordSignInKeepsEmailCodeOption() {
         app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--reset-ui-state", "--ui-invited-login"]
@@ -194,9 +239,8 @@ final class SignalWordJourneyTests: XCTestCase {
         let approve = app.buttons["Approve trusted person"]
         XCTAssertTrue(approve.waitForExistence(timeout: 5))
         XCTAssertFalse(approve.isEnabled, "Mailbox proof alone cannot approve a person")
-        let toggle = app.switches["enrollment.confirmPerson"]
-        reveal(toggle); toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
-        XCTAssertEqual(toggle.value as? String, "1")
+        tap("enrollment.confirmPerson")
+        XCTAssertTrue(app.buttons["enrollment.confirmPerson"].isSelected)
         XCTAssertTrue(approve.isEnabled)
         tap("Approve trusted person")
         XCTAssertTrue(app.navigationBars["Review your person"].waitForNonExistence(timeout: 5))
@@ -286,9 +330,8 @@ final class SignalWordJourneyTests: XCTestCase {
         name.press(forDuration: 1.2)
         if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20) + "Taylor\n")
-        let toggle = app.switches["enrollment.confirmPerson"]
-        reveal(toggle); toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
-        XCTAssertEqual(toggle.value as? String, "1")
+        tap("enrollment.confirmPerson")
+        XCTAssertTrue(app.buttons["enrollment.confirmPerson"].isSelected)
         tap("Approve trusted person")
         XCTAssertTrue(name.waitForNonExistence(timeout: 5))
         let routing = app.buttons["Primary now, others after 2 minutes"]
@@ -325,8 +368,8 @@ final class SignalWordJourneyTests: XCTestCase {
         XCTAssertTrue(warning.exists)
         XCTAssertFalse(app.buttons["Check in now"].exists)
         let resolve = app.buttons["alert.resolve"]
-        // Return to the persistent incident card above the timer panel.
-        reveal(resolve, scrollingUp: false, useMargin: true)
+        // The resolution control follows the timer panel on Home.
+        reveal(resolve, useMargin: true)
         resolve.press(forDuration: 1.8)
         XCTAssertTrue(app.buttons["alert.trigger"].waitForExistence(timeout: 5))
     }

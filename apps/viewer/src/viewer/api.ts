@@ -89,7 +89,9 @@ export function parsePublicEvent(value: unknown): PublicEvent {
   }
 }
 
-export function viewerTokenFromPath(pathname: string): string | null {
+export function viewerTokenFromPath(pathname: string, hash = ''): string | null {
+  const fragment = new URLSearchParams(hash.replace(/^#/, '')).get('token')
+  if (pathname === '/events' && fragment && /^[A-Za-z0-9_-]{43}$/.test(fragment)) return fragment
   const match = pathname.match(/^\/events\/([^/]+)$/)
   const token = match?.[1]
   return token && tokenPattern.test(token) ? token : null
@@ -117,10 +119,12 @@ export function isAbortError(error: unknown): boolean {
 export async function fetchPublicEvent(token: string, signal?: AbortSignal): Promise<PublicEvent> {
   let response: Response
   try {
-    response = await fetch(`/v1/public/events/${encodeURIComponent(token)}`, {
+    response = await fetch(`/api/private-links`, {
       cache: 'no-store',
       signal,
-      headers: { Accept: 'application/json' },
+      method: 'POST', referrerPolicy: 'no-referrer',
+      headers: { Accept: 'application/json', 'Content-Type':'application/json' },
+      body: JSON.stringify({kind:'event',token,action:'read'}),
     })
   } catch (error) {
     if (isAbortError(error)) throw error
@@ -146,9 +150,11 @@ export async function fetchPublicEvent(token: string, signal?: AbortSignal): Pro
 }
 
 export async function acknowledgeEvent(token: string): Promise<void> {
-  const response = await fetch(`/v1/public/events/${encodeURIComponent(token)}`, {
+  const response = await fetch(`/api/private-links`, {
     method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(8000),
-    headers: { 'X-SignalWord-Action': 'acknowledge', Accept: 'application/json' },
+    referrerPolicy: 'no-referrer',
+    headers: { 'Content-Type':'application/json', Accept: 'application/json' },
+    body: JSON.stringify({kind:'event',token,action:'acknowledge'}),
   })
   if (!response.ok || (await response.json()).acknowledged !== true) throw new Error('ACKNOWLEDGEMENT_FAILED')
 }

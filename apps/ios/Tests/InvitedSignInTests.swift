@@ -29,6 +29,29 @@ final class InvitedSignInTests: XCTestCase {
         do { _ = try await m.accessToken(createIfMissing: true, captchaToken: "proof"); XCTFail() }
         catch { XCTAssertEqual(error as? SessionError, .verificationRequired) }
     }
+    func testDisabledProviderAndClosedRegistrationHaveActionableErrors() async {
+        for (code, expected) in [("email_provider_disabled", SessionError.emailSignInDisabled),
+                                 ("signup_disabled", SessionError.registrationClosed)] {
+            let m = manager(SessionBox()) { request in
+                let data = try JSONSerialization.data(withJSONObject: ["code": 400, "error_code": code])
+                return (data, HTTPURLResponse(url: request.url!, statusCode: 400,
+                                              httpVersion: nil, headerFields: nil)!)
+            }
+            do {
+                try await m.requestInvitedCode(email: "a@example.com", captchaToken: "proof")
+                XCTFail("Request must be rejected")
+            } catch { XCTAssertEqual(error as? SessionError, expected) }
+        }
+    }
+    func testExpiredCodeAndNetworkFailuresRemainDistinct() async {
+        let expired = manager(SessionBox()) { request in
+            (Data(#"{"code":403,"error_code":"otp_expired"}"#.utf8), HTTPURLResponse(url: request.url!, statusCode: 403, httpVersion: nil, headerFields: nil)!)
+        }
+        do { try await expired.verifyInvitedCode(email: "a@example.com", code: "01234567"); XCTFail() }
+        catch { XCTAssertEqual(error as? SessionError, .verificationCodeExpired) }
+        XCTAssertNotEqual(SessionError.verificationCodeExpired.message, SessionError.unavailable.message)
+    }
+
     func testRequestDoesNotPersistIdentityAndVerificationSurvivesRelaunch() async throws {
         let box = SessionBox(); let payload = success
         let m = manager(box) { request in

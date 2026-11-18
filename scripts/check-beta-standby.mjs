@@ -12,6 +12,7 @@ export async function checkBetaStandby(target, fetchImpl = fetch) {
     { name: 'BETA_ENROLLMENT_DISABLED', path: '/api/enrollment/config' },
   ];
   const results = [];
+  let publicKey;
   for (const check of checks) {
     const problems = [];
     try {
@@ -25,7 +26,10 @@ export async function checkBetaStandby(target, fetchImpl = fetch) {
           || body?.siteKey !== config.turnstileSiteKey || body?.minimumPasswordLength !== 10) {
           problems.push('AUTH_CONFIGURATION_MISMATCH');
         }
-        try { validateBetaPublicKey(body?.publicKey, config.projectRef); }
+        try {
+          validateBetaPublicKey(body?.publicKey, config.projectRef);
+          if (problems.length === 0) publicKey = body.publicKey;
+        }
         catch { problems.push('PUBLIC_KEY_INVALID'); }
       } else {
         if (response.status !== 503 || body?.error?.code !== 'SERVICE_UNAVAILABLE'
@@ -38,6 +42,19 @@ export async function checkBetaStandby(target, fetchImpl = fetch) {
       results.push({ name: check.name, passed: false, problems: ['REQUEST_FAILED'] });
     }
   }
+  const providerProblems = [];
+  try {
+    if (!publicKey) throw Error('PUBLIC_KEY_INVALID');
+    const response = await fetchImpl(new URL('/auth/v1/settings', config.backendOrigin), {
+      method: 'GET', redirect: 'error', signal: AbortSignal.timeout(10000),
+      headers: { apikey: publicKey },
+    });
+    const body = await response.json();
+    if (!response.ok || body?.external?.email !== true) providerProblems.push('EMAIL_PROVIDER_DISABLED');
+    if (body?.disable_signup !== true) providerProblems.push('PUBLIC_SIGNUP_NOT_CLOSED');
+  } catch { providerProblems.push('PROVIDER_CONFIGURATION_UNAVAILABLE'); }
+  results.push({ name: 'BETA_EXISTING_USER_EMAIL_LOGIN', passed: providerProblems.length === 0,
+    problems: providerProblems });
   return { environment: 'beta', projectRef: config.projectRef,
     standbyConfigurationPassed: results.every(result => result.passed),
     hostedLifecycleAccepted: false, testFlightReady: false, results };
@@ -49,7 +66,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     // Owner-only Vercel automation access is optional and never written to the report.
     const access = process.env.SIGNALWORD_BETA_VERCEL_BYPASS;
     const result = await checkBetaStandby(target, (url, options) => fetch(url, {
-      ...options, headers: access ? { 'x-vercel-protection-bypass': access } : {},
+      ...options, headers: { ...options.headers,
+        ...(access && url.origin === new URL(target.viewerOrigin).origin
+          ? { 'x-vercel-protection-bypass': access } : {}) },
     }));
     console.log(JSON.stringify(result, null, 2));
     if (!result.standbyConfigurationPassed) process.exitCode = 1;

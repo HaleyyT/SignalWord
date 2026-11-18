@@ -21,7 +21,7 @@ let package = Package(
                 "Features/AppShell/CheckInPanel.swift",
                 "Features/AppShell/ContactNetworkPanel.swift", "Features/AppShell/HomeScreen.swift",
                 "Features/AppShell/PeopleScreen.swift", "Features/AppShell/SettingsScreen.swift",
-                "Features/AppShell/SignalWordRootView.swift", "Features/AppShell/SignalWordSetupFlow.swift",
+                "Features/AppShell/VoiceSetupGuide.swift", "Features/AppShell/SignalWordRootView.swift", "Features/AppShell/SignalWordSetupFlow.swift",
                 "Core/Configuration", "Core/Security/DeviceOwnerAuthenticator.swift",
                 "Services/AlertAPI", "Services/AppIntents", "Services/Location", "Services/UserAPI",
                 "Services/Auth/SignupVerificationView.swift",

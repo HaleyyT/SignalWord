@@ -43,6 +43,7 @@ enum DeviceCredentialStore {
     }
 
     static func saveSession(_ session: Session) throws {
+        let previous = try loadSession()
         let data = try JSONEncoder().encode(session)
         let identity: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
@@ -65,6 +66,9 @@ enum DeviceCredentialStore {
         } else if updateStatus != errSecSuccess {
             throw KeychainError.unexpectedStatus(updateStatus)
         }
+        if previous == nil || previous?.userID != session.userID {
+            VoiceSetupStorage.clear()
+        }
     }
 
     static func clear() throws {
@@ -77,6 +81,7 @@ enum DeviceCredentialStore {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unexpectedStatus(status)
         }
+        VoiceSetupStorage.clear()
     }
 }
 

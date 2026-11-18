@@ -4,6 +4,7 @@ import { createContactInvitationGateway, createInvitationPreviewGateway } from "
 import { createInvitationPreviewHandler } from "../supabase/functions/contact-invitation-preview/index.ts";
 import { createInvitationTokenCipher } from "../supabase/functions/_shared/encryption.ts";
 import { createServer as createViteServer } from "vite";
+import { privateLinkProxy } from "../apps/viewer/api/private-links.mjs";
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 import {
@@ -489,7 +490,10 @@ async function journey() {
     const retry = await request("/v3/contact-invitations", "POST", {}, { "Idempotency-Key": key });
     assert.equal(invitation.shareURL, retry.shareURL);
     assert.equal(sent.length, 0, "Creating/sharing never emails anyone");
-    const invitationToken = new URL(invitation.shareURL).pathname.split("/").at(-1);
+    const invitationURL = new URL(invitation.shareURL);
+    assert.equal(invitationURL.pathname, "/join");
+    const invitationToken = new URLSearchParams(invitationURL.hash.slice(1)).get("token");
+    assert.match(invitationToken, /^[A-Za-z0-9_-]{43}$/);
     let attemptId;
     let management;
     viewerServer = await createViteServer({ root: fileURLToPath(new URL("../apps/viewer/", import.meta.url)), server: { host: "127.0.0.1", port: 0 } });
@@ -498,26 +502,31 @@ async function journey() {
     const recipientPage = await browser.newPage();
     await recipientPage.route("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit", route => route.fulfill({ contentType: "text/javascript",
       body: "window.turnstile={render:(node,options)=>{setTimeout(()=>options.callback('local-fixture-challenge'),0);return 'widget'},remove:()=>{},reset:()=>{}};" }));
-    await recipientPage.route("**/api/enrollment/*", async route => {
-      const r = route.request(), token = new URL(r.url()).pathname.split("/").at(-1);
-      if (token === "config") return route.fulfill({ json: { enabled: true, siteKey: "local-fixture" } });
-      const data = r.postDataJSON();
-      const intent = r.headers()["x-signalword-action"];
-      const path = token.length === 64 ? `/v3/contact-management/${token}` : `/v3/contact-invitations/${token}${intent ? "/" + intent : ""}`;
-      const body = intent === "verify" ? { attemptId: data.attemptId, code: data.code } : data;
-      if (intent === "begin") { body.intent = "join"; attemptId = body.attemptId; enrollmentAttempts.push(attemptId); }
-      const response = await enrollment(new Request("https://api.example.test" + path, { method: r.method(),
-        headers: { Origin: "https://www.signalword.app", "Content-Type": "application/json" },
-        ...(r.method() === "POST" ? { body: JSON.stringify(body) } : {}) }));
-      const result = await response.json();
-      if (intent === "begin" && response.ok) {
-        management = result.withdrawalToken;
+    const requestURLs = [];
+    recipientPage.on("request", request => requestURLs.push(request.url()));
+    await recipientPage.route("**/api/enrollment/config", route =>
+      route.fulfill({ json: { enabled: true, siteKey: "local-fixture" } }));
+    await recipientPage.route("**/api/private-links", async route => {
+      const envelope = route.request().postDataJSON();
+      const publicOrigin = invitationURL.origin;
+      const result = await privateLinkProxy({
+        envelope, requestOrigin: publicOrigin, publicOrigin,
+        enrollmentOrigin: "https://api.example.test", enabled: true,
+        fetchImpl: (url, options) => {
+          requestURLs.push(String(url));
+          return enrollment(new Request(url, options));
+        },
+      });
+      if (envelope.action === "begin" && result.status === 200) {
+        attemptId = result.body.attemptId;
+        enrollmentAttempts.push(attemptId);
+        management = result.body.withdrawalToken;
         assert.equal(await runContactJoinEmail({ leaseId: crypto.randomUUID(), service: joinService,
           adapter: { provider: "resend", sendJoinCode: async message => { sent.push(message); return { providerMessageId: crypto.randomUUID() }; } } }), "sent");
       }
-      await route.fulfill({ status: response.status, json: result });
+      await route.fulfill({ status: result.status, json: result.body });
     });
-    await recipientPage.goto(viewerServer.resolvedUrls.local[0] + "join/" + invitationToken);
+    await recipientPage.goto(new URL(invitationURL.pathname + invitationURL.hash, viewerServer.resolvedUrls.local[0]).href);
     await recipientPage.getByRole("heading", { name: "Be there for Local journey fixture." }).waitFor();
     await recipientPage.getByLabel("Your email", { exact: true }).fill("fixture-a@example.test");
     await recipientPage.getByRole("checkbox").check();
@@ -535,6 +544,8 @@ async function journey() {
     assert.equal(sent.length, 1, "Approval sends no alert or extra verification email");
     await recipientPage.getByRole("button", { name: "Refresh status" }).click();
     await recipientPage.getByRole("heading", { name: "Your connection is confirmed" }).waitFor();
+    assert.ok(requestURLs.every(url => !url.includes(invitationToken) && !url.includes(management)),
+      "Invitation and management capabilities stay out of browser and upstream request URLs");
     await browser.close(); browser = undefined;
     await viewerServer.close(); viewerServer = undefined;
     const command = crypto.randomUUID();
@@ -559,7 +570,6 @@ async function journey() {
       server: {
         host: "127.0.0.1",
         port: 0,
-        proxy: { "/v1": { target: apiOrigin } },
       },
     });
     await viewerServer.listen();
@@ -581,9 +591,21 @@ async function journey() {
           ? route.continue()
           : route.abort(),
     );
-    await page.goto(
-      `http://127.0.0.1:${viewerServer.httpServer.address().port}/events/${token}`,
-    );
+    const eventRequestURLs = [];
+    page.on("request", request => eventRequestURLs.push(request.url()));
+    await page.route("**/api/private-links", async route => {
+      const publicOrigin = invitationURL.origin;
+      const result = await privateLinkProxy({
+        envelope: route.request().postDataJSON(), requestOrigin: publicOrigin, publicOrigin,
+        eventOrigin: "https://api.example.test",
+        fetchImpl: (url, options) => {
+          eventRequestURLs.push(String(url));
+          return publicEvent(new Request(url, options));
+        },
+      });
+      await route.fulfill({ status: result.status, json: result.body });
+    });
+    await page.goto(new URL(`/events#token=${token}`, viewerServer.resolvedUrls.local[0]).href);
     await page.getByRole("button", { name: "Acknowledge this alert" })
       .waitFor();
     assert.equal(
@@ -644,8 +666,10 @@ async function journey() {
     await request(`/v1/alerts/${event.eventId}/resolve`, "POST");
     await page.reload();
     await page.getByRole("heading", {
-      name: "Local journey fixture resolved the alert",
+      name: "Local journey fixture resolved the TEST",
     }).waitFor();
+    assert.ok(eventRequestURLs.every(url => !url.includes(token)),
+      "Event capability stays out of browser and upstream request URLs");
     await browser.close();
     browser = undefined;
     await viewerServer.close();

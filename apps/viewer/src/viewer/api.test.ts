@@ -77,10 +77,12 @@ describe('public event HTTP behavior', () => {
     const controller = new AbortController()
 
     await expect(fetchPublicEvent(token, controller.signal)).resolves.toEqual(validPayload)
-    expect(fetchMock).toHaveBeenCalledWith(`/v1/public/events/${token}`, {
+    expect(fetchMock).toHaveBeenCalledWith('/api/private-links', {
       cache: 'no-store',
       signal: controller.signal,
-      headers: { Accept: 'application/json' },
+      method:'POST', referrerPolicy:'no-referrer',
+      headers: { Accept: 'application/json', 'Content-Type':'application/json' },
+      body: JSON.stringify({kind:'event',token,action:'read'}),
     })
   })
 

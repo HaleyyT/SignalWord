@@ -106,6 +106,9 @@ final class AppShellModel {
     }
     private func restoreReadiness(for identity: String?) {
         guard let identity, readinessIdentityID != identity else { return }
+        if let previous = preferences.string(forKey: "readinessIdentityID"), previous != identity {
+            VoiceSetupStorage.clear(in: preferences)
+        }
         readinessIdentityID = identity
         if preferences.string(forKey: "readinessIdentityID") == identity { return }
         guard let data = preferences.data(forKey: "accountReadiness." + identity),
@@ -316,11 +319,12 @@ final class AppShellModel {
         defer { isSigningIn = false; invitedCode = "" }
         do {
             try await lifecycle.verifyInvitedCode(invitedEmail, invitedCode)
+            needsIdentityVerification = false
             invitedEmail = ""
             invitedCodeRequested = false
             await prepare()
         } catch {
-            accountMessage = "Code not accepted. It may be incorrect, expired or already used. Try again or request a new code."
+            accountMessage = (error as? SessionError)?.message ?? "Sign-in could not be confirmed. Check your connection before requesting another code."
         }
     }
 
@@ -330,6 +334,7 @@ final class AppShellModel {
         defer { isSigningIn = false }
         do {
             try await lifecycle.signInWithPassword(invitedEmail, password, captchaToken)
+            needsIdentityVerification = false
             invitedEmail = ""
             invitedCode = ""
             invitedCodeRequested = false
@@ -768,6 +773,7 @@ final class AppShellModel {
     }
 
     private func clearRehearsalEvidence(startingAt: Date = .now) {
+        VoiceSetupStorage.clear(in: preferences)
         lockedTestReports = []
         currentAcknowledgedTestID = nil
         canReportLockedTestForCurrentEvent = false
