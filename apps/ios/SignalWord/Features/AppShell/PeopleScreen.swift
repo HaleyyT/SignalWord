@@ -298,8 +298,17 @@ struct ContactEnrollmentPanel: View {
                     Text("Verified email: \(candidate.emailHint)")
                     Text("A verified mailbox and masked hint do not establish identity. Confirm with the person you intended to invite using a channel you already trust. Do not approve an unfamiliar request.")
                     TextField("Contact label", text: $label).textContentType(.nickname)
-                    Toggle("I confirmed this is my intended person", isOn: $confirmed)
-                        .accessibilityIdentifier("enrollment.confirmPerson")
+                    Button {
+                        confirmed.toggle()
+                    } label: {
+                        Label("I confirmed this is my intended person",
+                              systemImage: confirmed ? "checkmark.square.fill" : "square")
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(confirmed ? .isSelected : [])
+                    .accessibilityIdentifier("enrollment.confirmPerson")
                     if let message = enrollment.message { Text(message) }
                     Button("Approve trusted person") {
                         Task {

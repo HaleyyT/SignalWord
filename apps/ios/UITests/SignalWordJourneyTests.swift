@@ -239,9 +239,8 @@ final class SignalWordJourneyTests: XCTestCase {
         let approve = app.buttons["Approve trusted person"]
         XCTAssertTrue(approve.waitForExistence(timeout: 5))
         XCTAssertFalse(approve.isEnabled, "Mailbox proof alone cannot approve a person")
-        let toggle = app.switches["enrollment.confirmPerson"]
-        reveal(toggle); toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
-        XCTAssertEqual(toggle.value as? String, "1")
+        tap("enrollment.confirmPerson")
+        XCTAssertTrue(app.buttons["enrollment.confirmPerson"].isSelected)
         XCTAssertTrue(approve.isEnabled)
         tap("Approve trusted person")
         XCTAssertTrue(app.navigationBars["Review your person"].waitForNonExistence(timeout: 5))
@@ -331,9 +330,8 @@ final class SignalWordJourneyTests: XCTestCase {
         name.press(forDuration: 1.2)
         if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20) + "Taylor\n")
-        let toggle = app.switches["enrollment.confirmPerson"]
-        reveal(toggle); toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
-        XCTAssertEqual(toggle.value as? String, "1")
+        tap("enrollment.confirmPerson")
+        XCTAssertTrue(app.buttons["enrollment.confirmPerson"].isSelected)
         tap("Approve trusted person")
         XCTAssertTrue(name.waitForNonExistence(timeout: 5))
         let routing = app.buttons["Primary now, others after 2 minutes"]
