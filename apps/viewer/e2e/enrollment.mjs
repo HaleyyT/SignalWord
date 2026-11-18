@@ -1,4 +1,6 @@
 import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
@@ -50,7 +52,7 @@ try {
     await page.route('**/api/private-links', intercept);
     await page.goto(`${origin}/join#token=${token}`);
     await page.getByRole('heading', { name: 'Be there for Alice.' }).waitFor();
-    await page.screenshot({ path: `/private/tmp/signalword-enrollment-form-${width}.png`, fullPage: true });
+    await page.screenshot({ path: join(tmpdir(), `signalword-enrollment-form-${width}.png`), fullPage: true });
     assert.equal(mutations.length, 0, 'opening invitation must not change consent');
     await page.getByLabel('Your email', { exact: true }).fill('recipient@example.test');
     await page.getByRole('checkbox').check();
@@ -82,7 +84,7 @@ try {
     const viewport = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth }));
     assert.ok(viewport.content<=viewport.width, 'no horizontal overflow');
     assert.deepEqual(errors, [], 'no runtime errors');
-    await page.screenshot({ path: `/private/tmp/signalword-enrollment-${width}.png`, fullPage: true });
+    await page.screenshot({ path: join(tmpdir(), `signalword-enrollment-${width}.png`), fullPage: true });
     await page.close();
     console.log(`PASS: production enrollment journey at ${width}px (mocked CAPTCHA/provider, real CSP)`);
   }
